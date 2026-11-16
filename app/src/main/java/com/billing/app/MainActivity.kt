@@ -14,6 +14,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
+import com.billing.app.core.localization.LocalAppStrings
+import com.billing.app.core.localization.getAppStrings
 import com.billing.app.core.ui.theme.BillingAppTheme
 import com.billing.app.feature.checkout.CheckoutViewModel
 import com.billing.app.feature.home.HomeViewModel
@@ -106,8 +108,12 @@ class MainActivity : ComponentActivity() {
             val configuration = LocalConfiguration.current
             val currentLocale = remember(languagePreference) { Locale.forLanguageTag(languagePreference) }
             configuration.setLocale(currentLocale)
+            val currentStrings = remember(languagePreference) { getAppStrings(languagePreference) }
 
-            CompositionLocalProvider(LocalConfiguration provides configuration) {
+            CompositionLocalProvider(
+                LocalConfiguration provides configuration,
+                LocalAppStrings provides currentStrings
+            ) {
                 BillingAppTheme(darkTheme = isDark) {
                     val navController = rememberNavController()
                     AppNavHost(

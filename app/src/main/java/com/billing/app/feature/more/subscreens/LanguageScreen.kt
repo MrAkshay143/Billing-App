@@ -25,14 +25,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import com.billing.app.core.ui.components.SubPageHeader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.feature.settings.SettingsViewModel
@@ -79,31 +79,12 @@ fun LanguageScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "App Language",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = HeaderGradientStart,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
-                )
+            SubPageHeader(
+                title = "App Language",
+                onNavigateBack = onNavigateBack
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -116,7 +97,7 @@ fun LanguageScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
@@ -147,12 +128,12 @@ fun LanguageScreen(
                             text = "Language Preferences",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                         Text(
                             text = "Select your preferred regional language",
                             fontSize = 13.sp,
-                            color = TextMutedColor
+                            color = DokandaarTheme.textMuted
                         )
                     }
                 }
@@ -164,14 +145,14 @@ fun LanguageScreen(
                 text = "Available Languages",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = DokandaarTheme.textPrimary
             )
             Spacer(modifier = Modifier.height(10.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column {
@@ -192,12 +173,12 @@ fun LanguageScreen(
                                     text = lang.nativeName,
                                     fontSize = 16.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                                    color = Color(0xFF0F172A)
+                                    color = DokandaarTheme.textPrimary
                                 )
                                 Text(
                                     text = lang.subTitle,
                                     fontSize = 12.sp,
-                                    color = TextMutedColor
+                                    color = DokandaarTheme.textMuted
                                 )
                             }
 
@@ -208,7 +189,7 @@ fun LanguageScreen(
                                     .clip(CircleShape)
                                     .border(
                                         width = if (isSelected) 2.dp else 1.5.dp,
-                                        color = if (isSelected) HeaderGradientStart else BorderColor,
+                                        color = if (isSelected) HeaderGradientStart else DokandaarTheme.border,
                                         shape = CircleShape
                                     )
                                     .background(if (isSelected) HeaderGradientStart else Color.Transparent),
@@ -226,7 +207,7 @@ fun LanguageScreen(
                         }
 
                         if (index < languages.size - 1) {
-                            HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                            HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                         }
                     }
                 }

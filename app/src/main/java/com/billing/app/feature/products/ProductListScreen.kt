@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
@@ -59,6 +60,7 @@ import com.billing.app.core.ui.components.StockStatusBadge
 import com.billing.app.core.ui.components.TopDokandaarHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.LowStockBg
 import com.billing.app.core.ui.theme.LowStockText
@@ -111,11 +113,13 @@ fun ProductListScreen(
         )
     }
 
+    val strings = appStrings()
+
     Scaffold(
         topBar = {
             TopDokandaarHeader(
                 storeName = "Dokandaar",
-                subtitle = "Billing & POS",
+                subtitle = strings.appSubtitle,
                 onNotificationClick = onNavigateToInvoices,
                 onMenuClick = onNavigateToSettings
             )
@@ -126,7 +130,7 @@ fun ProductListScreen(
                 onTabSelected = onNavigateToTab
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -140,7 +144,7 @@ fun ProductListScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
@@ -408,7 +412,7 @@ private fun ProductItemCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -432,7 +436,7 @@ private fun ProductItemCard(
                     text = product.name,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = DokandaarTheme.textPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -440,14 +444,14 @@ private fun ProductItemCard(
                         text = "||||||",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
-                        color = Color(0xFF64748B),
+                        color = DokandaarTheme.textMuted,
                         letterSpacing = 1.sp
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = product.barcode,
                         fontSize = 12.sp,
-                        color = Color(0xFF64748B)
+                        color = DokandaarTheme.textMuted
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))

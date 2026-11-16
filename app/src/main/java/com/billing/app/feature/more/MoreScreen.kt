@@ -53,11 +53,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.TopDokandaarHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.feature.settings.SettingsViewModel
@@ -78,6 +80,7 @@ fun MoreScreen(
     onNavigateToTab: (DokandaarTab) -> Unit
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -85,7 +88,7 @@ fun MoreScreen(
         topBar = {
             TopDokandaarHeader(
                 storeName = "Dokandaar",
-                subtitle = "Billing & POS",
+                subtitle = strings.appSubtitle,
                 onNotificationClick = onNavigateToInvoices,
                 onMenuClick = { /* Current Tab */ }
             )
@@ -97,7 +100,7 @@ fun MoreScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -110,7 +113,7 @@ fun MoreScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
@@ -138,15 +141,15 @@ fun MoreScreen(
 
                     Column {
                         Text(
-                            text = "More",
+                            text = strings.moreTitle,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                         Text(
-                            text = "Settings, backup, reports and more",
+                            text = strings.moreSubtitle,
                             fontSize = 12.sp,
-                            color = TextMutedColor
+                            color = DokandaarTheme.textMuted
                         )
                     }
                 }
@@ -156,44 +159,44 @@ fun MoreScreen(
 
             // 1. Group: Business
             Text(
-                text = "Business",
+                text = strings.groupBusiness,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = DokandaarTheme.textPrimary
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column {
                     MoreOptionItem(
                         icon = Icons.Default.Storefront,
-                        title = "Store Profile",
+                        title = strings.storeProfile,
                         subtitle = "Store info, logo, address",
                         onClick = onNavigateToStoreProfile
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
                         icon = Icons.Default.Group,
-                        title = "User & Access",
+                        title = strings.userAccess,
                         subtitle = "Add staff, set permissions",
                         onClick = onNavigateToUserAccess
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
                         icon = Icons.Default.Print,
-                        title = "Printer Setup",
+                        title = strings.printerSetup,
                         subtitle = "Thermal/Bluetooth printer",
                         onClick = onNavigateToPrinterSetup
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
                         icon = Icons.Default.CreditCard,
-                        title = "Payment Settings",
+                        title = strings.paymentSettings,
                         subtitle = "UPI, cash and other options",
                         onClick = onNavigateToPaymentSettings
                     )
@@ -204,30 +207,30 @@ fun MoreScreen(
 
             // 2. Group: Data & Reports
             Text(
-                text = "Data & Reports",
+                text = strings.groupDataReports,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = DokandaarTheme.textPrimary
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column {
                     MoreOptionItem(
                         icon = Icons.Default.BarChart,
-                        title = "Sales Report",
+                        title = strings.salesReport,
                         subtitle = "Daily, weekly and monthly reports",
                         onClick = onNavigateToSalesReport
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
                         icon = Icons.Default.CloudDownload,
-                        title = "Backup & Restore",
+                        title = strings.backupRestore,
                         subtitle = "Backup your data and restore anytime",
                         onClick = onNavigateToBackupRestore
                     )
@@ -238,34 +241,34 @@ fun MoreScreen(
 
             // 3. Group: App
             Text(
-                text = "App",
+                text = strings.groupApp,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = DokandaarTheme.textPrimary
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column {
                     MoreOptionItem(
                         icon = Icons.Default.Palette,
-                        title = "Appearance",
+                        title = strings.appearance,
                         subtitle = "Theme, color and display",
                         onClick = onNavigateToAppearance
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
                         icon = Icons.Default.Language,
-                        title = "Language",
+                        title = strings.language,
                         subtitle = "English, বাংলা, हिंदी",
                         onClick = onNavigateToLanguage
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
 
                     // Notifications Switch Row
                     Row(
@@ -296,12 +299,12 @@ fun MoreScreen(
                                 text = "Notifications",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF0F172A)
+                                color = DokandaarTheme.textPrimary
                             )
                             Text(
                                 text = "Sale, stock and app alerts",
                                 fontSize = 12.sp,
-                                color = TextMutedColor
+                                color = DokandaarTheme.textMuted
                             )
                         }
 
@@ -324,10 +327,10 @@ fun MoreScreen(
                         )
                     }
 
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
                         icon = Icons.Default.Info,
-                        title = "About Dokandaar",
+                        title = strings.about,
                         subtitle = "App version, update and support",
                         onClick = onNavigateToAbout
                     )
@@ -375,19 +378,19 @@ private fun MoreOptionItem(
                 text = title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF0F172A)
+                color = DokandaarTheme.textPrimary
             )
             Text(
                 text = subtitle,
                 fontSize = 12.sp,
-                color = TextMutedColor
+                color = DokandaarTheme.textMuted
             )
         }
 
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = Color(0xFF94A3B8),
+            tint = DokandaarTheme.textMuted,
             modifier = Modifier.size(18.dp)
         )
     }

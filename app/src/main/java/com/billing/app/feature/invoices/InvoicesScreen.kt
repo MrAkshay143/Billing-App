@@ -19,13 +19,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Visibility
@@ -61,11 +61,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.TopDokandaarHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.core.util.Money
@@ -234,11 +236,13 @@ fun InvoicesScreen(
         )
     }
 
+    val strings = appStrings()
+
     Scaffold(
         topBar = {
             TopDokandaarHeader(
                 storeName = "Dokandaar",
-                subtitle = "Billing & POS",
+                subtitle = strings.appSubtitle,
                 onNotificationClick = { /* Already on Invoices */ },
                 onMenuClick = onNavigateToSettings
             )
@@ -250,7 +254,7 @@ fun InvoicesScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -281,7 +285,7 @@ fun InvoicesScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ReceiptLong,
+                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                             contentDescription = null,
                             tint = HeaderGradientStart,
                             modifier = Modifier.size(24.dp)
@@ -463,7 +467,7 @@ fun InvoicesScreen(
 
                 // Card 3: Avg. Bill
                 KpiMetricCard(
-                    icon = Icons.Default.ReceiptLong,
+                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
                     iconTint = Color(0xFF0284C7),
                     value = Money.fromPaise(avgBillPaise).format(),
                     label = "Avg. Bill",
@@ -703,7 +707,7 @@ private fun InvoiceItemCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.ReceiptLong,
+                    imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                     contentDescription = null,
                     tint = if (invoice.status == InvoiceStatus.DRAFT) Color(0xFFD97706) else HeaderGradientStart,
                     modifier = Modifier.size(22.dp)

@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.HeaderGradientEnd
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.util.Money
@@ -41,6 +42,8 @@ fun FloatingCheckoutBar(
     onCheckoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = appStrings()
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -78,7 +81,7 @@ fun FloatingCheckoutBar(
 
                     Column {
                         Text(
-                            text = "Total ($totalItems items)",
+                            text = "${strings.total} ($totalItems)",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White.copy(alpha = 0.85f)
@@ -111,7 +114,7 @@ fun FloatingCheckoutBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Checkout",
+                            text = strings.checkout,
                             color = HeaderGradientStart,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp

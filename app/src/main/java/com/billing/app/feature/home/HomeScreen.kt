@@ -72,6 +72,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.billing.app.core.scanner.BarcodeAnalyzer
 import com.billing.app.core.scanner.BarcodeDebounceManager
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.FloatingCheckoutBar
@@ -82,9 +83,11 @@ import com.billing.app.core.ui.components.ViewfinderLaserOverlay
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.AddProductContent
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.Slate800Color
 import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.ui.util.debouncedClickable
 import com.billing.app.domain.model.CartItem
 import java.util.concurrent.Executors
@@ -103,6 +106,7 @@ fun HomeScreen(
     val totalAmount by viewModel.totalAmount.collectAsState()
     val totalItems by viewModel.totalItems.collectAsState()
     val storeName by viewModel.storeName.collectAsState()
+    val strings = appStrings()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showClearConfirmation by rememberSaveable { mutableStateOf(false) }
@@ -127,6 +131,7 @@ fun HomeScreen(
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
+            FeedbackManager.showToast(context, error)
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
         }
@@ -156,11 +161,12 @@ fun HomeScreen(
     }
 
     Scaffold(
+        containerColor = DokandaarTheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopDokandaarHeader(
                 storeName = storeName,
-                subtitle = "Billing & POS",
+                subtitle = strings.appSubtitle,
                 onNotificationClick = onNavigateToInvoices,
                 onMenuClick = onNavigateToSettings
             )
@@ -309,15 +315,15 @@ fun HomeScreen(
                     Icon(
                         imageVector = Icons.Default.ShoppingCart,
                         contentDescription = "Cart",
-                        tint = Color(0xFF0F172A),
+                        tint = DokandaarTheme.textPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Cart (${uiState.cartItems.size} items)",
+                        text = "${strings.cartTitle} (${uiState.cartItems.size})",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = DokandaarTheme.textPrimary
                     )
                 }
 
@@ -338,7 +344,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Clear",
+                                text = strings.clearCart,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AddProductContent
@@ -360,20 +366,20 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
                             contentDescription = null,
-                            tint = Color(0xFFCBD5E1),
+                            tint = DokandaarTheme.textMuted,
                             modifier = Modifier.size(56.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Cart is empty",
+                            text = strings.cartEmpty,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = TextMutedColor
+                            color = DokandaarTheme.textMuted
                         )
                         Text(
-                            text = "Scan products above or use Add Product",
+                            text = strings.cartEmptySub,
                             fontSize = 12.sp,
-                            color = Color(0xFF94A3B8)
+                            color = DokandaarTheme.textMuted
                         )
                     }
                 }
@@ -409,7 +415,7 @@ fun CartItemRow(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -433,14 +439,14 @@ fun CartItemRow(
                     text = item.product.name,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A),
+                    color = DokandaarTheme.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = item.product.barcode,
                     fontSize = 12.sp,
-                    color = TextMutedColor
+                    color = DokandaarTheme.textMuted
                 )
             }
 
@@ -448,8 +454,8 @@ fun CartItemRow(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, BorderColor, RoundedCornerShape(10.dp))
-                    .background(Color(0xFFF8FAFC))
+                    .border(1.dp, DokandaarTheme.border, RoundedCornerShape(10.dp))
+                    .background(DokandaarTheme.background)
                     .padding(horizontal = 4.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -463,7 +469,7 @@ fun CartItemRow(
                     Icon(
                         imageVector = Icons.Default.Remove,
                         contentDescription = "Decrease",
-                        tint = Color(0xFF334155),
+                        tint = DokandaarTheme.textPrimary,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -472,7 +478,7 @@ fun CartItemRow(
                     text = "${item.quantity}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A),
+                    color = DokandaarTheme.textPrimary,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
@@ -499,7 +505,7 @@ fun CartItemRow(
                 text = item.total.format(),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = DokandaarTheme.textPrimary
             )
         }
     }

@@ -52,7 +52,7 @@ class HomeViewModel(
                 soundHapticManager.triggerScanFeedback()
                 addProductToCart(product)
             } else {
-                _uiState.value = _uiState.value.copy(errorMessage = "Product not found: $barcode")
+                _uiState.value = _uiState.value.copy(errorMessage = "Product not found")
             }
         }
     }

@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AddBox
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.AddProductContent
 import com.billing.app.core.ui.theme.InvoicesCardBg
@@ -46,6 +47,8 @@ fun QuickActionBar(
     onPrintClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = appStrings()
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -53,7 +56,7 @@ fun QuickActionBar(
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         QuickActionItem(
-            title = "Add Product",
+            title = strings.quickAddProduct,
             icon = Icons.Default.AddBox,
             bgColor = AddProductBg,
             contentColor = AddProductContent,
@@ -61,7 +64,7 @@ fun QuickActionBar(
             modifier = Modifier.weight(1f)
         )
         QuickActionItem(
-            title = "Products",
+            title = strings.quickProducts,
             icon = Icons.Default.Inventory2,
             bgColor = ProductsCardBg,
             contentColor = ProductsCardContent,
@@ -69,15 +72,15 @@ fun QuickActionBar(
             modifier = Modifier.weight(1f)
         )
         QuickActionItem(
-            title = "Invoices",
-            icon = Icons.Default.ReceiptLong,
+            title = strings.quickInvoices,
+            icon = Icons.AutoMirrored.Filled.ReceiptLong,
             bgColor = InvoicesCardBg,
             contentColor = InvoicesCardContent,
             onClick = onInvoicesClick,
             modifier = Modifier.weight(1f)
         )
         QuickActionItem(
-            title = "Print",
+            title = strings.quickPrint,
             icon = Icons.Default.Print,
             bgColor = PrintCardBg,
             contentColor = PrintCardContent,
