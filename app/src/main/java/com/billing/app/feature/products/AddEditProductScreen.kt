@@ -60,8 +60,10 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.PrimaryButton
 import com.billing.app.core.ui.components.ProductThumbnail
+import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.domain.model.Product
@@ -170,34 +172,15 @@ fun AddEditProductScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = if (existingProduct == null) "Add Product" else "Edit Product",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = HeaderGradientStart,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
-                )
+            SubPageHeader(
+                title = if (existingProduct == null) "Add Product" else "Edit Product",
+                onNavigateBack = onNavigateBack
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Surface(
-                color = Color.White,
+                color = DokandaarTheme.cardBackground,
                 shadowElevation = 8.dp,
                 modifier = Modifier.navigationBarsPadding()
             ) {
@@ -217,7 +200,7 @@ fun AddEditProductScreen(
                 }
             }
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -231,15 +214,15 @@ fun AddEditProductScreen(
                 text = "Product Photo (Optional)",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1E293B)
+                color = DokandaarTheme.textPrimary
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                color = Color.White,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                color = DokandaarTheme.cardBackground,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 if (imageUri != null) {
                     Row(
@@ -259,7 +242,7 @@ fun AddEditProductScreen(
                                 text = "Photo Attached",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
+                                color = DokandaarTheme.textPrimary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

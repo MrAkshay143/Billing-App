@@ -32,7 +32,7 @@ data class StaffMember(
     val id: String,
     val name: String,
     val phone: String,
-    val role: String // "Administrator", "Manager", "Cashier"
+    val role: String
 )
 
 data class SalesReportSummary(

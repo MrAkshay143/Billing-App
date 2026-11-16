@@ -2,6 +2,7 @@ package com.billing.app.feature.invoices
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.billing.app.core.datastore.SettingsDataStore
 import com.billing.app.core.util.Money
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,15 +29,23 @@ enum class InvoiceDateFilter {
 }
 
 enum class InvoiceStatusTab {
-    COMPLETED, DRAFT, ALL
+    COMPLETED, DRAFT, DUES, ALL
 }
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class InvoiceViewModel(
     private val invoiceRepository: InvoiceRepository,
     private val printerRepository: PrinterRepository,
-    private val shopRepository: ShopRepository
+    private val shopRepository: ShopRepository,
+    private val settingsDataStore: SettingsDataStore? = null
 ) : ViewModel() {
+
+    val isPinEnabled: StateFlow<Boolean> = (settingsDataStore?.pinEnabledFlow ?: flowOf(false))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    suspend fun verifySecurityPin(pin: String): Boolean {
+        return settingsDataStore?.verifyPin(pin) ?: true
+    }
 
     val searchQuery = MutableStateFlow("")
     val dateFilter = MutableStateFlow(InvoiceDateFilter.ALL)
@@ -59,22 +69,32 @@ class InvoiceViewModel(
         Triple(query, filter, tab)
     }.flatMapLatest { (query, filter, tab) ->
         val startTime = getFilterStartTime(filter)
-        val status = when (tab) {
-            InvoiceStatusTab.COMPLETED -> InvoiceStatus.COMPLETED
-            InvoiceStatusTab.DRAFT -> InvoiceStatus.DRAFT
-            InvoiceStatusTab.ALL -> null
-        }
-
-        if (query.isBlank()) {
-            if (status != null) {
-                invoiceRepository.getInvoicesByStatus(status)
-            } else if (startTime > 0L) {
-                invoiceRepository.getInvoicesSince(startTime)
-            } else {
-                invoiceRepository.getAllInvoices()
+        if (tab == InvoiceStatusTab.DUES) {
+            invoiceRepository.getCreditDuesInvoices().map { list ->
+                if (query.isBlank()) list
+                else list.filter {
+                    it.invoiceNumber.contains(query.trim(), ignoreCase = true) ||
+                            (it.customerName?.contains(query.trim(), ignoreCase = true) == true)
+                }
             }
         } else {
-            invoiceRepository.searchInvoices(query.trim(), status)
+            val status = when (tab) {
+                InvoiceStatusTab.COMPLETED -> InvoiceStatus.COMPLETED
+                InvoiceStatusTab.DRAFT -> InvoiceStatus.DRAFT
+                else -> null
+            }
+
+            if (query.isBlank()) {
+                if (status != null) {
+                    invoiceRepository.getInvoicesByStatus(status)
+                } else if (startTime > 0L) {
+                    invoiceRepository.getInvoicesSince(startTime)
+                } else {
+                    invoiceRepository.getAllInvoices()
+                }
+            } else {
+                invoiceRepository.searchInvoices(query.trim(), status)
+            }
         }
     }.map { invoices ->
         val startTime = getFilterStartTime(dateFilter.value)
@@ -88,6 +108,10 @@ class InvoiceViewModel(
     val displayedInvoices: StateFlow<List<InvoiceEntity>> = filteredInvoices
 
     val draftCount: StateFlow<Int> = invoiceRepository.getInvoicesByStatus(InvoiceStatus.DRAFT)
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val dueInvoicesCount: StateFlow<Int> = invoiceRepository.getCreditDuesInvoices()
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
@@ -174,6 +198,23 @@ class InvoiceViewModel(
                 onSuccess()
             } else {
                 _printMessage.value = result.exceptionOrNull()?.message ?: "Failed to void invoice"
+            }
+        }
+    }
+
+    fun settleDue(invoiceNumber: String, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            val result = invoiceRepository.settleInvoiceDue(invoiceNumber)
+            if (result.isSuccess) {
+                _printMessage.value = "Due balance settled for invoice $invoiceNumber"
+                _selectedInvoice.value?.let { pair ->
+                    if (pair.first.invoiceNumber == invoiceNumber) {
+                        _selectedInvoice.value = Pair(pair.first.copy(duePaise = 0L), pair.second)
+                    }
+                }
+                onSuccess()
+            } else {
+                _printMessage.value = result.exceptionOrNull()?.message ?: "Failed to settle due"
             }
         }
     }

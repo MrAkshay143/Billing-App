@@ -127,10 +127,17 @@ class ProductViewModel(
         _isSaving.value = true
         viewModelScope.launch {
             try {
+                val trimmedBarcode = barcode.trim()
+                val existing = productRepository.getProductByBarcode(trimmedBarcode)
+                if (existing != null && existing.id != id) {
+                    _errorMessage.value = "A product with barcode '$trimmedBarcode' already exists (${existing.name})"
+                    return@launch
+                }
+
                 val product = Product(
                     id = id,
                     name = name.trim(),
-                    barcode = barcode.trim(),
+                    barcode = trimmedBarcode,
                     price = price,
                     stock = stock,
                     imageUri = imageUri

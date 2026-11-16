@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.qr.UpiQrGenerator
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.core.util.Money
@@ -92,7 +93,7 @@ fun PaymentSettingsScreen(
                 onNavigateBack = onNavigateBack
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -106,7 +107,7 @@ fun PaymentSettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -122,7 +123,7 @@ fun PaymentSettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("UPI QR Code Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("UPI QR Code Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                             Text("Used to generate dynamic Scan & Pay QR on checkout", fontSize = 12.sp, color = TextMutedColor)
                         }
                     }
@@ -178,7 +179,7 @@ fun PaymentSettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -194,7 +195,7 @@ fun PaymentSettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Default Payment Method", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("Default Payment Method", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                             Text("Pre-selected tab when opening checkout", fontSize = 12.sp, color = TextMutedColor)
                         }
                     }
@@ -216,10 +217,10 @@ fun PaymentSettingsScreen(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(12.dp))
                                     .clickable { selectedDefaultMethod = mode },
-                                color = if (isSelected) AddProductBg else Color(0xFFF8FAFC),
+                                color = if (isSelected) AddProductBg else DokandaarTheme.surfaceVariant,
                                 border = androidx.compose.foundation.BorderStroke(
                                     width = if (isSelected) 1.5.dp else 1.dp,
-                                    color = if (isSelected) HeaderGradientStart else BorderColor
+                                    color = if (isSelected) HeaderGradientStart else DokandaarTheme.border
                                 )
                             ) {
                                 Column(

@@ -2,7 +2,9 @@ package com.billing.app.feature.checkout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.billing.app.BillingApplication
 import com.billing.app.core.datastore.SettingsDataStore
+import com.billing.app.core.notification.DokandaarNotificationManager
 import com.billing.app.core.util.Money
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
@@ -13,6 +15,7 @@ import com.billing.app.domain.model.ReceiptItem
 import com.billing.app.domain.model.ShopProfile
 import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
+import com.billing.app.domain.repository.ProductRepository
 import com.billing.app.domain.repository.ShopRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,7 +36,8 @@ class CheckoutViewModel(
     private val shopRepository: ShopRepository,
     private val printerRepository: PrinterRepository,
     private val invoiceRepository: InvoiceRepository,
-    private val settingsDataStore: SettingsDataStore? = null
+    private val settingsDataStore: SettingsDataStore? = null,
+    private val productRepository: ProductRepository? = null
 ) : ViewModel() {
 
     val shopProfile: StateFlow<ShopProfile> = shopRepository.getShopProfile()
@@ -78,18 +82,28 @@ class CheckoutViewModel(
     init {
         if (settingsDataStore != null) {
             viewModelScope.launch {
-                val defaultMethod = settingsDataStore.defaultPaymentMethodFlow.firstOrNull() ?: "UPI"
-                selectedPaymentMethod.value = when (defaultMethod.uppercase()) {
-                    "CASH" -> PaymentMethodMode.CASH
-                    "OTHER" -> PaymentMethodMode.OTHER
-                    else -> PaymentMethodMode.UPI
+                settingsDataStore.defaultPaymentMethodFlow.collect { defaultMethod ->
+                    selectedPaymentMethod.value = when (defaultMethod.uppercase()) {
+                        "CASH" -> PaymentMethodMode.CASH
+                        "OTHER" -> PaymentMethodMode.OTHER
+                        else -> PaymentMethodMode.UPI
+                    }
                 }
-
-                // Load GST settings
-                isGstEnabled = settingsDataStore.gstEnabledFlow.firstOrNull() ?: false
-                gstin = settingsDataStore.gstinFlow.firstOrNull() ?: ""
-                val rateStr = settingsDataStore.taxRateFlow.firstOrNull() ?: "0"
-                taxRatePercent = rateStr.toDoubleOrNull() ?: 0.0
+            }
+            viewModelScope.launch {
+                settingsDataStore.gstEnabledFlow.collect { enabled ->
+                    isGstEnabled = enabled
+                }
+            }
+            viewModelScope.launch {
+                settingsDataStore.gstinFlow.collect { gstinValue ->
+                    gstin = gstinValue
+                }
+            }
+            viewModelScope.launch {
+                settingsDataStore.taxRateFlow.collect { rateStr ->
+                    taxRatePercent = rateStr.toDoubleOrNull() ?: 0.0
+                }
             }
         }
     }
@@ -224,11 +238,20 @@ class CheckoutViewModel(
                     _isCompletingSale.value = false
                     onSuccess()
 
-                    // Offline low stock notification check
-                    if (settingsDataStore != null && settingsDataStore.areNotificationsEnabled()) {
+                    // Offline low stock notification check (Fixes C4)
+                    if (settingsDataStore != null && settingsDataStore.areNotificationsEnabled() && productRepository != null) {
                         try {
-                            val lowStockProducts = (invoiceRepository as? com.billing.app.data.repository.InvoiceRepositoryImpl)
-                            // Notification will be triggered via DokandaarNotificationManager if needed
+                            val purchasedProductIds = items.map { it.product.id }.toSet()
+                            val lowStockList = productRepository.getLowAndOutOfStockProducts()
+                                .filter { it.id in purchasedProductIds }
+                            if (lowStockList.isNotEmpty()) {
+                                val sampleNames = lowStockList.take(3).joinToString(", ") { "${it.name} (${it.stock} left)" }
+                                DokandaarNotificationManager.showLowStockNotification(
+                                    context = BillingApplication.instance,
+                                    productCount = lowStockList.size,
+                                    sampleNames = sampleNames
+                                )
+                            }
                         } catch (_: Exception) {}
                     }
                 } else {

@@ -82,6 +82,12 @@ interface InvoiceDao {
     @Query("DELETE FROM invoices WHERE invoiceNumber = :invoiceNumber")
     suspend fun deleteInvoice(invoiceNumber: String)
 
+    @Query("DELETE FROM invoice_items WHERE invoiceNumber = :invoiceNumber")
+    suspend fun deleteInvoiceItems(invoiceNumber: String)
+
+    @Query("UPDATE invoices SET duePaise = :duePaise WHERE invoiceNumber = :invoiceNumber")
+    suspend fun updateInvoiceDue(invoiceNumber: String, duePaise: Long)
+
     // Sequential invoice numbering counter
     @Query("SELECT lastNumber FROM invoice_counter WHERE id = 1")
     suspend fun getLastInvoiceNumber(): Long?

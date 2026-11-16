@@ -1,6 +1,12 @@
 package com.billing.app.feature.more
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.billing.app.core.ui.util.FeedbackManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,12 +62,17 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
+import com.billing.app.core.ui.components.PinVerificationDialog
 import com.billing.app.core.ui.components.TopDokandaarHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import com.billing.app.feature.settings.SettingsViewModel
 
 @Composable
@@ -82,7 +93,49 @@ fun MoreScreen(
     val context = LocalContext.current
     val strings = appStrings()
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val isPinEnabled by viewModel.isPinEnabled.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var pendingNavigation by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    val requirePinBeforeNavigate: (() -> Unit) -> Unit = { action ->
+        if (isPinEnabled) {
+            pendingNavigation = action
+        } else {
+            action()
+        }
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.setNotificationsEnabled(true)
+            viewModel.triggerSalesSummaryNotification(context)
+            FeedbackManager.showToast(context, "Notifications Enabled")
+        } else {
+            FeedbackManager.showToast(context, "Notification permission denied")
+        }
+    }
+
+    if (pendingNavigation != null) {
+        PinVerificationDialog(
+            title = "Enter Owner PIN",
+            subtitle = "This section is protected by Owner Security PIN",
+            onDismissRequest = { pendingNavigation = null },
+            onVerify = { pin, onError ->
+                scope.launch {
+                    if (viewModel.verifySecurityPin(pin)) {
+                        val action = pendingNavigation
+                        pendingNavigation = null
+                        action?.invoke()
+                    } else {
+                        onError("Incorrect PIN. Please try again.")
+                    }
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -184,7 +237,7 @@ fun MoreScreen(
                         icon = Icons.Default.Group,
                         title = strings.userAccess,
                         subtitle = "Add staff, set permissions",
-                        onClick = onNavigateToUserAccess
+                        onClick = { requirePinBeforeNavigate(onNavigateToUserAccess) }
                     )
                     HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
@@ -225,14 +278,14 @@ fun MoreScreen(
                         icon = Icons.Default.BarChart,
                         title = strings.salesReport,
                         subtitle = "Daily, weekly and monthly reports",
-                        onClick = onNavigateToSalesReport
+                        onClick = { requirePinBeforeNavigate(onNavigateToSalesReport) }
                     )
                     HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
                     MoreOptionItem(
                         icon = Icons.Default.CloudDownload,
                         title = strings.backupRestore,
                         subtitle = "Backup your data and restore anytime",
-                        onClick = onNavigateToBackupRestore
+                        onClick = { requirePinBeforeNavigate(onNavigateToBackupRestore) }
                     )
                 }
             }
@@ -310,15 +363,21 @@ fun MoreScreen(
 
                         Switch(
                             checked = notificationsEnabled,
-                            onCheckedChange = {
-                                viewModel.setNotificationsEnabled(it)
-                                if (it) {
-                                    viewModel.triggerSalesSummaryNotification(context)
+                            onCheckedChange = { enabled ->
+                                if (enabled) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        viewModel.setNotificationsEnabled(true)
+                                        viewModel.triggerSalesSummaryNotification(context)
+                                        FeedbackManager.showToast(context, "Notifications Enabled")
+                                    }
+                                } else {
+                                    viewModel.setNotificationsEnabled(false)
+                                    FeedbackManager.showToast(context, "Notifications Muted")
                                 }
-                                FeedbackManager.showToast(
-                                    context,
-                                    if (it) "Notifications Enabled" else "Notifications Muted"
-                                )
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,

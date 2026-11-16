@@ -28,6 +28,10 @@ object DokandaarTheme {
         @Composable
         get() = if (LocalIsDarkTheme.current) Color(0xFF334155) else Color(0xFFE2E8F0)
 
+    val surfaceVariant: Color
+        @Composable
+        get() = if (LocalIsDarkTheme.current) Color(0xFF0F172A) else Color(0xFFF1F5F9)
+
     val navBackground: Color
         @Composable
         get() = if (LocalIsDarkTheme.current) Color(0xFF1E293B) else Color.White

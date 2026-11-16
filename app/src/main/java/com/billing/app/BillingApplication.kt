@@ -25,6 +25,11 @@ import java.util.Date
 import java.util.Locale
 
 class BillingApplication : Application() {
+    companion object {
+        lateinit var instance: BillingApplication
+            private set
+    }
+
     lateinit var database: AppDatabase
         private set
     lateinit var settingsDataStore: SettingsDataStore
@@ -45,6 +50,7 @@ class BillingApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
 
         val currentProcessName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             Application.getProcessName()

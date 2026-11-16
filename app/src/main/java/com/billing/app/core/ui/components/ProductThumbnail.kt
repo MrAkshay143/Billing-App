@@ -2,6 +2,7 @@ package com.billing.app.core.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -26,9 +27,25 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.billing.app.core.ui.theme.DokandaarTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+
+object ThumbnailCache {
+    private val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+    private val cacheSize = (maxMemory / 8).coerceIn(4096, 32768)
+    private val lru = object : LruCache<String, Bitmap>(cacheSize) {
+        override fun sizeOf(key: String, bitmap: Bitmap): Int {
+            return bitmap.byteCount / 1024
+        }
+    }
+
+    fun get(key: String): Bitmap? = synchronized(this) { lru.get(key) }
+    fun put(key: String, bitmap: Bitmap) { synchronized(this) { lru.put(key, bitmap) } }
+    fun remove(key: String) { synchronized(this) { lru.remove(key) } }
+    fun clear() { synchronized(this) { lru.evictAll() } }
+}
 
 @Composable
 fun ProductThumbnail(
@@ -44,6 +61,13 @@ fun ProductThumbnail(
     LaunchedEffect(imageUri, targetPx) {
         if (imageUri.isNullOrBlank()) {
             bitmap = null
+            return@LaunchedEffect
+        }
+
+        val cacheKey = "$imageUri-$targetPx"
+        val cached = ThumbnailCache.get(cacheKey)
+        if (cached != null && !cached.isRecycled) {
+            bitmap = cached
             return@LaunchedEffect
         }
 
@@ -74,7 +98,11 @@ fun ProductThumbnail(
                     inSampleSize = sampleSize
                     inPreferredConfig = Bitmap.Config.RGB_565
                 }
-                BitmapFactory.decodeFile(file.absolutePath, decodeOptions)
+                val decoded = BitmapFactory.decodeFile(file.absolutePath, decodeOptions)
+                if (decoded != null) {
+                    ThumbnailCache.put(cacheKey, decoded)
+                }
+                decoded
             } catch (_: OutOfMemoryError) {
                 null
             } catch (_: Throwable) {
@@ -87,7 +115,7 @@ fun ProductThumbnail(
         modifier = modifier
             .size(size)
             .clip(shape)
-            .background(Color(0xFFF1F5F9)),
+            .background(if (DokandaarTheme.isDark) Color(0xFF334155) else Color(0xFFF1F5F9)),
         contentAlignment = Alignment.Center
     ) {
         val currentBitmap = bitmap
@@ -102,7 +130,7 @@ fun ProductThumbnail(
             Icon(
                 imageVector = Icons.Default.Inventory2,
                 contentDescription = "Product Placeholder",
-                tint = Color(0xFF94A3B8),
+                tint = if (DokandaarTheme.isDark) Color(0xFF64748B) else Color(0xFF94A3B8),
                 modifier = Modifier.size(size * 0.55f)
             )
         }

@@ -67,6 +67,7 @@ object ImageUtil {
     fun deleteImageFile(filePath: String?) {
         if (filePath.isNullOrBlank()) return
         try {
+            com.billing.app.core.ui.components.ThumbnailCache.clear()
             val file = File(filePath)
             if (file.exists() && file.parentFile?.name == "product_images") {
                 file.delete()

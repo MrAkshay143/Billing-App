@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.core.ui.util.FeedbackManager
@@ -187,7 +188,7 @@ fun BackupRestoreScreen(
                 onNavigateBack = onNavigateBack
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -199,7 +200,7 @@ fun BackupRestoreScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -215,7 +216,7 @@ fun BackupRestoreScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Database Durability", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("Database Durability", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                             Text("Export verified JSON snapshot with SHA-256 checksum", fontSize = 12.sp, color = TextMutedColor)
                         }
                     }
@@ -347,8 +348,8 @@ fun BackupRestoreScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                            colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -362,7 +363,7 @@ fun BackupRestoreScreen(
                                         text = file.name,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A),
+                                        color = DokandaarTheme.textPrimary,
                                         maxLines = 1
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))

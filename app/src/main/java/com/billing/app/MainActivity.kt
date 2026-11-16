@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return CheckoutViewModel(app.shopRepository, app.printerRepository, app.invoiceRepository, app.settingsDataStore) as T
+                    return CheckoutViewModel(app.shopRepository, app.printerRepository, app.invoiceRepository, app.settingsDataStore, app.productRepository) as T
                 }
             }
         )[CheckoutViewModel::class.java]
@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return InvoiceViewModel(app.invoiceRepository, app.printerRepository, app.shopRepository) as T
+                    return InvoiceViewModel(app.invoiceRepository, app.printerRepository, app.shopRepository, app.settingsDataStore) as T
                 }
             }
         )[InvoiceViewModel::class.java]

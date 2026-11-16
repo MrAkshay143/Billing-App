@@ -13,6 +13,7 @@ import com.billing.app.domain.model.ReceiptItem
 import com.billing.app.domain.model.ShopProfile
 import com.billing.app.domain.repository.PrinterRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 
 class PrinterRepositoryImpl(
     private val printerManager: BluetoothPrinterManager,
@@ -74,12 +75,13 @@ class PrinterRepositoryImpl(
                 lineTotalPaise = it.total.paise
             )
         }
+        val storeGstin = settingsDataStore.gstinFlow.firstOrNull() ?: ""
         val receipt = InvoiceReceipt(
             shopName = shop.name,
             shopAddressLine1 = shop.addressLine1,
             shopAddressLine2 = shop.addressLine2,
             shopPhone = shop.phoneNumber,
-            shopGstin = "",
+            shopGstin = storeGstin,
             footerText = shop.footerText,
             invoiceNumber = "INV-SAMPLE",
             timestamp = System.currentTimeMillis(),
@@ -116,12 +118,13 @@ class PrinterRepositoryImpl(
                 lineTotalPaise = it.lineTotalPaise
             )
         }
+        val storeGstin = settingsDataStore.gstinFlow.firstOrNull() ?: ""
         val receipt = InvoiceReceipt(
             shopName = shop.name,
             shopAddressLine1 = shop.addressLine1,
             shopAddressLine2 = shop.addressLine2,
             shopPhone = shop.phoneNumber,
-            shopGstin = "",
+            shopGstin = storeGstin,
             footerText = shop.footerText,
             invoiceNumber = invoice.invoiceNumber,
             timestamp = invoice.timestamp,

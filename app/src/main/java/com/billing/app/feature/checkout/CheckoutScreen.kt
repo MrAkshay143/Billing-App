@@ -1,9 +1,15 @@
 package com.billing.app.feature.checkout
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +38,7 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -74,6 +81,7 @@ import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.TopDokandaarHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.InStockText
 import com.billing.app.core.ui.theme.TextMutedColor
@@ -96,11 +104,41 @@ fun CheckoutScreen(
     val selectedMethod by viewModel.selectedPaymentMethod.collectAsState()
     val discountPaise by viewModel.discountPaise.collectAsState()
     val cashReceivedPaise by viewModel.cashReceivedPaise.collectAsState()
+    val custName by viewModel.customerName.collectAsState()
+    val custPhone by viewModel.customerPhone.collectAsState()
     val isCompletingSale by viewModel.isCompletingSale.collectAsState()
     val isPrinting by viewModel.isPrinting.collectAsState()
     val printSuccess by viewModel.printSuccess.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.BLUETOOTH_CONNECT] == true
+        if (granted) {
+            viewModel.printReceipt(cartItems, subtotalAmount)
+        } else {
+            FeedbackManager.showToast(context, "Bluetooth permission required to print")
+        }
+    }
+
+    val onPrintClicked: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                bluetoothPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                        Manifest.permission.BLUETOOTH_SCAN
+                    )
+                )
+            } else {
+                viewModel.printReceipt(cartItems, subtotalAmount)
+            }
+        } else {
+            viewModel.printReceipt(cartItems, subtotalAmount)
+        }
+    }
 
     var showDiscountDialog by rememberSaveable { mutableStateOf(false) }
     var discountInput by rememberSaveable { mutableStateOf("") }
@@ -188,7 +226,7 @@ fun CheckoutScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -462,6 +500,66 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Customer Details Card (U3)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = if (duePaise > 0L) Color(0xFFDC2626) else HeaderGradientStart,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Customer Information",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (duePaise > 0L) Color(0xFFDC2626) else DokandaarTheme.textPrimary
+                        )
+                        if (duePaise > 0L) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "(Required for Due)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFDC2626)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = custName,
+                        onValueChange = { viewModel.customerName.value = it },
+                        label = { Text("Customer Name" + if (duePaise > 0L) " *" else "") },
+                        placeholder = { Text("Enter customer name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = custPhone,
+                        onValueChange = { viewModel.customerPhone.value = it },
+                        label = { Text("Customer Phone") },
+                        placeholder = { Text("Enter contact number") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // 3. Payment Method Card (Mockup 2.3)
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -537,7 +635,7 @@ fun CheckoutScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFF8FAFC))
+                                    .background(DokandaarTheme.surfaceVariant)
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -607,7 +705,7 @@ fun CheckoutScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFF8FAFC))
+                                    .background(DokandaarTheme.surfaceVariant)
                                     .padding(12.dp)
                             ) {
                                 Text(
@@ -717,7 +815,7 @@ fun CheckoutScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFF8FAFC))
+                                    .background(DokandaarTheme.surfaceVariant)
                                     .padding(14.dp)
                             ) {
                                 Text(
@@ -785,7 +883,7 @@ fun CheckoutScreen(
                         .clip(RoundedCornerShape(14.dp))
                         .border(1.dp, HeaderGradientStart, RoundedCornerShape(14.dp))
                         .debouncedClickable(enabled = !isPrinting && !isCompletingSale) {
-                            viewModel.printReceipt(cartItems, subtotalAmount)
+                            onPrintClicked()
                         },
                     color = AddProductBg
                 ) {

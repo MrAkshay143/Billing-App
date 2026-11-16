@@ -196,7 +196,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF8FAFC))
+                .background(DokandaarTheme.background)
         ) {
             // Scanner Viewfinder Card (Mockup 2.1)
             Card(

@@ -39,11 +39,13 @@ object BackupManager {
         val products = database.productDao().getAllProducts().first()
         val invoices = database.invoiceDao().getAllInvoices().first()
         val invoiceItems = database.invoiceDao().getAllInvoiceItems()
+        val invoiceCounter = database.invoiceDao().getLastInvoiceNumber() ?: 0L
 
         val root = JSONObject().apply {
             put("version", BACKUP_VERSION)
             put("app", "Dokandaar")
             put("timestamp", System.currentTimeMillis())
+            put("invoiceCounter", invoiceCounter)
 
             // Shop Profile
             if (shop != null) {
@@ -113,7 +115,9 @@ object BackupManager {
         }
 
         // Add payload SHA-256 checksum for integrity check
-        val payloadToHash = root.getJSONArray("products").toString() +
+        val payloadToHash = (root.optJSONObject("shopProfile")?.toString() ?: "") +
+                root.optLong("invoiceCounter", 0L).toString() +
+                root.getJSONArray("products").toString() +
                 root.getJSONArray("invoices").toString() +
                 root.getJSONArray("invoiceItems").toString()
         root.put("checksum", calculateSha256(payloadToHash))
@@ -155,11 +159,18 @@ object BackupManager {
             // Validate integrity checksum if present (Version 2+)
             if (root.has("checksum") && root.has("products") && root.has("invoices") && root.has("invoiceItems")) {
                 val expectedChecksum = root.getString("checksum")
-                val payloadToHash = root.getJSONArray("products").toString() +
+                val newPayload = (root.optJSONObject("shopProfile")?.toString() ?: "") +
+                        root.optLong("invoiceCounter", 0L).toString() +
+                        root.getJSONArray("products").toString() +
                         root.getJSONArray("invoices").toString() +
                         root.getJSONArray("invoiceItems").toString()
-                val actualChecksum = calculateSha256(payloadToHash)
-                if (!expectedChecksum.equals(actualChecksum, ignoreCase = true)) {
+                val legacyPayload = root.getJSONArray("products").toString() +
+                        root.getJSONArray("invoices").toString() +
+                        root.getJSONArray("invoiceItems").toString()
+
+                val matchesNew = expectedChecksum.equals(calculateSha256(newPayload), ignoreCase = true)
+                val matchesLegacy = expectedChecksum.equals(calculateSha256(legacyPayload), ignoreCase = true)
+                if (!matchesNew && !matchesLegacy) {
                     return@withContext Result.failure(SecurityException("Backup data integrity check failed: corrupt or modified backup file"))
                 }
             }
@@ -167,6 +178,8 @@ object BackupManager {
             var productCount = 0
             var invoiceCount = 0
             var itemCount = 0
+            var maxInvoiceSuffix = 0L
+            val restoredInvoiceNumbers = mutableSetOf<String>()
 
             database.withTransaction {
                 // 1. Restore Shop Profile (Fixes C3)
@@ -209,6 +222,11 @@ object BackupManager {
                     invoiceCount = iArray.length()
                     for (i in 0 until iArray.length()) {
                         val obj = iArray.getJSONObject(i)
+                        val invNumber = obj.getString("invoiceNumber")
+                        restoredInvoiceNumbers.add(invNumber)
+                        val suffix = invNumber.substringAfterLast("-").toLongOrNull() ?: 0L
+                        if (suffix > maxInvoiceSuffix) maxInvoiceSuffix = suffix
+
                         val statusStr = obj.optString("status", "COMPLETED")
                         val status = try {
                             InvoiceStatus.valueOf(statusStr)
@@ -217,7 +235,7 @@ object BackupManager {
                         }
                         val inv = InvoiceEntity(
                             id = obj.optLong("id", 0L),
-                            invoiceNumber = obj.getString("invoiceNumber"),
+                            invoiceNumber = invNumber,
                             timestamp = obj.getLong("timestamp"),
                             subtotalPaise = obj.getLong("subtotalPaise"),
                             taxPaise = obj.optLong("taxPaise", 0L),
@@ -235,7 +253,7 @@ object BackupManager {
                     }
                 }
 
-                // 4. Restore Invoice Items with Upsert/Merge
+                // 4. Restore Invoice Items with clean replacement (Fixes C1)
                 if (root.has("invoiceItems")) {
                     val itemArray = root.getJSONArray("invoiceItems")
                     itemCount = itemArray.length()
@@ -244,7 +262,7 @@ object BackupManager {
                         val obj = itemArray.getJSONObject(i)
                         itemsList.add(
                             InvoiceItemEntity(
-                                id = obj.optLong("id", 0L),
+                                id = 0L,
                                 invoiceNumber = obj.getString("invoiceNumber"),
                                 productId = obj.getString("productId"),
                                 productName = obj.getString("productName"),
@@ -255,7 +273,21 @@ object BackupManager {
                             )
                         )
                     }
-                    database.invoiceDao().upsertInvoiceItems(itemsList)
+                    // Clean old items for restored invoices before inserting restored items to prevent duplication
+                    for (invNum in restoredInvoiceNumbers) {
+                        database.invoiceDao().deleteInvoiceItems(invNum)
+                    }
+                    database.invoiceDao().insertInvoiceItems(itemsList)
+                }
+
+                // 5. Restore & Sync Invoice Counter (Fixes C2)
+                val backupCounter = root.optLong("invoiceCounter", 0L)
+                val currentDbCounter = database.invoiceDao().getLastInvoiceNumber() ?: 0L
+                val maxCounter = maxOf(backupCounter, maxInvoiceSuffix, currentDbCounter)
+                if (maxCounter > 0L) {
+                    database.invoiceDao().setInvoiceCounter(
+                        com.billing.app.data.local.entity.InvoiceCounterEntity(id = 1, lastNumber = maxCounter)
+                    )
                 }
             }
 

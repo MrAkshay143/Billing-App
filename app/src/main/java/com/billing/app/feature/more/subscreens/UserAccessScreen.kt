@@ -56,9 +56,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.ui.components.PinVerificationDialog
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.core.ui.util.FeedbackManager
@@ -80,6 +82,71 @@ fun UserAccessScreen(
 
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var showSetPinDialog by rememberSaveable { mutableStateOf(false) }
+    var showVerifyPinForRemove by rememberSaveable { mutableStateOf(false) }
+    var showVerifyPinForChange by rememberSaveable { mutableStateOf(false) }
+    var showVerifyPinForDisable by rememberSaveable { mutableStateOf(false) }
+
+    // Dialog for verifying current PIN before changing PIN
+    if (showVerifyPinForChange) {
+        PinVerificationDialog(
+            title = "Verify Current PIN",
+            subtitle = "Please enter your current PIN before setting a new PIN",
+            onDismissRequest = { showVerifyPinForChange = false },
+            onVerify = { pin, onError ->
+                scope.launch {
+                    val verified = viewModel.verifySecurityPin(pin)
+                    if (verified) {
+                        showVerifyPinForChange = false
+                        showSetPinDialog = true
+                    } else {
+                        onError("Incorrect PIN. Please try again.")
+                    }
+                }
+            }
+        )
+    }
+
+    // Dialog for verifying PIN before removing PIN
+    if (showVerifyPinForRemove) {
+        PinVerificationDialog(
+            title = "Verify Owner PIN",
+            subtitle = "Enter current PIN to remove security lock",
+            onDismissRequest = { showVerifyPinForRemove = false },
+            onVerify = { pin, onError ->
+                scope.launch {
+                    val verified = viewModel.verifySecurityPin(pin)
+                    if (verified) {
+                        viewModel.removeSecurityPin()
+                        showVerifyPinForRemove = false
+                        FeedbackManager.showToast(context, "PIN removed successfully")
+                    } else {
+                        onError("Incorrect PIN. Please try again.")
+                    }
+                }
+            }
+        )
+    }
+
+    // Dialog for verifying PIN before disabling PIN security switch
+    if (showVerifyPinForDisable) {
+        PinVerificationDialog(
+            title = "Verify Owner PIN",
+            subtitle = "Enter PIN to disable security lock",
+            onDismissRequest = { showVerifyPinForDisable = false },
+            onVerify = { pin, onError ->
+                scope.launch {
+                    val verified = viewModel.verifySecurityPin(pin)
+                    if (verified) {
+                        viewModel.togglePinSecurity(false)
+                        showVerifyPinForDisable = false
+                        FeedbackManager.showToast(context, "PIN lock disabled")
+                    } else {
+                        onError("Incorrect PIN. Please try again.")
+                    }
+                }
+            }
+        )
+    }
 
     // Set / Change PIN Dialog
     if (showSetPinDialog) {
@@ -249,7 +316,7 @@ fun UserAccessScreen(
                 onNavigateBack = onNavigateBack
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -261,7 +328,7 @@ fun UserAccessScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -301,6 +368,8 @@ fun UserAccessScreen(
                             onCheckedChange = { enabled ->
                                 if (enabled && !hasPinSet) {
                                     showSetPinDialog = true
+                                } else if (!enabled && hasPinSet) {
+                                    showVerifyPinForDisable = true
                                 } else {
                                     scope.launch { viewModel.togglePinSecurity(enabled) }
                                 }
@@ -322,7 +391,13 @@ fun UserAccessScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .clickable { showSetPinDialog = true },
+                                    .clickable {
+                                        if (hasPinSet) {
+                                            showVerifyPinForChange = true
+                                        } else {
+                                            showSetPinDialog = true
+                                        }
+                                    },
                                 color = AddProductBg
                             ) {
                                 Row(
@@ -347,10 +422,7 @@ fun UserAccessScreen(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable {
-                                            scope.launch {
-                                                viewModel.removeSecurityPin()
-                                                FeedbackManager.showToast(context, "PIN removed")
-                                            }
+                                            showVerifyPinForRemove = true
                                         },
                                     color = Color(0xFFFEE2E2)
                                 ) {
@@ -374,7 +446,7 @@ fun UserAccessScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
@@ -458,8 +530,8 @@ fun UserAccessScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                            colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
                         ) {
                             Row(
                                 modifier = Modifier

@@ -1,7 +1,13 @@
 package com.billing.app.feature.more.subscreens
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,9 +60,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.InStockText
 import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.feature.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,8 +78,32 @@ fun PrinterSetupScreen(
     val paperWidth by viewModel.paperWidth.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.BLUETOOTH_CONNECT] == true
+        if (granted) {
+            viewModel.refreshBondedDevices()
+        } else {
+            FeedbackManager.showToast(context, "Bluetooth permission is required to discover and connect to printers")
+        }
+    }
+
     LaunchedEffect(Unit) {
-        viewModel.refreshBondedDevices()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                bluetoothPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                        Manifest.permission.BLUETOOTH_SCAN
+                    )
+                )
+            } else {
+                viewModel.refreshBondedDevices()
+            }
+        } else {
+            viewModel.refreshBondedDevices()
+        }
     }
 
     LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
@@ -93,7 +125,7 @@ fun PrinterSetupScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -165,7 +197,7 @@ fun PrinterSetupScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -173,7 +205,7 @@ fun PrinterSetupScreen(
                         text = "Receipt Paper Format",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = DokandaarTheme.textPrimary
                     )
                     Text(
                         text = "Choose paper size matching your thermal printer model",
@@ -220,7 +252,7 @@ fun PrinterSetupScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -358,7 +390,7 @@ fun PrinterSetupScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -366,7 +398,7 @@ fun PrinterSetupScreen(
                         text = "Hardware Verification",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = DokandaarTheme.textPrimary
                     )
                     Text(
                         text = "Send a formatted sample bill to check printer alignment and print head",

@@ -10,6 +10,7 @@ interface ProductRepository {
     fun getOutOfStockCount(): Flow<Int>
     suspend fun getProductByBarcode(barcode: String): Product?
     suspend fun getProductById(id: String): Product?
+    suspend fun getLowAndOutOfStockProducts(): List<Product>
     suspend fun addProduct(product: Product): Result<Unit>
     suspend fun updateProduct(product: Product): Result<Unit>
     suspend fun deleteProduct(id: String): Result<Unit>

@@ -5,8 +5,10 @@ import com.billing.app.data.local.dao.ProductDao
 import com.billing.app.data.local.entity.ProductEntity
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.repository.ProductRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 class ProductRepositoryImpl(
     private val productDao: ProductDao
@@ -32,6 +34,10 @@ class ProductRepositoryImpl(
         return productDao.getProductById(id)?.toDomain()
     }
 
+    override suspend fun getLowAndOutOfStockProducts(): List<Product> = withContext(Dispatchers.IO) {
+        productDao.getLowAndOutOfStockProducts().map { it.toDomain() }
+    }
+
     override suspend fun addProduct(product: Product): Result<Unit> {
         return try {
             productDao.insertProduct(product.toEntity())
@@ -41,9 +47,13 @@ class ProductRepositoryImpl(
         }
     }
 
-    override suspend fun updateProduct(product: Product): Result<Unit> {
-        return try {
-            productDao.updateProduct(product.toEntity())
+    override suspend fun updateProduct(product: Product): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val existing = productDao.getProductById(product.id)
+            val entity = product.toEntity().copy(
+                createdAt = existing?.createdAt ?: System.currentTimeMillis()
+            )
+            productDao.updateProduct(entity)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

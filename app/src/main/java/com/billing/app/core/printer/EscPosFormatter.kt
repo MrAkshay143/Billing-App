@@ -197,18 +197,22 @@ object EscPosFormatter {
         out.write(height and 0xFF)
         out.write((height shr 8) and 0xFF)
 
+        // Bulk pixel fetch avoids millions of JNI calls (Fixes P3)
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
         for (y in 0 until height) {
+            val yOffset = y * width
             for (byteIdx in 0 until bytesPerLine) {
                 var byteVal = 0
                 for (bit in 0 until 8) {
                     val x = byteIdx * 8 + bit
                     if (x < width) {
-                        val pixel = bitmap.getPixel(x, y)
-                        // Luminance formula to determine black vs white
-                        val r = Color.red(pixel)
-                        val g = Color.green(pixel)
-                        val b = Color.blue(pixel)
-                        val luminance = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
+                        val pixel = pixels[yOffset + x]
+                        val r = (pixel shr 16) and 0xFF
+                        val g = (pixel shr 8) and 0xFF
+                        val b = pixel and 0xFF
+                        val luminance = (299 * r + 587 * g + 114 * b) / 1000
                         if (luminance < 160) {
                             byteVal = byteVal or (1 shl (7 - bit))
                         }
@@ -399,7 +403,11 @@ object EscPosFormatter {
         }
         canvas.drawText("Thank You! Visit Again", widthPx / 2f, y, paintText)
 
-        return convertBitmapToEscPosRaster(bitmap)
+        try {
+            return convertBitmapToEscPosRaster(bitmap)
+        } finally {
+            bitmap.recycle()
+        }
     }
 
     /**

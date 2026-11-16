@@ -58,14 +58,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.core.util.Money
 import com.billing.app.feature.settings.SalesReportSummary
 import com.billing.app.feature.settings.SettingsViewModel
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+enum class ReportPeriod(val label: String) {
+    TODAY("Today"),
+    THIS_WEEK("This Week"),
+    THIS_MONTH("This Month"),
+    ALL_TIME("All Time")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,11 +85,45 @@ fun SalesReportScreen(
 ) {
     val context = LocalContext.current
     val shopProfile by viewModel.shopProfile.collectAsState()
+    var selectedPeriod by remember { mutableStateOf(ReportPeriod.TODAY) }
     var summary by remember { mutableStateOf<SalesReportSummary?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        summary = viewModel.generateSalesReport()
+    fun getPeriodTimestamps(period: ReportPeriod): Pair<Long, Long> {
+        val cal = Calendar.getInstance()
+        val now = cal.timeInMillis
+        return when (period) {
+            ReportPeriod.TODAY -> {
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                Pair(cal.timeInMillis, now)
+            }
+            ReportPeriod.THIS_WEEK -> {
+                cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                Pair(cal.timeInMillis, now)
+            }
+            ReportPeriod.THIS_MONTH -> {
+                cal.set(Calendar.DAY_OF_MONTH, 1)
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                Pair(cal.timeInMillis, now)
+            }
+            ReportPeriod.ALL_TIME -> Pair(0L, Long.MAX_VALUE)
+        }
+    }
+
+    LaunchedEffect(selectedPeriod) {
+        isLoading = true
+        val (start, end) = getPeriodTimestamps(selectedPeriod)
+        summary = viewModel.generateSalesReport(start, end)
         isLoading = false
     }
 
@@ -91,32 +134,58 @@ fun SalesReportScreen(
                 onNavigateBack = onNavigateBack
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Period Filter Chips Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                CircularProgressIndicator(color = HeaderGradientStart)
+                ReportPeriod.values().forEach { period ->
+                    val isSelected = selectedPeriod == period
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { selectedPeriod = period },
+                        color = if (isSelected) HeaderGradientStart else DokandaarTheme.cardBackground,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) HeaderGradientStart else DokandaarTheme.border),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text(
+                            text = period.label,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color.White else DokandaarTheme.textMuted,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                        )
+                    }
+                }
             }
-        } else if (summary != null) {
-            val report = summary!!
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = HeaderGradientStart)
+                }
+            } else if (summary != null) {
+                val report = summary!!
                 // Header Banner
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
@@ -137,13 +206,13 @@ fun SalesReportScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "Performance Summary",
+                                text = "Performance Summary (${selectedPeriod.label})",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
+                                color = DokandaarTheme.textPrimary
                             )
                             Text(
-                                text = "Calculated from all ${report.totalInvoices} stored SQLite invoices",
+                                text = "Calculated from ${report.totalInvoices} sales in selected period",
                                 fontSize = 12.sp,
                                 color = TextMutedColor
                             )
@@ -226,7 +295,7 @@ fun SalesReportScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -234,7 +303,7 @@ fun SalesReportScreen(
                             text = "Payment Method Breakdown",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 

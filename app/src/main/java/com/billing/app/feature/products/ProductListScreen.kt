@@ -172,13 +172,13 @@ fun ProductListScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Products",
+                            text = strings.productsTitle,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                         Text(
-                            text = "Manage your store products",
+                            text = strings.productsSubtitle,
                             fontSize = 12.sp,
                             color = TextMutedColor
                         )
@@ -203,7 +203,7 @@ fun ProductListScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Add Product",
+                                text = strings.quickAddProduct,
                                 color = Color.White,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
@@ -225,7 +225,7 @@ fun ProductListScreen(
                     onValueChange = { viewModel.searchQuery.value = it },
                     placeholder = {
                         Text(
-                            text = "Search by name, barcode or QR...",
+                            text = strings.searchProducts,
                             fontSize = 13.sp,
                             color = TextMutedColor
                         )
@@ -275,8 +275,8 @@ fun ProductListScreen(
                     },
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = DokandaarTheme.cardBackground,
+                        unfocusedContainerColor = DokandaarTheme.cardBackground,
                         focusedBorderColor = HeaderGradientStart,
                         unfocusedBorderColor = BorderColor
                     ),
@@ -294,14 +294,14 @@ fun ProductListScreen(
             ) {
                 // All Chip
                 FilterChipPill(
-                    label = "All ($allCount)",
+                    label = "${strings.filterAll} ($allCount)",
                     isSelected = activeFilter == StockFilter.ALL,
                     onClick = { viewModel.setFilter(StockFilter.ALL) }
                 )
 
                 // Low Stock Chip
                 FilterChipPill(
-                    label = "Low Stock ($lowStockCount)",
+                    label = "${strings.filterLowStock} ($lowStockCount)",
                     icon = Icons.Default.Warning,
                     isSelected = activeFilter == StockFilter.LOW_STOCK,
                     onClick = { viewModel.setFilter(StockFilter.LOW_STOCK) },
@@ -312,7 +312,7 @@ fun ProductListScreen(
 
                 // Out of Stock Chip
                 FilterChipPill(
-                    label = "Out of Stock ($outOfStockCount)",
+                    label = "${strings.filterOutOfStock} ($outOfStockCount)",
                     icon = Icons.Default.DoNotDisturbOn,
                     isSelected = activeFilter == StockFilter.OUT_OF_STOCK,
                     onClick = { viewModel.setFilter(StockFilter.OUT_OF_STOCK) },
@@ -464,7 +464,7 @@ private fun ProductItemCard(
                     text = product.price.format(),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = DokandaarTheme.textPrimary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

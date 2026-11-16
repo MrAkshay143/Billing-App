@@ -65,11 +65,16 @@ import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.TopDokandaarHeader
+import com.billing.app.core.ui.components.PinVerificationDialog
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
+import com.billing.app.core.ui.theme.InStockText
 import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.util.FeedbackManager
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.billing.app.core.util.Money
 import com.billing.app.data.local.entity.InvoiceEntity
 import java.text.SimpleDateFormat
@@ -88,6 +93,8 @@ fun InvoicesScreen(
     val invoices by viewModel.displayedInvoices.collectAsState()
     val activeStatusTab by viewModel.statusTab.collectAsState()
     val draftCount by viewModel.draftCount.collectAsState()
+    val dueCount by viewModel.dueInvoicesCount.collectAsState()
+    val isPinEnabled by viewModel.isPinEnabled.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val activeFilter by viewModel.dateFilter.collectAsState()
     val totalCount by viewModel.totalSalesCount.collectAsState()
@@ -97,8 +104,12 @@ fun InvoicesScreen(
     val printMessage by viewModel.printMessage.collectAsState()
     val selectedInvoicePair by viewModel.selectedInvoice.collectAsState()
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var showVoidPinDialog by remember { mutableStateOf(false) }
+    var invoiceToVoid by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(printMessage) {
         printMessage?.let { msg ->
@@ -172,6 +183,22 @@ fun InvoicesScreen(
                             color = HeaderGradientStart
                         )
                     }
+
+                    if (invoice.duePaise > 0L) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = "Balance Due:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFDC2626))
+                            Text(
+                                text = Money.fromPaise(invoice.duePaise).format(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color(0xFFDC2626)
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -228,10 +255,26 @@ fun InvoicesScreen(
                             Text("Discard Draft", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
                         }
                     } else if (invoice.status == InvoiceStatus.COMPLETED) {
+                        if (invoice.duePaise > 0L) {
+                            TextButton(
+                                onClick = {
+                                    viewModel.settleDue(invoice.invoiceNumber) {
+                                        FeedbackManager.showToast(context, "Balance due settled!")
+                                    }
+                                }
+                            ) {
+                                Text("Settle Due", color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                            }
+                        }
                         TextButton(
                             onClick = {
-                                viewModel.voidInvoice(invoice.invoiceNumber) {
-                                    viewModel.dismissInvoiceDetails()
+                                if (isPinEnabled) {
+                                    invoiceToVoid = invoice.invoiceNumber
+                                    showVoidPinDialog = true
+                                } else {
+                                    viewModel.voidInvoice(invoice.invoiceNumber) {
+                                        viewModel.dismissInvoiceDetails()
+                                    }
                                 }
                             }
                         ) {
@@ -240,6 +283,32 @@ fun InvoicesScreen(
                     }
                     TextButton(onClick = { viewModel.dismissInvoiceDetails() }) {
                         Text("Close", color = Color.Gray)
+                    }
+                }
+            }
+        )
+    }
+
+    if (showVoidPinDialog && invoiceToVoid != null) {
+        PinVerificationDialog(
+            title = "Verify Owner PIN",
+            subtitle = "Enter PIN to void invoice $invoiceToVoid and restore stock to inventory",
+            onDismissRequest = {
+                showVoidPinDialog = false
+                invoiceToVoid = null
+            },
+            onVerify = { pin, onError ->
+                scope.launch {
+                    if (viewModel.verifySecurityPin(pin)) {
+                        showVoidPinDialog = false
+                        invoiceToVoid?.let { num ->
+                            viewModel.voidInvoice(num) {
+                                viewModel.dismissInvoiceDetails()
+                            }
+                        }
+                        invoiceToVoid = null
+                    } else {
+                        onError("Incorrect PIN. Please try again.")
                     }
                 }
             }
@@ -278,7 +347,7 @@ fun InvoicesScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
@@ -306,13 +375,13 @@ fun InvoicesScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Invoices",
+                            text = strings.invoicesTitle,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                         Text(
-                            text = "View, search and manage sales",
+                            text = strings.invoicesSubtitle,
                             fontSize = 12.sp,
                             color = TextMutedColor
                         )
@@ -350,24 +419,30 @@ fun InvoicesScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 1.5 Status Tabs Row: Completed, Drafts, All
+            // 1.5 Status Tabs Row: Completed, Drafts, Dues, All
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatusTabPill(
-                    label = "Completed",
+                    label = strings.tabCompleted,
                     isSelected = activeStatusTab == InvoiceStatusTab.COMPLETED,
                     onClick = { viewModel.setStatusTab(InvoiceStatusTab.COMPLETED) }
                 )
                 StatusTabPill(
-                    label = "Drafts",
+                    label = strings.tabDrafts,
                     badgeCount = draftCount,
                     isSelected = activeStatusTab == InvoiceStatusTab.DRAFT,
                     onClick = { viewModel.setStatusTab(InvoiceStatusTab.DRAFT) }
                 )
                 StatusTabPill(
-                    label = "All Invoices",
+                    label = "Dues",
+                    badgeCount = dueCount,
+                    isSelected = activeStatusTab == InvoiceStatusTab.DUES,
+                    onClick = { viewModel.setStatusTab(InvoiceStatusTab.DUES) }
+                )
+                StatusTabPill(
+                    label = strings.tabAll,
                     isSelected = activeStatusTab == InvoiceStatusTab.ALL,
                     onClick = { viewModel.setStatusTab(InvoiceStatusTab.ALL) }
                 )
@@ -381,7 +456,7 @@ fun InvoicesScreen(
                 onValueChange = { viewModel.searchQuery.value = it },
                 placeholder = {
                     Text(
-                        text = "Search by invoice no. or date...",
+                        text = strings.searchInvoices,
                         fontSize = 13.sp,
                         color = TextMutedColor
                     )
@@ -699,7 +774,7 @@ private fun InvoiceItemCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -733,7 +808,7 @@ private fun InvoiceItemCard(
                         text = invoice.invoiceNumber,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = DokandaarTheme.textPrimary
                     )
                     if (invoice.status == InvoiceStatus.DRAFT) {
                         Spacer(modifier = Modifier.width(6.dp))
@@ -766,6 +841,23 @@ private fun InvoiceItemCard(
                             )
                         }
                     }
+
+                    if (invoice.status == InvoiceStatus.COMPLETED && invoice.duePaise > 0L) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFFEE2E2))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "DUE: ${Money.fromPaise(invoice.duePaise).format()}",
+                                color = Color(0xFFDC2626),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -789,7 +881,7 @@ private fun InvoiceItemCard(
                 text = Money.fromPaise(invoice.grandTotalPaise).format(),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = DokandaarTheme.textPrimary
             )
 
             Spacer(modifier = Modifier.width(10.dp))

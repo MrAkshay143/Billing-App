@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
 
@@ -61,7 +62,7 @@ fun AboutDokandaarScreen(
                 onNavigateBack = onNavigateBack
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -75,7 +76,7 @@ fun AboutDokandaarScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
@@ -103,7 +104,7 @@ fun AboutDokandaarScreen(
                         text = "Dokandaar",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF0F172A)
+                        color = DokandaarTheme.textPrimary
                     )
                     Text(
                         text = "Retail Billing & Point of Sale",
@@ -130,7 +131,7 @@ fun AboutDokandaarScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -138,7 +139,7 @@ fun AboutDokandaarScreen(
                         text = "Engine & Architecture Specs",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = DokandaarTheme.textPrimary
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -175,14 +176,14 @@ fun AboutDokandaarScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Enterprise Retail Certified", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                        Text("Enterprise Retail Certified", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
@@ -219,7 +220,7 @@ private fun TechSpecItem(
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+            Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = description, fontSize = 11.sp, color = TextMutedColor)
         }

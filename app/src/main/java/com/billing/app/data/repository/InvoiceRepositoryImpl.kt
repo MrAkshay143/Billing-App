@@ -116,7 +116,8 @@ class InvoiceRepositoryImpl(
         try {
             database.withTransaction {
                 database.invoiceDao().upsertInvoice(invoice)
-                database.invoiceDao().upsertInvoiceItems(items)
+                database.invoiceDao().deleteInvoiceItems(invoice.invoiceNumber)
+                database.invoiceDao().insertInvoiceItems(items)
             }
             Result.success(invoice)
         } catch (e: Exception) {
@@ -142,6 +143,15 @@ class InvoiceRepositoryImpl(
                     database.productDao().restoreProductStock(item.productId, item.quantity)
                 }
             }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun settleInvoiceDue(invoiceNumber: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            database.invoiceDao().updateInvoiceDue(invoiceNumber, 0L)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

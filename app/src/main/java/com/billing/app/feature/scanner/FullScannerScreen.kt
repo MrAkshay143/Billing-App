@@ -53,6 +53,7 @@ import com.billing.app.core.scanner.BarcodeDebounceManager
 import com.billing.app.core.ui.components.ViewfinderOverlay
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +66,7 @@ fun FullScannerScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val debounceManager = remember { BarcodeDebounceManager(2000L) }
+    val hasScanned = remember { AtomicBoolean(false) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -147,8 +149,12 @@ fun FullScannerScreen(
                                 imageAnalysis.setAnalyzer(
                                     cameraExecutor,
                                     BarcodeAnalyzer(debounceManager) { barcode ->
-                                        soundHapticManager.triggerScanFeedback()
-                                        onBarcodeCaptured(barcode)
+                                        if (hasScanned.compareAndSet(false, true)) {
+                                            ContextCompat.getMainExecutor(ctx).execute {
+                                                soundHapticManager.triggerScanFeedback()
+                                                onBarcodeCaptured(barcode)
+                                            }
+                                        }
                                     }
                                 )
 
