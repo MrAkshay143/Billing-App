@@ -11,3 +11,6 @@
 *.apk
 *.aab
 .kotlin
+*.jks
+*.keystore
+keystore.properties

@@ -1,13 +1,13 @@
-# ProGuard / R8 optimization and obfuscation keep rules for Dokandaar Billing App
+# ProGuard / R8 optimization and obfuscation rules for Dokandaar Billing App
 
 # Preserve line numbers and source files for crash reporting
 -keepattributes SourceFile,LineNumberTable,*Annotation*,Signature,InnerClasses,EnclosingMethod
 -renamesourcefileattribute SourceFile
 
-# KEEP ALL APP CODE: Prevents stripping/obfuscating ViewModels, DAOs, Entities, Models, Navigation
--keep class com.billing.app.** { *; }
--keep interface com.billing.app.** { *; }
--keep enum com.billing.app.** { *; }
+# Data models and entities required for Room and DataStore persistence
+-keep class com.billing.app.data.local.entity.** { *; }
+-keep interface com.billing.app.data.local.dao.** { *; }
+-keep class com.billing.app.domain.model.** { *; }
 
 # Room database keep rules
 -keep class * extends androidx.room.RoomDatabase { *; }
@@ -27,19 +27,14 @@
 -keep class com.google.mlkit.** { *; }
 -keep interface com.google.mlkit.** { *; }
 -dontwarn com.google.mlkit.**
-
 -keep class com.google.android.gms.internal.mlkit_vision_barcode.** { *; }
 -dontwarn com.google.android.gms.internal.mlkit_vision_barcode.**
-
 -keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
 -dontwarn com.google.android.gms.internal.mlkit_vision_common.**
-
 -keep class com.google.android.gms.vision.** { *; }
 -dontwarn com.google.android.gms.vision.**
-
 -keep class com.google.android.gms.common.** { *; }
 -dontwarn com.google.android.gms.common.**
-
 -keep class com.google.android.datatransport.** { *; }
 -dontwarn com.google.android.datatransport.**
 

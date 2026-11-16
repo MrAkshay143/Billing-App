@@ -22,14 +22,20 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertProduct(product: ProductEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertProduct(product: ProductEntity)
+
     @Update
     suspend fun updateProduct(product: ProductEntity)
 
     @Query("DELETE FROM products WHERE id = :id")
     suspend fun deleteProduct(id: String)
 
-    @Query("UPDATE products SET stock = MAX(0, stock - :quantity) WHERE id = :productId")
-    suspend fun decrementProductStock(productId: String, quantity: Int)
+    @Query("UPDATE products SET stock = stock - :quantity WHERE id = :productId AND stock >= :quantity")
+    suspend fun decrementProductStock(productId: String, quantity: Int): Int
+
+    @Query("UPDATE products SET stock = stock + :quantity WHERE id = :productId")
+    suspend fun restoreProductStock(productId: String, quantity: Int): Int
 
     @Query("SELECT COUNT(*) FROM products")
     fun getTotalCount(): Flow<Int>

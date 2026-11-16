@@ -1,6 +1,10 @@
 package com.billing.app.feature.more.subscreens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,6 +85,20 @@ fun StoreProfileScreen(
     var upiId by rememberSaveable(key = "store_upi") { mutableStateOf(profile.upiId) }
     var footer by rememberSaveable(key = "store_footer") { mutableStateOf(profile.footerText) }
 
+    val isGstEnabledPref by viewModel.isGstEnabled.collectAsState()
+    val gstinPref by viewModel.gstin.collectAsState()
+    val taxRatePref by viewModel.taxRate.collectAsState()
+
+    var isGstEnabled by rememberSaveable(key = "store_gst_enabled") { mutableStateOf(false) }
+    var gstinInput by rememberSaveable(key = "store_gstin") { mutableStateOf("") }
+    var taxRateInput by rememberSaveable(key = "store_tax_rate") { mutableStateOf("0") }
+
+    LaunchedEffect(isGstEnabledPref, gstinPref, taxRatePref) {
+        isGstEnabled = isGstEnabledPref
+        gstinInput = gstinPref
+        taxRateInput = taxRatePref
+    }
+
     LaunchedEffect(profile) {
         if (name.isBlank() && address1.isBlank() && phone.isBlank()) {
             name = profile.name
@@ -131,6 +149,11 @@ fun StoreProfileScreen(
                                 phone = phone,
                                 upiId = profile.upiId, // Preserve UPI ID from Payment Settings
                                 footer = footer
+                            )
+                            viewModel.saveGstConfiguration(
+                                enabled = isGstEnabled,
+                                gstin = gstinInput,
+                                taxRate = taxRateInput
                             )
                         },
                         modifier = Modifier
@@ -316,6 +339,94 @@ fun StoreProfileScreen(
                             unfocusedBorderColor = BorderColor
                         )
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Section: GST & Taxation Details (H7)
+            Text(
+                text = "GST & Tax Details",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Enable GST Billing", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("Display GSTIN and tax split on invoices", fontSize = 12.sp, color = TextMutedColor)
+                        }
+                        Switch(
+                            checked = isGstEnabled,
+                            onCheckedChange = { isGstEnabled = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = HeaderGradientStart
+                            )
+                        )
+                    }
+
+                    if (isGstEnabled) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        OutlinedTextField(
+                            value = gstinInput,
+                            onValueChange = { gstinInput = it.uppercase() },
+                            label = { Text("Store GSTIN") },
+                            placeholder = { Text("e.g. 27AAPFU0939F1ZV") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = HeaderGradientStart,
+                                unfocusedBorderColor = BorderColor
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text("Default Tax Rate:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("0", "5", "12", "18", "28").forEach { rate ->
+                                val selected = taxRateInput == rate
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { taxRateInput = rate },
+                                    color = if (selected) HeaderGradientStart else AddProductBg
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "$rate%",
+                                            color = if (selected) Color.White else HeaderGradientStart,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

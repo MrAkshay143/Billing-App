@@ -52,6 +52,10 @@ class ProductRepositoryImpl(
 
     override suspend fun deleteProduct(id: String): Result<Unit> {
         return try {
+            val product = productDao.getProductById(id)
+            if (product?.imageUri != null) {
+                com.billing.app.core.util.ImageUtil.deleteImageFile(product.imageUri)
+            }
             productDao.deleteProduct(id)
             Result.success(Unit)
         } catch (e: Exception) {

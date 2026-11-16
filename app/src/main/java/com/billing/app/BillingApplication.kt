@@ -9,14 +9,20 @@ import com.billing.app.core.database.AppDatabase
 import com.billing.app.core.datastore.SettingsDataStore
 import com.billing.app.core.notification.DokandaarNotificationManager
 import com.billing.app.core.printer.BluetoothPrinterManager
+import com.billing.app.data.repository.InvoiceRepositoryImpl
 import com.billing.app.data.repository.PrinterRepositoryImpl
 import com.billing.app.data.repository.ProductRepositoryImpl
 import com.billing.app.data.repository.ShopRepositoryImpl
+import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
 import com.billing.app.domain.repository.ProductRepository
 import com.billing.app.domain.repository.ShopRepository
+import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class BillingApplication : Application() {
     lateinit var database: AppDatabase
@@ -33,6 +39,8 @@ class BillingApplication : Application() {
     lateinit var shopRepository: ShopRepository
         private set
     lateinit var printerRepository: PrinterRepository
+        private set
+    lateinit var invoiceRepository: InvoiceRepository
         private set
 
     override fun onCreate() {
@@ -56,9 +64,12 @@ class BillingApplication : Application() {
                 throwable.printStackTrace(PrintWriter(sw))
                 val stackTrace = sw.toString()
 
+                val logFilePath = saveCrashLog(stackTrace)
+
                 val intent = Intent(this, CrashActivity::class.java).apply {
-                    putExtra("error_message", throwable.javaClass.simpleName + ": " + (throwable.message ?: "Unknown Error"))
+                    putExtra("error_message", throwable.javaClass.simpleName + ": " + (throwable.message ?: "Unexpected error"))
                     putExtra("error_stacktrace", stackTrace)
+                    putExtra("crash_log_path", logFilePath)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 }
                 startActivity(intent)
@@ -77,11 +88,39 @@ class BillingApplication : Application() {
 
             productRepository = ProductRepositoryImpl(database.productDao())
             shopRepository = ShopRepositoryImpl(database.shopDao())
+            invoiceRepository = InvoiceRepositoryImpl(database)
             printerRepository = PrinterRepositoryImpl(printerManager, settingsDataStore)
 
             DokandaarNotificationManager.initChannels(this)
         } catch (e: Exception) {
             Log.e("BillingApplication", "Error initializing repositories in onCreate", e)
+            val sw = StringWriter()
+            e.printStackTrace(PrintWriter(sw))
+            val stackTrace = sw.toString()
+            val logFilePath = saveCrashLog(stackTrace)
+
+            val intent = Intent(this, CrashActivity::class.java).apply {
+                putExtra("error_message", "Initialization failure: ${e.message}")
+                putExtra("error_stacktrace", stackTrace)
+                putExtra("crash_log_path", logFilePath)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            android.os.Process.killProcess(android.os.Process.myPid())
+            System.exit(10)
+        }
+    }
+
+    private fun saveCrashLog(stackTrace: String): String? {
+        return try {
+            val crashDir = File(filesDir, "crash_logs")
+            if (!crashDir.exists()) crashDir.mkdirs()
+            val time = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val file = File(crashDir, "crash_$time.log")
+            file.writeText(stackTrace)
+            file.absolutePath
+        } catch (_: Exception) {
+            null
         }
     }
 }

@@ -1,18 +1,16 @@
 package com.billing.app.feature.settings
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.withTransaction
+import com.billing.app.core.backup.BackupManager
 import com.billing.app.core.database.AppDatabase
 import com.billing.app.core.datastore.SettingsDataStore
-import com.billing.app.core.util.Money
-import com.billing.app.data.local.entity.InvoiceEntity
-import com.billing.app.data.local.entity.InvoiceItemEntity
 import com.billing.app.data.local.entity.InvoiceStatus
-import com.billing.app.data.local.entity.ProductEntity
 import com.billing.app.domain.model.BluetoothPrinterDevice
 import com.billing.app.domain.model.ShopProfile
+import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
 import com.billing.app.domain.repository.ShopRepository
 import kotlinx.coroutines.Dispatchers
@@ -21,15 +19,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
 
 data class StaffMember(
@@ -43,6 +39,8 @@ data class SalesReportSummary(
     val totalInvoices: Int,
     val totalRevenuePaise: Long,
     val totalDiscountPaise: Long,
+    val totalTaxPaise: Long = 0L,
+    val totalDuePaise: Long = 0L,
     val cashSalesPaise: Long,
     val upiSalesPaise: Long,
     val otherSalesPaise: Long,
@@ -66,7 +64,8 @@ class SettingsViewModel(
     private val printerRepository: PrinterRepository,
     private val shopRepository: ShopRepository,
     private val database: AppDatabase,
-    private val settingsDataStore: SettingsDataStore
+    private val settingsDataStore: SettingsDataStore,
+    private val invoiceRepository: InvoiceRepository
 ) : ViewModel() {
 
     val shopProfile: StateFlow<ShopProfile> = shopRepository.getShopProfile()
@@ -90,6 +89,26 @@ class SettingsViewModel(
     val defaultPaymentMethod: StateFlow<String> = settingsDataStore.defaultPaymentMethodFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, "UPI")
 
+    // PIN Lock State (H3)
+    val isPinEnabled: StateFlow<Boolean> = settingsDataStore.pinEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val hasPinSet: StateFlow<Boolean> = settingsDataStore.hasPinSetFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val autoLockMinutes: StateFlow<Int> = settingsDataStore.autoLockMinutesFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 5)
+
+    // GST State (H7)
+    val isGstEnabled: StateFlow<Boolean> = settingsDataStore.gstEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val gstin: StateFlow<String> = settingsDataStore.gstinFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    val taxRate: StateFlow<String> = settingsDataStore.taxRateFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "0")
+
     private val _staffList = MutableStateFlow<List<StaffMember>>(emptyList())
     val staffList: StateFlow<List<StaffMember>> = _staffList.asStateFlow()
 
@@ -99,71 +118,86 @@ class SettingsViewModel(
             printerRepository.getSavedPrinterMac().collect { mac ->
                 _uiState.value = _uiState.value.copy(
                     connectedMac = mac,
-                    isConnected = printerRepository.isConnected && mac != null
+                    isConnected = printerRepository.isConnected
                 )
             }
         }
+
         viewModelScope.launch {
             printerRepository.getSavedPrinterName().collect { name ->
                 _uiState.value = _uiState.value.copy(connectedName = name)
             }
         }
+
         viewModelScope.launch {
-            paperWidth.collect { width ->
+            settingsDataStore.paperWidthFlow.collect { width ->
                 _uiState.value = _uiState.value.copy(paperWidth = width)
             }
         }
-        // Load Staff Members
+
+        loadBondedPrinters()
         loadStaffMembers()
     }
 
-    // 1. Printer Setup Features
-    fun refreshBondedDevices() {
-        if (_uiState.value.isScanning) return
-        _uiState.value = _uiState.value.copy(isScanning = true, errorMessage = null)
-
+    // 1. Bluetooth Printer Management
+    fun loadBondedPrinters() {
         viewModelScope.launch {
-            val devices = printerRepository.getBondedPrinters()
+            _uiState.value = _uiState.value.copy(isScanning = true)
+            val bonded = printerRepository.getBondedPrinters()
             _uiState.value = _uiState.value.copy(
-                bondedDevices = devices,
+                bondedDevices = bonded,
                 isScanning = false,
-                errorMessage = if (devices.isEmpty()) "No paired Bluetooth printers found in Phone Bluetooth settings." else null
+                isConnected = printerRepository.isConnected
             )
         }
     }
 
-    fun connectToPrinter(mac: String, name: String) {
-        _uiState.value = _uiState.value.copy(isConnecting = true, errorMessage = null)
+    fun refreshBondedDevices() = loadBondedPrinters()
+
+    fun connectPrinter(device: BluetoothPrinterDevice) {
         viewModelScope.launch {
-            val result = printerRepository.connect(mac)
+            _uiState.value = _uiState.value.copy(isConnecting = true, errorMessage = null)
+            val result = printerRepository.connect(device.macAddress)
             if (result.isSuccess) {
-                printerRepository.savePrinterData(mac, name)
+                printerRepository.savePrinterData(device.macAddress, device.name)
                 _uiState.value = _uiState.value.copy(
                     isConnecting = false,
                     isConnected = true,
-                    connectedMac = mac,
-                    connectedName = name,
-                    successMessage = "Connected to $name"
+                    connectedMac = device.macAddress,
+                    connectedName = device.name,
+                    successMessage = "Connected to ${device.name}"
                 )
             } else {
                 _uiState.value = _uiState.value.copy(
                     isConnecting = false,
                     isConnected = false,
-                    errorMessage = result.exceptionOrNull()?.message ?: "Failed to connect to printer"
+                    errorMessage = result.exceptionOrNull()?.message ?: "Connection failed"
                 )
             }
         }
     }
 
+    fun connectToPrinter(device: BluetoothPrinterDevice) = connectPrinter(device)
+    fun connectToPrinter(macAddress: String, name: String) =
+        connectPrinter(BluetoothPrinterDevice(name = name, macAddress = macAddress))
+
     fun disconnectPrinter() {
         printerRepository.disconnect()
+        _uiState.value = _uiState.value.copy(
+            isConnected = false,
+            successMessage = "Printer disconnected"
+        )
+    }
+
+    fun forgetPrinter() {
         viewModelScope.launch {
+            printerRepository.disconnect()
             printerRepository.clearPrinterData()
             _uiState.value = _uiState.value.copy(
                 isConnected = false,
                 connectedMac = null,
                 connectedName = null,
-                successMessage = "Printer disconnected"
+                successMessage = "Printer unpaired"
             )
         }
     }
@@ -171,14 +205,13 @@ class SettingsViewModel(
     fun setPaperWidth(width: String) {
         viewModelScope.launch {
             settingsDataStore.savePaperWidth(width)
+            _uiState.value = _uiState.value.copy(paperWidth = width)
         }
     }
 
     fun printTestReceipt() {
-        if (_uiState.value.isPrintingTest) return
-        _uiState.value = _uiState.value.copy(isPrintingTest = true, errorMessage = null)
-
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isPrintingTest = true, errorMessage = null)
             val shop = shopRepository.getShopProfileSync()
             val result = printerRepository.printTestReceipt(shop)
             if (result.isSuccess) {
@@ -195,10 +228,10 @@ class SettingsViewModel(
         }
     }
 
-    // 2. User & Access (Staff Management)
+    // 2. User & Access (Staff Management - H3)
     private fun loadStaffMembers() {
         viewModelScope.launch {
-            val json = settingsDataStore.staffListJsonFlow.first()
+            val json = settingsDataStore.staffListJsonFlow.firstOrNull()
             if (!json.isNullOrBlank()) {
                 try {
                     val array = JSONArray(json)
@@ -218,24 +251,8 @@ class SettingsViewModel(
                     return@launch
                 } catch (_: Exception) {}
             }
-
-            // Default Staff if none exists
-            val defaultStaff = listOf(
-                StaffMember(
-                    id = "owner-1",
-                    name = "Store Owner",
-                    phone = "+91 9876543210",
-                    role = "Administrator (Full Access)"
-                ),
-                StaffMember(
-                    id = "cashier-1",
-                    name = "Head Cashier",
-                    phone = "+91 9876543211",
-                    role = "Cashier (Billing Only)"
-                )
-            )
-            _staffList.value = defaultStaff
-            saveStaffMembersInternal(defaultStaff)
+            // Starts empty - no fake seeded phone numbers (H3)
+            _staffList.value = emptyList()
         }
     }
 
@@ -273,6 +290,27 @@ class SettingsViewModel(
         }
     }
 
+    // PIN Security Management (H3)
+    suspend fun setSecurityPin(pin: String) {
+        settingsDataStore.setPin(pin)
+    }
+
+    suspend fun verifySecurityPin(pin: String): Boolean {
+        return settingsDataStore.verifyPin(pin)
+    }
+
+    suspend fun removeSecurityPin() {
+        settingsDataStore.removePin()
+    }
+
+    suspend fun togglePinSecurity(enabled: Boolean) {
+        settingsDataStore.setPinEnabled(enabled)
+    }
+
+    suspend fun updateAutoLockMinutes(minutes: Int) {
+        settingsDataStore.saveAutoLockMinutes(minutes)
+    }
+
     // 3. Store Profile & Payment Settings
     fun updateShopProfile(
         name: String,
@@ -284,15 +322,16 @@ class SettingsViewModel(
     ) {
         viewModelScope.launch {
             val current = shopRepository.getShopProfileSync()
-            val updated = current.copy(
-                name = name.trim(),
-                addressLine1 = address1.trim(),
-                addressLine2 = address2.trim(),
-                phoneNumber = phone.trim(),
-                upiId = upiId.trim(),
-                footerText = footer.trim()
+            shopRepository.updateShopProfile(
+                current.copy(
+                    name = name.trim(),
+                    addressLine1 = address1.trim(),
+                    addressLine2 = address2.trim(),
+                    phoneNumber = phone.trim(),
+                    upiId = upiId.trim(),
+                    footerText = footer.trim()
+                )
             )
-            shopRepository.updateShopProfile(updated)
             _uiState.value = _uiState.value.copy(successMessage = "Store profile updated successfully!")
         }
     }
@@ -306,13 +345,31 @@ class SettingsViewModel(
         }
     }
 
-    // 4. Sales Report Generation
-    suspend fun generateSalesReport(): SalesReportSummary = withContext(Dispatchers.IO) {
-        val allInvoices = database.invoiceDao().getAllInvoices().first()
-        val invoices = allInvoices.filter { it.status == InvoiceStatus.COMPLETED }
+    // GST Configuration (H7)
+    fun saveGstConfiguration(enabled: Boolean, gstin: String, taxRate: String) {
+        viewModelScope.launch {
+            settingsDataStore.saveGstSettings(enabled, gstin, taxRate)
+            _uiState.value = _uiState.value.copy(successMessage = "GST settings saved!")
+        }
+    }
+
+    // 4. Sales Report Generation (M1: Parameterized & Accurate)
+    suspend fun generateSalesReport(
+        startTime: Long = 0L,
+        endTime: Long = Long.MAX_VALUE
+    ): SalesReportSummary = withContext(Dispatchers.IO) {
+        val invoices = if (startTime == 0L && endTime == Long.MAX_VALUE) {
+            invoiceRepository.getInvoicesByStatus(InvoiceStatus.COMPLETED).first()
+        } else {
+            invoiceRepository.getInvoicesBetween(startTime, endTime).first()
+                .filter { it.status == InvoiceStatus.COMPLETED }
+        }
+
         val totalCount = invoices.size
         val totalRevenue = invoices.sumOf { it.grandTotalPaise }
         val totalDiscount = invoices.sumOf { it.discountPaise }
+        val totalTax = invoices.sumOf { it.taxPaise }
+        val totalDue = invoices.sumOf { it.duePaise }
         val cashSales = invoices.filter { it.paymentMethod == "CASH" }.sumOf { it.grandTotalPaise }
         val upiSales = invoices.filter { it.paymentMethod == "UPI" }.sumOf { it.grandTotalPaise }
         val otherSales = invoices.filter { it.paymentMethod != "CASH" && it.paymentMethod != "UPI" }.sumOf { it.grandTotalPaise }
@@ -322,6 +379,8 @@ class SettingsViewModel(
             totalInvoices = totalCount,
             totalRevenuePaise = totalRevenue,
             totalDiscountPaise = totalDiscount,
+            totalTaxPaise = totalTax,
+            totalDuePaise = totalDue,
             cashSalesPaise = cashSales,
             upiSalesPaise = upiSales,
             otherSalesPaise = otherSales,
@@ -329,171 +388,36 @@ class SettingsViewModel(
         )
     }
 
-    // 5. Backup & Restore
-    suspend fun createDatabaseBackup(context: Context): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val products = database.productDao().getAllProducts().first()
-            val invoices = database.invoiceDao().getAllInvoices().first()
-            val invoiceItems = database.invoiceDao().getAllInvoiceItems()
-            val shop = shopRepository.getShopProfileSync()
-
-            val rootJson = JSONObject().apply {
-                put("version", 2)
-                put("exportDate", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date()))
-                put("timestamp", System.currentTimeMillis())
-
-                // Shop info
-                put("shop", JSONObject().apply {
-                    put("name", shop.name)
-                    put("address1", shop.addressLine1)
-                    put("address2", shop.addressLine2)
-                    put("phone", shop.phoneNumber)
-                    put("upiId", shop.upiId)
-                    put("footer", shop.footerText)
-                })
-
-                // Products
-                val productsArr = JSONArray()
-                products.forEach { p ->
-                    productsArr.put(JSONObject().apply {
-                        put("id", p.id)
-                        put("name", p.name)
-                        put("barcode", p.barcode)
-                        put("pricePaise", p.pricePaise)
-                        put("stock", p.stock)
-                        put("imageUri", p.imageUri ?: "")
-                    })
-                }
-                put("products", productsArr)
-
-                // Invoices
-                val invoicesArr = JSONArray()
-                invoices.forEach { inv ->
-                    invoicesArr.put(JSONObject().apply {
-                        put("invoiceNumber", inv.invoiceNumber)
-                        put("timestamp", inv.timestamp)
-                        put("subtotalPaise", inv.subtotalPaise)
-                        put("taxPaise", inv.taxPaise)
-                        put("discountPaise", inv.discountPaise)
-                        put("grandTotalPaise", inv.grandTotalPaise)
-                        put("status", inv.status.name)
-                        put("paymentMethod", inv.paymentMethod)
-                        put("customerName", inv.customerName ?: "")
-                        put("customerPhone", inv.customerPhone ?: "")
-                        put("cashReceivedPaise", inv.cashReceivedPaise)
-                        put("changeReturnedPaise", inv.changeReturnedPaise)
-                    })
-                }
-                put("invoices", invoicesArr)
-
-                // Invoice Items
-                val itemsArr = JSONArray()
-                invoiceItems.forEach { item ->
-                    itemsArr.put(JSONObject().apply {
-                        put("id", item.id)
-                        put("invoiceNumber", item.invoiceNumber)
-                        put("productId", item.productId)
-                        put("productName", item.productName)
-                        put("barcode", item.barcode)
-                        put("unitPricePaise", item.unitPricePaise)
-                        put("quantity", item.quantity)
-                        put("lineTotalPaise", item.lineTotalPaise)
-                    })
-                }
-                put("invoiceItems", itemsArr)
-            }
-
-            val dir = File(context.filesDir, "backups")
-            if (!dir.exists()) dir.mkdirs()
-            val fileName = "dokandaar_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.json"
-            val file = File(dir, fileName)
-            file.writeText(rootJson.toString(2))
-
-            Result.success("Backup saved to ${file.name} (${products.size} products, ${invoices.size} invoices, ${invoiceItems.size} items)")
-        } catch (e: Exception) {
-            Result.failure(e)
+    // 5. Rebuilt Backup & Restore with Checksum, Upsert, and SAF (C3)
+    suspend fun createDatabaseBackup(context: Context): Result<String> {
+        val fileResult = BackupManager.saveBackupToInternalStorage(context, database)
+        return if (fileResult.isSuccess) {
+            val file = fileResult.getOrThrow()
+            Result.success("Backup saved to ${file.name}")
+        } else {
+            Result.failure(fileResult.exceptionOrNull() ?: Exception("Backup failed"))
         }
+    }
+
+    suspend fun exportBackupToUri(context: Context, uri: Uri): Result<String> {
+        return BackupManager.exportBackupToUri(context, database, uri)
     }
 
     suspend fun restoreDatabaseBackup(file: File): Result<String> = withContext(Dispatchers.IO) {
         try {
             val content = file.readText()
-            val root = JSONObject(content)
-
-            database.withTransaction {
-                // Restore Products
-                if (root.has("products")) {
-                    val pArray = root.getJSONArray("products")
-                    for (i in 0 until pArray.length()) {
-                        val obj = pArray.getJSONObject(i)
-                        val entity = ProductEntity(
-                            id = obj.getString("id"),
-                            name = obj.getString("name"),
-                            barcode = obj.getString("barcode"),
-                            pricePaise = obj.getLong("pricePaise"),
-                            stock = obj.getInt("stock"),
-                            imageUri = obj.optString("imageUri").ifBlank { null }
-                        )
-                        database.productDao().insertProduct(entity)
-                    }
-                }
-
-                // Restore Invoices
-                if (root.has("invoices")) {
-                    val iArray = root.getJSONArray("invoices")
-                    for (i in 0 until iArray.length()) {
-                        val obj = iArray.getJSONObject(i)
-                        val statusStr = obj.optString("status", "COMPLETED")
-                        val status = try {
-                            InvoiceStatus.valueOf(statusStr)
-                        } catch (_: Exception) {
-                            InvoiceStatus.COMPLETED
-                        }
-                        val inv = InvoiceEntity(
-                            invoiceNumber = obj.getString("invoiceNumber"),
-                            timestamp = obj.getLong("timestamp"),
-                            subtotalPaise = obj.getLong("subtotalPaise"),
-                            taxPaise = obj.optLong("taxPaise", 0L),
-                            discountPaise = obj.optLong("discountPaise", 0L),
-                            grandTotalPaise = obj.getLong("grandTotalPaise"),
-                            status = status,
-                            paymentMethod = obj.getString("paymentMethod"),
-                            customerName = obj.optString("customerName").ifBlank { null },
-                            customerPhone = obj.optString("customerPhone").ifBlank { null },
-                            cashReceivedPaise = obj.optLong("cashReceivedPaise", 0L),
-                            changeReturnedPaise = obj.optLong("changeReturnedPaise", 0L)
-                        )
-                        database.invoiceDao().insertInvoice(inv)
-                    }
-                }
-
-                // Restore Invoice Items
-                if (root.has("invoiceItems")) {
-                    val itemArray = root.getJSONArray("invoiceItems")
-                    val itemsList = mutableListOf<InvoiceItemEntity>()
-                    for (i in 0 until itemArray.length()) {
-                        val obj = itemArray.getJSONObject(i)
-                        itemsList.add(
-                            InvoiceItemEntity(
-                                id = obj.optLong("id", 0L),
-                                invoiceNumber = obj.getString("invoiceNumber"),
-                                productId = obj.getString("productId"),
-                                productName = obj.getString("productName"),
-                                barcode = obj.optString("barcode", ""),
-                                unitPricePaise = obj.getLong("unitPricePaise"),
-                                quantity = obj.getInt("quantity"),
-                                lineTotalPaise = obj.getLong("lineTotalPaise")
-                            )
-                        )
-                    }
-                    database.invoiceDao().insertInvoiceItems(itemsList)
-                }
-            }
-
-            Result.success("Restored database from ${file.name} successfully!")
+            BackupManager.restoreBackupFromJson(database, content)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun importBackupFromUri(context: Context, uri: Uri): Result<String> {
+        return BackupManager.importBackupFromUri(context, database, uri)
+    }
+
+    fun shareBackup(context: Context, file: File) {
+        BackupManager.shareBackupFile(context, file)
     }
 
     fun listBackups(context: Context): List<File> {
@@ -502,47 +426,49 @@ class SettingsViewModel(
         return dir.listFiles { f -> f.extension == "json" }?.sortedByDescending { it.lastModified() } ?: emptyList()
     }
 
-    // 6. Appearance & Language & Notifications
-    fun setAppTheme(theme: String) {
-        viewModelScope.launch {
-            settingsDataStore.saveAppTheme(theme)
-        }
+    fun deleteBackup(file: File): Boolean {
+        return file.delete()
     }
 
-    fun setAppLanguage(lang: String) {
-        viewModelScope.launch {
-            settingsDataStore.saveAppLanguage(lang)
-        }
-    }
-
+    // 6. Preferences
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsDataStore.saveNotificationsEnabled(enabled)
         }
     }
 
+    fun setAppLanguage(language: String) {
+        viewModelScope.launch {
+            settingsDataStore.saveAppLanguage(language)
+        }
+    }
+
+    fun setAppTheme(theme: String) {
+        viewModelScope.launch {
+            settingsDataStore.saveAppTheme(theme)
+        }
+    }
+
     fun triggerSalesSummaryNotification(context: Context) {
         viewModelScope.launch {
-            if (settingsDataStore.areNotificationsEnabled()) {
-                val report = generateSalesReport()
-                com.billing.app.core.notification.DokandaarNotificationManager.showDailySalesNotification(
-                    context = context,
-                    totalInvoices = report.totalInvoices,
-                    totalRevenueFormatted = Money.fromPaise(report.totalRevenuePaise).format()
-                )
-            }
+            val cal = java.util.Calendar.getInstance()
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+            cal.set(java.util.Calendar.MINUTE, 0)
+            cal.set(java.util.Calendar.SECOND, 0)
+            cal.set(java.util.Calendar.MILLISECOND, 0)
+            val todayStart = cal.timeInMillis
+
+            val report = generateSalesReport(startTime = todayStart)
+            val formatted = com.billing.app.core.util.Money.fromPaise(report.totalRevenuePaise).format()
+            com.billing.app.core.notification.DokandaarNotificationManager.showDailySalesNotification(
+                context = context,
+                totalInvoices = report.totalInvoices,
+                totalRevenueFormatted = formatted
+            )
         }
     }
 
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
-    }
-
-    fun clearError() {
-        clearMessages()
-    }
-
-    fun refreshAndAutoConnect() {
-        refreshBondedDevices()
     }
 }

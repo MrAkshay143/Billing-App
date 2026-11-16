@@ -8,19 +8,45 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 import java.net.URLEncoder
+import java.util.Locale
 
 object UpiQrGenerator {
+    private val UPI_VPA_REGEX = Regex("^[a-zA-Z0-9.\\-_]{2,256}@[a-zA-Z]{2,64}$")
+
+    fun isValidUpiId(upiId: String): Boolean {
+        return UPI_VPA_REGEX.matches(upiId.trim())
+    }
+
     fun generateUpiQrBitmap(
         upiId: String,
         shopName: String,
         amount: Money,
+        transactionRef: String? = null,
+        transactionNote: String = "Store Payment",
         sizePx: Int = 360
     ): Bitmap? {
-        if (upiId.isBlank()) return null
+        val cleanUpi = upiId.trim()
+        if (!isValidUpiId(cleanUpi)) return null
 
-        val encodedName = URLEncoder.encode(shopName, "UTF-8").replace("+", "%20")
+        val encodedPa = URLEncoder.encode(cleanUpi, "UTF-8").replace("+", "%20")
+        val cleanShop = shopName.ifBlank { "Store" }
+        val encodedPn = URLEncoder.encode(cleanShop, "UTF-8").replace("+", "%20")
         val amountStr = amount.format(includeSymbol = false)
-        val upiUri = "upi://pay?pa=$upiId&pn=$encodedName&am=$amountStr&cu=INR"
+        val encodedTn = URLEncoder.encode(transactionNote, "UTF-8").replace("+", "%20")
+
+        val sb = StringBuilder("upi://pay?")
+        sb.append("pa=").append(encodedPa)
+        sb.append("&pn=").append(encodedPn)
+        sb.append("&am=").append(amountStr)
+        sb.append("&cu=INR")
+        sb.append("&tn=").append(encodedTn)
+
+        if (!transactionRef.isNullOrBlank()) {
+            val encodedTr = URLEncoder.encode(transactionRef.trim(), "UTF-8").replace("+", "%20")
+            sb.append("&tr=").append(encodedTr)
+        }
+
+        val upiUri = sb.toString()
 
         return try {
             val hints = mapOf(

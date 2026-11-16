@@ -11,14 +11,24 @@ enum class InvoiceStatus {
     CANCELLED
 }
 
-@Entity(tableName = "invoices")
+@Entity(
+    tableName = "invoices",
+    indices = [
+        Index(value = ["invoiceNumber"], unique = true),
+        Index(value = ["timestamp"]),
+        Index(value = ["status"]),
+        Index(value = ["customerName"])
+    ]
+)
 data class InvoiceEntity(
-    @PrimaryKey val invoiceNumber: String,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    val invoiceNumber: String,
     val timestamp: Long = System.currentTimeMillis(),
     val subtotalPaise: Long,
     val taxPaise: Long = 0L,
     val discountPaise: Long = 0L,
     val grandTotalPaise: Long,
+    val duePaise: Long = 0L,
     val status: InvoiceStatus = InvoiceStatus.COMPLETED,
     val paymentMethod: String = "UPI_OR_CASH",
     val customerName: String? = null,

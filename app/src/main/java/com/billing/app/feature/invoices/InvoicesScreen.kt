@@ -227,6 +227,16 @@ fun InvoicesScreen(
                         ) {
                             Text("Discard Draft", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
                         }
+                    } else if (invoice.status == InvoiceStatus.COMPLETED) {
+                        TextButton(
+                            onClick = {
+                                viewModel.voidInvoice(invoice.invoiceNumber) {
+                                    viewModel.dismissInvoiceDetails()
+                                }
+                            }
+                        ) {
+                            Text("Void Sale", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                        }
                     }
                     TextButton(onClick = { viewModel.dismissInvoiceDetails() }) {
                         Text("Close", color = Color.Gray)
@@ -736,6 +746,21 @@ private fun InvoiceItemCard(
                             Text(
                                 text = "DRAFT",
                                 color = Color(0xFFD97706),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    } else if (invoice.status == InvoiceStatus.CANCELLED) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFFEE2E2))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "CANCELLED",
+                                color = Color(0xFFDC2626),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )

@@ -157,7 +157,7 @@ fun AppNavHost(
                 onNavigateToSalesReport = { navController.navigate(Screen.SalesReport.route) },
                 onResumeDraft = { items, draftInvoiceNumber ->
                     homeViewModel.loadCartItems(items)
-                    invoiceViewModel.discardDraft(draftInvoiceNumber)
+                    checkoutViewModel.setResumedDraft(draftInvoiceNumber)
                     navController.navigate(Screen.Checkout.route)
                 }
             )

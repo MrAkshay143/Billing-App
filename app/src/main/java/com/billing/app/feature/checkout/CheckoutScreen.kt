@@ -106,8 +106,10 @@ fun CheckoutScreen(
     var discountInput by rememberSaveable { mutableStateOf("") }
     var cashInput by rememberSaveable { mutableStateOf("") }
 
-    val grandTotalPaise = (subtotalAmount.paise - discountPaise).coerceAtLeast(0L)
+    val grandTotalPaise = viewModel.calculateGrandTotal(subtotalAmount.paise)
+    val taxPaise = viewModel.calculateTax(subtotalAmount.paise, discountPaise)
     val grandTotal = Money.fromPaise(grandTotalPaise)
+    val (duePaise, changeReturnedPaise) = viewModel.calculateDueAndChange(grandTotalPaise)
 
     // Back handler preserves cart!
     BackHandler {
@@ -145,7 +147,7 @@ fun CheckoutScreen(
                 TextButton(
                     onClick = {
                         val d = Money.fromRupees(discountInput)
-                        viewModel.setDiscount(d.paise)
+                        viewModel.setDiscount(d.paise, subtotalAmount.paise)
                         showDiscountDialog = false
                     }
                 ) {
@@ -249,6 +251,27 @@ fun CheckoutScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                        }
+                    }
+
+                    if (taxPaise > 0L) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "GST / Taxes",
+                                fontSize = 14.sp,
+                                color = Color(0xFF475569)
+                            )
+                            Text(
+                                text = "+ ${Money.fromPaise(taxPaise).format()}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF0F172A)
+                            )
                         }
                     }
 
@@ -388,6 +411,27 @@ fun CheckoutScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = if (discountPaise > 0L) Color(0xFFEF4444) else Color(0xFF64748B)
                         )
+                    }
+
+                    if (taxPaise > 0L) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "GST / Taxes",
+                                fontSize = 14.sp,
+                                color = Color(0xFF475569)
+                            )
+                            Text(
+                                text = "+ ${Money.fromPaise(taxPaise).format()}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF0F172A)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -628,23 +672,42 @@ fun CheckoutScreen(
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                val changeDue = (cashReceivedPaise - grandTotalPaise).coerceAtLeast(0L)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Change to Return:",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A)
-                                    )
-                                    Text(
-                                        text = Money.fromPaise(changeDue).format(),
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = InStockText
-                                    )
+                                if (duePaise > 0L) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "Balance Due (Credit):",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFDC2626)
+                                        )
+                                        Text(
+                                            text = Money.fromPaise(duePaise).format(),
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFDC2626)
+                                        )
+                                    }
+                                } else {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "Change to Return:",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A)
+                                        )
+                                        Text(
+                                            text = Money.fromPaise(changeReturnedPaise).format(),
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = InStockText
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -722,7 +785,7 @@ fun CheckoutScreen(
                         .clip(RoundedCornerShape(14.dp))
                         .border(1.dp, HeaderGradientStart, RoundedCornerShape(14.dp))
                         .debouncedClickable(enabled = !isPrinting && !isCompletingSale) {
-                            viewModel.printReceipt(cartItems, grandTotal)
+                            viewModel.printReceipt(cartItems, subtotalAmount)
                         },
                     color = AddProductBg
                 ) {

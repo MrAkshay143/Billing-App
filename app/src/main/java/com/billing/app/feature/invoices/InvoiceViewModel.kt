@@ -3,12 +3,12 @@ package com.billing.app.feature.invoices
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.billing.app.core.util.Money
-import com.billing.app.data.local.dao.InvoiceDao
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
 import com.billing.app.data.local.entity.InvoiceStatus
 import com.billing.app.domain.model.CartItem
 import com.billing.app.domain.model.Product
+import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
 import com.billing.app.domain.repository.ShopRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,8 +30,9 @@ enum class InvoiceStatusTab {
     COMPLETED, DRAFT, ALL
 }
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class InvoiceViewModel(
-    private val invoiceDao: InvoiceDao,
+    private val invoiceRepository: InvoiceRepository,
     private val printerRepository: PrinterRepository,
     private val shopRepository: ShopRepository
 ) : ViewModel() {
@@ -49,46 +50,52 @@ class InvoiceViewModel(
     private val _selectedInvoice = MutableStateFlow<Pair<InvoiceEntity, List<InvoiceItemEntity>>?>(null)
     val selectedInvoice: StateFlow<Pair<InvoiceEntity, List<InvoiceItemEntity>>?> = _selectedInvoice.asStateFlow()
 
-    // Base flow of invoices by date filter
+    // Base flow of invoices by search query, date filter, and tab status
     val filteredInvoices: StateFlow<List<InvoiceEntity>> = combine(
         searchQuery,
-        dateFilter
-    ) { query, filter ->
-        Pair(query, filter)
-    }.flatMapLatest { (query, filter) ->
+        dateFilter,
+        statusTab
+    ) { query, filter, tab ->
+        Triple(query, filter, tab)
+    }.flatMapLatest { (query, filter, tab) ->
         val startTime = getFilterStartTime(filter)
+        val status = when (tab) {
+            InvoiceStatusTab.COMPLETED -> InvoiceStatus.COMPLETED
+            InvoiceStatusTab.DRAFT -> InvoiceStatus.DRAFT
+            InvoiceStatusTab.ALL -> null
+        }
+
         if (query.isBlank()) {
-            if (startTime == 0L) {
-                invoiceDao.getAllInvoices()
+            if (status != null) {
+                invoiceRepository.getInvoicesByStatus(status)
+            } else if (startTime > 0L) {
+                invoiceRepository.getInvoicesSince(startTime)
             } else {
-                invoiceDao.getInvoicesSince(startTime)
+                invoiceRepository.getAllInvoices()
             }
         } else {
-            invoiceDao.searchInvoices(query.trim())
+            invoiceRepository.searchInvoices(query.trim(), status)
+        }
+    }.map { invoices ->
+        val startTime = getFilterStartTime(dateFilter.value)
+        if (startTime > 0L) {
+            invoices.filter { it.timestamp >= startTime }
+        } else {
+            invoices
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Invoices filtered by active status tab (Completed, Draft, All)
-    val displayedInvoices: StateFlow<List<InvoiceEntity>> = combine(
-        filteredInvoices,
-        statusTab
-    ) { invoices, tab ->
-        when (tab) {
-            InvoiceStatusTab.COMPLETED -> invoices.filter { it.status == InvoiceStatus.COMPLETED }
-            InvoiceStatusTab.DRAFT -> invoices.filter { it.status == InvoiceStatus.DRAFT }
-            InvoiceStatusTab.ALL -> invoices
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val displayedInvoices: StateFlow<List<InvoiceEntity>> = filteredInvoices
 
-    val draftCount: StateFlow<Int> = filteredInvoices.map { list ->
-        list.count { it.status == InvoiceStatus.DRAFT }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val draftCount: StateFlow<Int> = invoiceRepository.getInvoicesByStatus(InvoiceStatus.DRAFT)
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val completedInvoices: StateFlow<List<InvoiceEntity>> = filteredInvoices.map { list ->
         list.filter { it.status == InvoiceStatus.COMPLETED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // KPI Metrics dynamically computed for COMPLETED sales only
+    // KPI Metrics dynamically computed for COMPLETED sales only (excluding CANCELLED)
     val totalSalesCount: StateFlow<Int> = completedInvoices.map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
@@ -100,6 +107,10 @@ class InvoiceViewModel(
         if (count > 0) total / count else 0L
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
+    fun setSearchQuery(query: String) {
+        searchQuery.value = query
+    }
+
     fun setDateFilter(filter: InvoiceDateFilter) {
         dateFilter.value = filter
     }
@@ -108,8 +119,23 @@ class InvoiceViewModel(
         statusTab.value = tab
     }
 
+    fun selectInvoice(invoice: InvoiceEntity) {
+        viewModelScope.launch {
+            val items = invoiceRepository.getInvoiceItems(invoice.invoiceNumber)
+            _selectedInvoice.value = Pair(invoice, items)
+        }
+    }
+
+    fun viewInvoiceDetails(invoice: InvoiceEntity) = selectInvoice(invoice)
+
+    fun clearSelectedInvoice() {
+        _selectedInvoice.value = null
+    }
+
+    fun dismissInvoiceDetails() = clearSelectedInvoice()
+
     suspend fun getCartItemsForInvoice(invoiceNumber: String): List<CartItem> {
-        val items = invoiceDao.getInvoiceItems(invoiceNumber)
+        val items = invoiceRepository.getInvoiceItems(invoiceNumber)
         return items.map { item ->
             CartItem(
                 product = Product(
@@ -123,53 +149,74 @@ class InvoiceViewModel(
         }
     }
 
+    fun reprintInvoice(invoiceNumber: String) = printInvoice(invoiceNumber)
+
     fun discardDraft(invoiceNumber: String) {
         viewModelScope.launch {
-            invoiceDao.deleteInvoice(invoiceNumber)
-            _selectedInvoice.value = null
+            invoiceRepository.deleteInvoice(invoiceNumber)
+            if (_selectedInvoice.value?.first?.invoiceNumber == invoiceNumber) {
+                _selectedInvoice.value = null
+            }
         }
     }
 
-    fun viewInvoiceDetails(invoice: InvoiceEntity) {
+    /**
+     * Voids a completed invoice, changes status to CANCELLED and restores product stock (H6)
+     */
+    fun voidInvoice(invoiceNumber: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
-            val items = invoiceDao.getInvoiceItems(invoice.invoiceNumber)
-            _selectedInvoice.value = Pair(invoice, items)
+            val result = invoiceRepository.voidInvoice(invoiceNumber)
+            if (result.isSuccess) {
+                _printMessage.value = "Invoice $invoiceNumber voided. Stock returned to inventory."
+                if (_selectedInvoice.value?.first?.invoiceNumber == invoiceNumber) {
+                    _selectedInvoice.value = null
+                }
+                onSuccess()
+            } else {
+                _printMessage.value = result.exceptionOrNull()?.message ?: "Failed to void invoice"
+            }
         }
     }
 
-    fun dismissInvoiceDetails() {
-        _selectedInvoice.value = null
+    fun resumeDraft(
+        invoice: InvoiceEntity,
+        items: List<InvoiceItemEntity>,
+        onResumeDraft: (List<CartItem>, String) -> Unit
+    ) {
+        val cartItems = items.map { item ->
+            CartItem(
+                product = Product(
+                    id = item.productId,
+                    name = item.productName,
+                    barcode = item.barcode,
+                    price = Money.fromPaise(item.unitPricePaise)
+                ),
+                quantity = item.quantity
+            )
+        }
+        onResumeDraft(cartItems, invoice.invoiceNumber)
     }
 
-    fun reprintInvoice(invoiceNumber: String) {
+    /**
+     * Accurate invoice reprint using saved invoice entity and exact timestamp (C4 & M2)
+     */
+    fun printInvoice(invoiceNumber: String) {
         if (_isPrinting.value) return
         _isPrinting.value = true
         _printMessage.value = null
 
         viewModelScope.launch {
             try {
-                val invoice = invoiceDao.getInvoiceByNumber(invoiceNumber)
+                val invoice = invoiceRepository.getInvoiceByNumber(invoiceNumber)
                 if (invoice == null) {
                     _printMessage.value = "Invoice not found"
                     _isPrinting.value = false
                     return@launch
                 }
-                val items = invoiceDao.getInvoiceItems(invoiceNumber)
+                val items = invoiceRepository.getInvoiceItems(invoiceNumber)
                 val shop = shopRepository.getShopProfileSync()
 
-                val cartItems = items.map { item ->
-                    CartItem(
-                        product = Product(
-                            id = item.productId,
-                            name = item.productName,
-                            barcode = item.barcode,
-                            price = Money.fromPaise(item.unitPricePaise)
-                        ),
-                        quantity = item.quantity
-                    )
-                }
-
-                val result = printerRepository.printReceipt(shop, cartItems)
+                val result = printerRepository.printInvoice(invoice, items, shop)
                 if (result.isSuccess) {
                     _printMessage.value = "Reprinted ${invoice.invoiceNumber} successfully"
                 } else {

@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -21,14 +24,39 @@ android {
         }
     }
 
+    val keystorePropsFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropsFile.exists()) {
+        FileInputStream(keystorePropsFile).use { stream ->
+            keystoreProperties.load(stream)
+        }
+    }
+
+    val releaseStoreFilePath = System.getenv("KEYSTORE_PATH")
+        ?: keystoreProperties.getProperty("KEYSTORE_PATH")
+        ?: "${rootDir}/dokandaar-release.jks"
+    val releaseStoreFile = file(releaseStoreFilePath)
+    val hasReleaseKey = releaseStoreFile.exists()
+
     signingConfigs {
-        create("release") {
-            storeFile = file("${rootDir}/dokandaar-release.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: (project.findProperty("KEYSTORE_PASSWORD") as String?) ?: "Dokandaar@2026"
-            keyAlias = "dokandaar-release"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: (project.findProperty("KEY_PASSWORD") as String?) ?: "Dokandaar@2026"
-            enableV1Signing = true
-            enableV2Signing = true
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = releaseStoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                    ?: keystoreProperties.getProperty("KEYSTORE_PASSWORD")
+                    ?: (project.findProperty("KEYSTORE_PASSWORD") as String?)
+                    ?: ""
+                keyAlias = System.getenv("KEY_ALIAS")
+                    ?: keystoreProperties.getProperty("KEY_ALIAS")
+                    ?: (project.findProperty("KEY_ALIAS") as String?)
+                    ?: "dokandaar-release"
+                keyPassword = System.getenv("KEY_PASSWORD")
+                    ?: keystoreProperties.getProperty("KEY_PASSWORD")
+                    ?: (project.findProperty("KEY_PASSWORD") as String?)
+                    ?: ""
+                enableV1Signing = true
+                enableV2Signing = true
+            }
         }
     }
 
@@ -41,10 +69,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseKey) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
-            signingConfig = signingConfigs.getByName("release")
+            // Debug builds use default Android debug key
         }
     }
 
@@ -56,6 +86,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {

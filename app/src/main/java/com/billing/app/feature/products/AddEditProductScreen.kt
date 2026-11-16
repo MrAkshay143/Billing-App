@@ -111,42 +111,38 @@ fun AddEditProductScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Gallery Picker Launcher
+    // Gallery Picker Launcher with downscaling and cleanup
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            try {
-                val dir = File(context.filesDir, "product_images")
-                if (!dir.exists()) dir.mkdirs()
-                val file = File(dir, "prod_${System.currentTimeMillis()}.jpg")
-                context.contentResolver.openInputStream(it)?.use { input ->
-                    FileOutputStream(file).use { output ->
-                        input.copyTo(output)
-                    }
+            val oldPath = imageUri
+            val newPath = com.billing.app.core.util.ImageUtil.saveAndDownscaleImage(context, it)
+            if (newPath != null) {
+                if (oldPath != null && oldPath != existingProduct?.imageUri) {
+                    com.billing.app.core.util.ImageUtil.deleteImageFile(oldPath)
                 }
-                imageUri = file.absolutePath
-            } catch (e: Exception) {
-                e.printStackTrace()
+                imageUri = newPath
+            } else {
+                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Failed to process image")
             }
         }
     }
 
-    // Camera Capture Launcher
+    // Camera Capture Launcher with cleanup
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
         bitmap?.let {
-            try {
-                val dir = File(context.filesDir, "product_images")
-                if (!dir.exists()) dir.mkdirs()
-                val file = File(dir, "prod_${System.currentTimeMillis()}.jpg")
-                FileOutputStream(file).use { output ->
-                    it.compress(Bitmap.CompressFormat.JPEG, 85, output)
+            val oldPath = imageUri
+            val newPath = com.billing.app.core.util.ImageUtil.saveBitmapImage(context, it)
+            if (newPath != null) {
+                if (oldPath != null && oldPath != existingProduct?.imageUri) {
+                    com.billing.app.core.util.ImageUtil.deleteImageFile(oldPath)
                 }
-                imageUri = file.absolutePath
-            } catch (e: Exception) {
-                e.printStackTrace()
+                imageUri = newPath
+            } else {
+                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Failed to capture image")
             }
         }
     }

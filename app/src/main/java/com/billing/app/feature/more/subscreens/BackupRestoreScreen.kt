@@ -1,8 +1,11 @@
 package com.billing.app.feature.more.subscreens
 
+import android.net.Uri
 import android.widget.Toast
-import com.billing.app.core.ui.util.FeedbackManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,11 +22,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,11 +36,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.billing.app.core.ui.components.SubPageHeader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,10 +56,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.feature.settings.SettingsViewModel
 import kotlinx.coroutines.launch
 import java.io.File
@@ -83,6 +90,35 @@ fun BackupRestoreScreen(
         refreshList()
     }
 
+    // SAF Document Exporter
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let {
+            isWorking = true
+            scope.launch {
+                val result = viewModel.exportBackupToUri(context, it)
+                isWorking = false
+                FeedbackManager.showToast(context, result.getOrNull() ?: "Export failed", Toast.LENGTH_LONG)
+            }
+        }
+    }
+
+    // SAF Document Importer
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            isWorking = true
+            scope.launch {
+                val result = viewModel.importBackupFromUri(context, it)
+                isWorking = false
+                refreshList()
+                FeedbackManager.showToast(context, result.getOrNull() ?: "Import failed", Toast.LENGTH_LONG)
+            }
+        }
+    }
+
     // Restore Confirmation Dialog
     if (fileToRestore != null) {
         val target = fileToRestore!!
@@ -90,7 +126,7 @@ fun BackupRestoreScreen(
             onDismissRequest = { fileToRestore = null },
             title = { Text("Restore Database?", fontWeight = FontWeight.Bold) },
             text = {
-                Text("Restoring from '${target.name}' will import all products and invoices into your database.")
+                Text("Restoring from '${target.name}' will verify data integrity, restore your store profile, and safely merge all products and invoices into your offline database.")
             },
             confirmButton = {
                 TextButton(
@@ -101,6 +137,7 @@ fun BackupRestoreScreen(
                         scope.launch {
                             val result = viewModel.restoreDatabaseBackup(file)
                             isWorking = false
+                            refreshList()
                             FeedbackManager.showToast(context, result.getOrNull() ?: "Restore failed", Toast.LENGTH_LONG)
                         }
                     }
@@ -126,7 +163,7 @@ fun BackupRestoreScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        target.delete()
+                        viewModel.deleteBackup(target)
                         fileToDelete = null
                         refreshList()
                         FeedbackManager.showToast(context, "Backup deleted")
@@ -158,7 +195,7 @@ fun BackupRestoreScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Create Backup Action Card
+            // Backup Actions Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -178,13 +215,14 @@ fun BackupRestoreScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Database Snapshot", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
-                            Text("Export complete products, store info, and invoices", fontSize = 12.sp, color = TextMutedColor)
+                            Text("Database Durability", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            Text("Export verified JSON snapshot with SHA-256 checksum", fontSize = 12.sp, color = TextMutedColor)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
 
+                    // Local Backup Button
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -212,7 +250,58 @@ fun BackupRestoreScreen(
                             } else {
                                 Icon(imageVector = Icons.Default.CloudDownload, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Create New Backup", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Create Local Backup", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // SAF Export & Import Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, HeaderGradientStart, RoundedCornerShape(12.dp))
+                                .clickable(enabled = !isWorking) {
+                                    val time = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                                    exportLauncher.launch("dokandaar_backup_$time.json")
+                                },
+                            color = AddProductBg
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(vertical = 11.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Export to File", color = HeaderGradientStart, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
+                                .clickable(enabled = !isWorking) {
+                                    importLauncher.launch(arrayOf("application/json", "*/*"))
+                                },
+                            color = Color.White
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(vertical = 11.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(imageVector = Icons.Default.CloudUpload, contentDescription = null, tint = Color(0xFF0F172A), modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Import File", color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }
@@ -243,7 +332,7 @@ fun BackupRestoreScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No backup files saved yet.\nTap 'Create New Backup' to export your database.",
+                        text = "No backup files saved yet.\nTap 'Create Local Backup' or 'Export to File' to safeguard your database.",
                         fontSize = 13.sp,
                         color = TextMutedColor,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -284,7 +373,24 @@ fun BackupRestoreScreen(
                                     )
                                 }
 
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Share Button
+                                    IconButton(
+                                        onClick = { viewModel.shareBackup(context, file) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Share,
+                                            contentDescription = "Share Backup",
+                                            tint = HeaderGradientStart,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+
+                                    // Restore Button
                                     Surface(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(8.dp))
@@ -292,20 +398,21 @@ fun BackupRestoreScreen(
                                         color = AddProductBg
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(imageVector = Icons.Default.Restore, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(14.dp))
+                                            Icon(imageVector = Icons.Default.Restore, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(13.dp))
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Restore", color = HeaderGradientStart, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text("Restore", color = HeaderGradientStart, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
 
+                                    // Delete Button
                                     IconButton(
                                         onClick = { fileToDelete = file },
                                         modifier = Modifier.size(32.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Backup", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Backup", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
                                     }
                                 }
                             }

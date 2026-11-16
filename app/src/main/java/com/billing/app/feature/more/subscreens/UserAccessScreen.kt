@@ -1,5 +1,6 @@
 package com.billing.app.feature.more.subscreens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,11 +20,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,29 +35,35 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.billing.app.core.ui.components.SubPageHeader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.feature.settings.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,8 +71,86 @@ fun UserAccessScreen(
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val staffList by viewModel.staffList.collectAsState()
+    val isPinEnabled by viewModel.isPinEnabled.collectAsState()
+    val hasPinSet by viewModel.hasPinSet.collectAsState()
+    val autoLockMinutes by viewModel.autoLockMinutes.collectAsState()
+
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    var showSetPinDialog by rememberSaveable { mutableStateOf(false) }
+
+    // Set / Change PIN Dialog
+    if (showSetPinDialog) {
+        var pinInput by rememberSaveable { mutableStateOf("") }
+        var confirmPinInput by rememberSaveable { mutableStateOf("") }
+        var pinError by rememberSaveable { mutableStateOf<String?>(null) }
+
+        AlertDialog(
+            onDismissRequest = { showSetPinDialog = false },
+            title = { Text(if (hasPinSet) "Change Owner PIN" else "Set Owner Security PIN", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "This PIN protects sensitive store settings, sales reports, database restore, and voiding sales.",
+                        fontSize = 12.sp,
+                        color = TextMutedColor
+                    )
+
+                    OutlinedTextField(
+                        value = pinInput,
+                        onValueChange = { if (it.length <= 6) pinInput = it },
+                        label = { Text("New PIN (4-6 digits)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = confirmPinInput,
+                        onValueChange = { if (it.length <= 6) confirmPinInput = it },
+                        label = { Text("Confirm PIN") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (pinError != null) {
+                        Text(text = pinError!!, color = Color(0xFFEF4444), fontSize = 12.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (pinInput.length < 4) {
+                            pinError = "PIN must be at least 4 digits"
+                            return@TextButton
+                        }
+                        if (pinInput != confirmPinInput) {
+                            pinError = "PINs do not match"
+                            return@TextButton
+                        }
+                        scope.launch {
+                            viewModel.setSecurityPin(pinInput)
+                            showSetPinDialog = false
+                            FeedbackManager.showToast(context, "Owner PIN saved successfully!")
+                        }
+                    }
+                ) {
+                    Text("Save PIN", color = HeaderGradientStart, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSetPinDialog = false }) {
+                    Text("Cancel", color = Color.Gray)
+                }
+            }
+        )
+    }
 
     if (showAddDialog) {
         var name by rememberSaveable { mutableStateOf("") }
@@ -171,6 +257,119 @@ fun UserAccessScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            // Owner PIN Security Card (H3)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(AddProductBg),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Security,
+                                    contentDescription = null,
+                                    tint = HeaderGradientStart,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Owner PIN Lock", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                                Text(
+                                    text = if (isPinEnabled) "PIN protection is active" else "Protect reports & settings with PIN",
+                                    fontSize = 12.sp,
+                                    color = TextMutedColor
+                                )
+                            }
+                        }
+
+                        Switch(
+                            checked = isPinEnabled,
+                            onCheckedChange = { enabled ->
+                                if (enabled && !hasPinSet) {
+                                    showSetPinDialog = true
+                                } else {
+                                    scope.launch { viewModel.togglePinSecurity(enabled) }
+                                }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = HeaderGradientStart
+                            )
+                        )
+                    }
+
+                    if (isPinEnabled || hasPinSet) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { showSetPinDialog = true },
+                                color = AddProductBg
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (hasPinSet) "Change PIN" else "Set PIN",
+                                        color = HeaderGradientStart,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+
+                            if (hasPinSet) {
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            scope.launch {
+                                                viewModel.removeSecurityPin()
+                                                FeedbackManager.showToast(context, "PIN removed")
+                                            }
+                                        },
+                                    color = Color(0xFFFEE2E2)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("Remove PIN", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Header Info Card with [+ Add Staff]
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -227,87 +426,101 @@ fun UserAccessScreen(
                         ) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Add Staff", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("Add Staff", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Staff Cards List
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(staffList, key = { it.id }) { staff ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
+            // Staff List
+            if (staffList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No staff members added yet.\nTap 'Add Staff' to register cashiers and managers.",
+                        fontSize = 13.sp,
+                        color = TextMutedColor,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(staffList, key = { it.id }) { staff ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
                         ) {
-                            Box(
+                            Row(
                                 modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(CircleShape)
-                                    .background(AddProductBg),
-                                contentAlignment = Alignment.Center
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = staff.name.take(1).uppercase(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    color = HeaderGradientStart
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(14.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = staff.name,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
-                                )
-                                Text(
-                                    text = staff.phone.ifBlank { "No phone recorded" },
-                                    fontSize = 12.sp,
-                                    color = TextMutedColor
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(
-                                            if (staff.role.contains("Admin")) Color(0xFFEDE9FE)
-                                            else Color(0xFFE0F2FE)
-                                        )
-                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = staff.role,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (staff.role.contains("Admin")) HeaderGradientStart else Color(0xFF0284C7)
-                                    )
-                                }
-                            }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFEDE9FE)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = staff.name.take(1).uppercase(),
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = HeaderGradientStart
+                                        )
+                                    }
 
-                            if (staffList.size > 1 && !staff.role.contains("Administrator")) {
-                                IconButton(onClick = { viewModel.deleteStaffMember(staff.id) }) {
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column {
+                                        Text(
+                                            text = staff.name,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A)
+                                        )
+                                        if (staff.phone.isNotBlank()) {
+                                            Text(
+                                                text = staff.phone,
+                                                fontSize = 12.sp,
+                                                color = TextMutedColor
+                                            )
+                                        }
+                                        Text(
+                                            text = staff.role,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = HeaderGradientStart
+                                        )
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = { viewModel.deleteStaffMember(staff.id) },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
                                         contentDescription = "Remove Staff",
                                         tint = Color(0xFFEF4444),
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
