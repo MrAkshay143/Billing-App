@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoNotDisturbOn
 import androidx.compose.material.icons.filled.Edit
@@ -31,6 +32,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -232,21 +234,39 @@ fun ProductListScreen(
                         )
                     },
                     trailingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 4.dp)
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(AddProductBg)
-                                .clickable { onNavigateToScannerForSearch() },
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 4.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.QrCodeScanner,
-                                contentDescription = "Scan Barcode",
-                                tint = HeaderGradientStart,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            if (searchQuery.isNotBlank()) {
+                                IconButton(
+                                    onClick = { viewModel.searchQuery.value = "" },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear search",
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(2.dp))
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(AddProductBg)
+                                    .clickable { onNavigateToScannerForSearch() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCodeScanner,
+                                    contentDescription = "Scan Barcode",
+                                    tint = HeaderGradientStart,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     },
                     shape = RoundedCornerShape(14.dp),

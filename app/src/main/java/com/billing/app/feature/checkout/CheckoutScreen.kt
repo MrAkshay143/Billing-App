@@ -55,6 +55,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,9 +102,9 @@ fun CheckoutScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showDiscountDialog by remember { mutableStateOf(false) }
-    var discountInput by remember { mutableStateOf("") }
-    var cashInput by remember { mutableStateOf("") }
+    var showDiscountDialog by rememberSaveable { mutableStateOf(false) }
+    var discountInput by rememberSaveable { mutableStateOf("") }
+    var cashInput by rememberSaveable { mutableStateOf("") }
 
     val grandTotalPaise = (subtotalAmount.paise - discountPaise).coerceAtLeast(0L)
     val grandTotal = Money.fromPaise(grandTotalPaise)

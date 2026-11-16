@@ -18,10 +18,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Button
@@ -46,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,12 +75,23 @@ fun StoreProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var name by remember(profile) { mutableStateOf(profile.name) }
-    var address1 by remember(profile) { mutableStateOf(profile.addressLine1) }
-    var address2 by remember(profile) { mutableStateOf(profile.addressLine2) }
-    var phone by remember(profile) { mutableStateOf(profile.phoneNumber) }
-    var upiId by remember(profile) { mutableStateOf(profile.upiId) }
-    var footer by remember(profile) { mutableStateOf(profile.footerText) }
+    var name by rememberSaveable(key = "store_name") { mutableStateOf(profile.name) }
+    var address1 by rememberSaveable(key = "store_addr1") { mutableStateOf(profile.addressLine1) }
+    var address2 by rememberSaveable(key = "store_addr2") { mutableStateOf(profile.addressLine2) }
+    var phone by rememberSaveable(key = "store_phone") { mutableStateOf(profile.phoneNumber) }
+    var upiId by rememberSaveable(key = "store_upi") { mutableStateOf(profile.upiId) }
+    var footer by rememberSaveable(key = "store_footer") { mutableStateOf(profile.footerText) }
+
+    LaunchedEffect(profile) {
+        if (name.isBlank() && address1.isBlank() && phone.isBlank()) {
+            name = profile.name
+            address1 = profile.addressLine1
+            address2 = profile.addressLine2
+            phone = profile.phoneNumber
+            upiId = profile.upiId
+            footer = profile.footerText
+        }
+    }
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let { msg ->
@@ -351,7 +363,7 @@ fun StoreProfileScreen(
                         label = { Text("Receipt Footer Message") },
                         placeholder = { Text("Thank you! Visit again.") },
                         leadingIcon = {
-                            Icon(imageVector = Icons.Default.Message, contentDescription = null, tint = HeaderGradientStart)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.Message, contentDescription = null, tint = HeaderGradientStart)
                         },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),

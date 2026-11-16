@@ -42,6 +42,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,12 +65,12 @@ fun UserAccessScreen(
     onNavigateBack: () -> Unit
 ) {
     val staffList by viewModel.staffList.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showAddDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showAddDialog) {
-        var name by remember { mutableStateOf("") }
-        var phone by remember { mutableStateOf("") }
-        var role by remember { mutableStateOf("Cashier (Billing Only)") }
+        var name by rememberSaveable { mutableStateOf("") }
+        var phone by rememberSaveable { mutableStateOf("") }
+        var role by rememberSaveable { mutableStateOf("Cashier (Billing Only)") }
 
         AlertDialog(
             onDismissRequest = { showAddDialog = false },

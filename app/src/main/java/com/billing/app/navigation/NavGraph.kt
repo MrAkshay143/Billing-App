@@ -5,6 +5,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -49,8 +50,8 @@ fun AppNavHost(
     val homeUiState by homeViewModel.uiState.collectAsState()
     val totalAmount by homeViewModel.totalAmount.collectAsState()
 
-    var scannedBarcodeForAddProduct by remember { mutableStateOf<String?>(null) }
-    var scanTargetMode by remember { mutableStateOf("add") } // "add" or "search"
+    var scannedBarcodeForAddProduct by rememberSaveable { mutableStateOf<String?>(null) }
+    var scanTargetMode by rememberSaveable { mutableStateOf("add") } // "add" or "search"
 
     fun navigateToTab(tab: DokandaarTab) {
         when (tab) {
@@ -98,11 +99,12 @@ fun AppNavHost(
                 onNavigateToCheckout = { navController.navigate(Screen.Checkout.route) },
                 onNavigateToProducts = { navigateToTab(DokandaarTab.PRODUCTS) },
                 onNavigateToInvoices = { navigateToTab(DokandaarTab.INVOICES) },
-                onNavigateToSettings = { navController.navigate(Screen.PrinterSetup.route) },
+                onNavigateToSettings = { navigateToTab(DokandaarTab.MORE) },
                 onNavigateToAddProduct = {
                     scannedBarcodeForAddProduct = null
                     navController.navigate(Screen.AddProduct.route)
-                }
+                },
+                onNavigateToPrinter = { navController.navigate(Screen.PrinterSetup.route) }
             )
         }
 
@@ -247,6 +249,7 @@ fun AppNavHost(
                 viewModel = productViewModel,
                 existingProduct = null,
                 scannedBarcode = scannedBarcodeForAddProduct,
+                onBarcodeConsumed = { scannedBarcodeForAddProduct = null },
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToScanner = {
                     scanTargetMode = "add"
@@ -267,6 +270,7 @@ fun AppNavHost(
                 viewModel = productViewModel,
                 existingProduct = product,
                 scannedBarcode = scannedBarcodeForAddProduct,
+                onBarcodeConsumed = { scannedBarcodeForAddProduct = null },
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToScanner = {
                     scanTargetMode = "add"

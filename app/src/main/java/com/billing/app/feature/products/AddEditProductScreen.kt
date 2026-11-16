@@ -46,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,16 +74,38 @@ fun AddEditProductScreen(
     viewModel: ProductViewModel,
     existingProduct: Product? = null,
     scannedBarcode: String? = null,
+    onBarcodeConsumed: () -> Unit = {},
     onNavigateBack: () -> Unit,
     onNavigateToScanner: () -> Unit
 ) {
     val context = LocalContext.current
     val isSaving by viewModel.isSaving.collectAsState()
-    var name by remember(existingProduct) { mutableStateOf(existingProduct?.name ?: "") }
-    var barcode by remember(existingProduct) { mutableStateOf(existingProduct?.barcode ?: "") }
-    var priceStr by remember(existingProduct) { mutableStateOf(existingProduct?.price?.format(includeSymbol = false) ?: "") }
-    var stockStr by remember(existingProduct) { mutableStateOf(existingProduct?.stock?.toString() ?: "0") }
-    var imageUri by remember(existingProduct) { mutableStateOf(existingProduct?.imageUri) }
+    val productKey = existingProduct?.id ?: "new_product"
+    var name by rememberSaveable(key = "prod_name_$productKey") {
+        mutableStateOf(existingProduct?.name ?: "")
+    }
+    var barcode by rememberSaveable(key = "prod_barcode_$productKey") {
+        mutableStateOf(existingProduct?.barcode ?: "")
+    }
+    var priceStr by rememberSaveable(key = "prod_price_$productKey") {
+        mutableStateOf(existingProduct?.price?.format(includeSymbol = false) ?: "")
+    }
+    var stockStr by rememberSaveable(key = "prod_stock_$productKey") {
+        mutableStateOf(existingProduct?.stock?.toString() ?: "0")
+    }
+    var imageUri by rememberSaveable(key = "prod_image_$productKey") {
+        mutableStateOf(existingProduct?.imageUri)
+    }
+
+    LaunchedEffect(existingProduct) {
+        if (existingProduct != null && name.isBlank() && barcode.isBlank() && priceStr.isBlank()) {
+            name = existingProduct.name
+            barcode = existingProduct.barcode
+            priceStr = existingProduct.price.format(includeSymbol = false)
+            stockStr = existingProduct.stock.toString()
+            imageUri = existingProduct.imageUri
+        }
+    }
 
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -131,6 +154,7 @@ fun AddEditProductScreen(
     LaunchedEffect(scannedBarcode) {
         if (!scannedBarcode.isNullOrBlank()) {
             barcode = scannedBarcode
+            onBarcodeConsumed()
         }
     }
 

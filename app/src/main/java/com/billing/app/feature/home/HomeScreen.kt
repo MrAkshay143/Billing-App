@@ -55,6 +55,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,7 +96,8 @@ fun HomeScreen(
     onNavigateToProducts: () -> Unit,
     onNavigateToInvoices: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToAddProduct: () -> Unit
+    onNavigateToAddProduct: () -> Unit,
+    onNavigateToPrinter: () -> Unit = onNavigateToSettings
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val totalAmount by viewModel.totalAmount.collectAsState()
@@ -103,7 +105,7 @@ fun HomeScreen(
     val storeName by viewModel.storeName.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-    var showClearConfirmation by remember { mutableStateOf(false) }
+    var showClearConfirmation by rememberSaveable { mutableStateOf(false) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -292,7 +294,7 @@ fun HomeScreen(
                 onAddProductClick = onNavigateToAddProduct,
                 onProductsClick = onNavigateToProducts,
                 onInvoicesClick = onNavigateToInvoices,
-                onPrintClick = onNavigateToSettings
+                onPrintClick = onNavigateToPrinter
             )
 
             // Cart Section Header
