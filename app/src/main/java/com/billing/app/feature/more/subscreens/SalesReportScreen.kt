@@ -23,13 +23,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -164,7 +164,7 @@ fun SalesReportScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDDD6FE))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Icon(imageVector = Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF7C3AED), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF7C3AED), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = Money.fromPaise(report.totalRevenuePaise).format(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
                             Text(text = "Total Revenue", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF5B21B6))
@@ -179,7 +179,7 @@ fun SalesReportScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Icon(imageVector = Icons.Default.ReceiptLong, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = "${report.totalInvoices}", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
                             Text(text = "Total Sales", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF065F46))
@@ -199,7 +199,7 @@ fun SalesReportScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBAE6FD))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Icon(imageVector = Icons.Default.ReceiptLong, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = Money.fromPaise(report.avgBillPaise).format(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
                             Text(text = "Avg. Bill Value", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF075985))
