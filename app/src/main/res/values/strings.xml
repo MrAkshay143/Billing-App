@@ -1,0 +1,64 @@
+<resources>
+    <string name="app_name">Dokandaar</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_home">Home</string>
+    <string name="nav_products">Products</string>
+    <string name="nav_invoices">Invoices</string>
+    <string name="nav_more">More</string>
+
+    <!-- Home & Cart -->
+    <string name="cart_title">Current Cart</string>
+    <string name="empty_cart_title">Cart is Empty</string>
+    <string name="empty_cart_msg">Scan barcode or pick products below to begin</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="total_amount">Total Amount</string>
+    <string name="items_count">items</string>
+    <string name="checkout_button">Proceed to Checkout</string>
+
+    <!-- Checkout -->
+    <string name="checkout_title">Checkout</string>
+    <string name="review_pay_print">Review, Pay &amp; Print</string>
+    <string name="complete_sale">Complete Sale</string>
+    <string name="print_receipt">Print Receipt</string>
+    <string name="hold_bill">Hold Bill as Draft (Park Cart)</string>
+    <string name="discount">Discount</string>
+    <string name="grand_total">Grand Total</string>
+    <string name="payment_method">Payment Method</string>
+    <string name="cash_received">Cash Received (₹)</string>
+    <string name="change_due">Change to Return:</string>
+
+    <!-- Invoices & Drafts -->
+    <string name="invoices_title">Invoices</string>
+    <string name="invoices_subtitle">View, search and manage sales</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_draft">Drafts</string>
+    <string name="status_all">All Invoices</string>
+    <string name="sales_report">Sales Report</string>
+    <string name="resume_sale">Resume Sale</string>
+    <string name="discard_draft">Discard Draft</string>
+    <string name="reprint">Reprint</string>
+    <string name="total_sales">Total Sales</string>
+    <string name="avg_bill">Avg. Bill</string>
+
+    <!-- Products -->
+    <string name="products_title">Product Catalog</string>
+    <string name="add_product">Add Product</string>
+    <string name="edit_product">Edit Product</string>
+    <string name="search_products">Search by name or barcode...</string>
+    <string name="in_stock">In Stock</string>
+    <string name="low_stock">Low Stock</string>
+    <string name="out_of_stock">Out of Stock</string>
+
+    <!-- Settings & More -->
+    <string name="more_title">More Options</string>
+    <string name="store_profile">Store Profile</string>
+    <string name="user_access">User Access &amp; Staff</string>
+    <string name="printer_setup">Bluetooth Printer Setup</string>
+    <string name="payment_settings">Payment &amp; UPI Setup</string>
+    <string name="appearance">Appearance &amp; Theme</string>
+    <string name="language">App Language</string>
+    <string name="backup_restore">Backup &amp; Restore</string>
+    <string name="about_dokandaar">About Dokandaar</string>
+    <string name="notifications">Notifications &amp; Alerts</string>
+</resources>

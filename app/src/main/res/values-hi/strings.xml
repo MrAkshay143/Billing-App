@@ -1,0 +1,64 @@
+<resources>
+    <string name="app_name">दुकानदार</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_home">होम</string>
+    <string name="nav_products">उत्पाद</string>
+    <string name="nav_invoices">बिल/रसीदें</string>
+    <string name="nav_more">अन्य</string>
+
+    <!-- Home & Cart -->
+    <string name="cart_title">वर्तमान कार्ट</string>
+    <string name="empty_cart_title">कार्ट खाली है</string>
+    <string name="empty_cart_msg">उत्पाद जोड़ने के लिए बारकोड स्कैन करें या चुनें</string>
+    <string name="quick_actions">त्वरित कार्य</string>
+    <string name="total_amount">कुल राशि</string>
+    <string name="items_count">आइटम</string>
+    <string name="checkout_button">चेकआउट के लिए आगे बढ़ें</string>
+
+    <!-- Checkout -->
+    <string name="checkout_title">चेकआउट</string>
+    <string name="review_pay_print">समीक्षा, भुगतान और प्रिंट</string>
+    <string name="complete_sale">बिक्री पूरी करें</string>
+    <string name="print_receipt">रसीद प्रिंट करें</string>
+    <string name="hold_bill">बिल होल्ड करें (ड्राफ्ट)</string>
+    <string name="discount">छूट</string>
+    <string name="grand_total">कुल योग</string>
+    <string name="payment_method">भुगतान विधि</string>
+    <string name="cash_received">नकद प्राप्त (₹)</string>
+    <string name="change_due">वापस करने योग्य राशि:</string>
+
+    <!-- Invoices & Drafts -->
+    <string name="invoices_title">बिल/रसीदें</string>
+    <string name="invoices_subtitle">बिक्री देखें, खोजें और प्रबंधित करें</string>
+    <string name="status_completed">पूर्ण</string>
+    <string name="status_draft">ड्राफ्ट</string>
+    <string name="status_all">सभी रसीदें</string>
+    <string name="sales_report">बिक्री रिपोर्ट</string>
+    <string name="resume_sale">बिक्री जारी रखें</string>
+    <string name="discard_draft">ड्राफ्ट हटाएं</string>
+    <string name="reprint">दोबारा प्रिंट करें</string>
+    <string name="total_sales">कुल बिक्री</string>
+    <string name="avg_bill">औसत बिल</string>
+
+    <!-- Products -->
+    <string name="products_title">उत्पाद सूची</string>
+    <string name="add_product">उत्पाद जोड़ें</string>
+    <string name="edit_product">उत्पाद संपादित करें</string>
+    <string name="search_products">नाम या बारकोड से खोजें...</string>
+    <string name="in_stock">उपलब्ध है</string>
+    <string name="low_stock">कम स्टॉक</string>
+    <string name="out_of_stock">स्टॉक समाप्त</string>
+
+    <!-- Settings & More -->
+    <string name="more_title">अन्य विकल्प</string>
+    <string name="store_profile">दुकान प्रोफ़ाइल</string>
+    <string name="user_access">उपयोगकर्ता और स्टाफ</string>
+    <string name="printer_setup">ब्लूटूथ प्रिंटर सेटअप</string>
+    <string name="payment_settings">भुगतान व UPI सेटअप</string>
+    <string name="appearance">थीम और रूप</string>
+    <string name="language">ऐप भाषा</string>
+    <string name="backup_restore">बैकअप और पुनर्स्थापना</string>
+    <string name="about_dokandaar">दुकानदार के बारे में</string>
+    <string name="notifications">सूचनाएं और अलर्ट</string>
+</resources>

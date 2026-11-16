@@ -1,0 +1,110 @@
+package com.billing.app.core.ui.components
+
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+
+@Composable
+fun ProductThumbnail(
+    imageUri: String?,
+    modifier: Modifier = Modifier,
+    size: Dp = 46.dp,
+    shape: RoundedCornerShape = RoundedCornerShape(10.dp)
+) {
+    val density = LocalDensity.current
+    val targetPx = with(density) { size.roundToPx() }.coerceAtLeast(64)
+    var bitmap by remember(imageUri) { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(imageUri, targetPx) {
+        if (imageUri.isNullOrBlank()) {
+            bitmap = null
+            return@LaunchedEffect
+        }
+
+        bitmap = withContext(Dispatchers.IO) {
+            try {
+                val cleanPath = imageUri.removePrefix("file://")
+                val file = File(cleanPath)
+                if (!file.exists()) return@withContext null
+
+                // 1. Decode bounds only
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                BitmapFactory.decodeFile(file.absolutePath, options)
+
+                val rawWidth = options.outWidth
+                val rawHeight = options.outHeight
+                if (rawWidth <= 0 || rawHeight <= 0) return@withContext null
+
+                // 2. Calculate optimal inSampleSize
+                var sampleSize = 1
+                while (rawWidth / (sampleSize * 2) >= targetPx && rawHeight / (sampleSize * 2) >= targetPx) {
+                    sampleSize *= 2
+                }
+
+                // 3. Decode scaled bitmap safely in RGB_565 (50% less memory)
+                val decodeOptions = BitmapFactory.Options().apply {
+                    inSampleSize = sampleSize
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                }
+                BitmapFactory.decodeFile(file.absolutePath, decodeOptions)
+            } catch (_: OutOfMemoryError) {
+                null
+            } catch (_: Throwable) {
+                null
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(shape)
+            .background(Color(0xFFF1F5F9)),
+        contentAlignment = Alignment.Center
+    ) {
+        val currentBitmap = bitmap
+        if (currentBitmap != null) {
+            Image(
+                bitmap = currentBitmap.asImageBitmap(),
+                contentDescription = "Product Image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.Inventory2,
+                contentDescription = "Product Placeholder",
+                tint = Color(0xFF94A3B8),
+                modifier = Modifier.size(size * 0.55f)
+            )
+        }
+    }
+}
