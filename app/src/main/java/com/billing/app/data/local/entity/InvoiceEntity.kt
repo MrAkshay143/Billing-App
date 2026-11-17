@@ -17,7 +17,8 @@ enum class InvoiceStatus {
         Index(value = ["invoiceNumber"], unique = true),
         Index(value = ["timestamp"]),
         Index(value = ["status"]),
-        Index(value = ["customerName"])
+        Index(value = ["customerName"]),
+        Index(value = ["invoiceType"])
     ]
 )
 data class InvoiceEntity(
@@ -34,7 +35,9 @@ data class InvoiceEntity(
     val customerName: String? = null,
     val customerPhone: String? = null,
     val cashReceivedPaise: Long = 0L,
-    val changeReturnedPaise: Long = 0L
+    val changeReturnedPaise: Long = 0L,
+    val invoiceType: String = "SALE",
+    val itemsCount: Int = 1
 )
 
 @Entity(

@@ -1,15 +1,10 @@
 package com.billing.app.feature.more
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import com.billing.app.core.ui.util.FeedbackManager
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,58 +16,87 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.HeadsetMic
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Policy
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
-import com.billing.app.core.ui.components.PinVerificationDialog
-import com.billing.app.core.ui.components.TopDokandaarHeader
-import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
-import com.billing.app.core.ui.theme.HeaderGradientStart
-import com.billing.app.core.ui.theme.TextMutedColor
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import kotlinx.coroutines.launch
+import com.billing.app.core.ui.theme.ErrorColor
+import com.billing.app.core.ui.theme.PastelBlueBg
+import com.billing.app.core.ui.theme.PastelBlueContent
+import com.billing.app.core.ui.theme.PastelGreenBg
+import com.billing.app.core.ui.theme.PastelGreenContent
+import com.billing.app.core.ui.theme.PastelIndigoBg
+import com.billing.app.core.ui.theme.PastelIndigoContent
+import com.billing.app.core.ui.theme.PastelOrangeBg
+import com.billing.app.core.ui.theme.PastelOrangeContent
+import com.billing.app.core.ui.theme.PastelPinkBg
+import com.billing.app.core.ui.theme.PastelPinkContent
+import com.billing.app.core.ui.theme.PastelPurpleBg
+import com.billing.app.core.ui.theme.PastelPurpleContent
+import com.billing.app.core.ui.theme.PastelRedBg
+import com.billing.app.core.ui.theme.PastelRedContent
+import com.billing.app.core.ui.theme.PastelSlateBg
+import com.billing.app.core.ui.theme.PastelSlateContent
+import com.billing.app.core.ui.theme.PastelTealBg
+import com.billing.app.core.ui.theme.PastelTealContent
+import com.billing.app.core.ui.theme.PrimaryPurple
+import com.billing.app.core.ui.theme.SecondaryPurple
 import com.billing.app.feature.settings.SettingsViewModel
 
 @Composable
@@ -88,63 +112,90 @@ fun MoreScreen(
     onNavigateToLanguage: () -> Unit,
     onNavigateToAbout: () -> Unit,
     onNavigateToInvoices: () -> Unit,
-    onNavigateToTab: (DokandaarTab) -> Unit
+    onNavigateToTab: (DokandaarTab) -> Unit,
+    onNavigateToScanner: () -> Unit = {},
+    onNavigateToCustomers: () -> Unit = {},
+    onNavigateToSuppliers: () -> Unit = {},
+    onNavigateToExpenses: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {},
+    onNavigateToImportExport: () -> Unit = {},
+    onNavigateToPrivacyPolicy: () -> Unit = {},
+    onNavigateToTerms: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val strings = appStrings()
-    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
-    val isPinEnabled by viewModel.isPinEnabled.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    var pendingNavigation by remember { mutableStateOf<(() -> Unit)?>(null) }
-
-    val requirePinBeforeNavigate: (() -> Unit) -> Unit = { action ->
-        if (isPinEnabled) {
-            pendingNavigation = action
-        } else {
-            action()
-        }
-    }
-
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            viewModel.setNotificationsEnabled(true)
-            viewModel.triggerSalesSummaryNotification(context)
-            FeedbackManager.showToast(context, "Notifications Enabled")
-        } else {
-            FeedbackManager.showToast(context, "Notification permission denied")
-        }
-    }
-
-    if (pendingNavigation != null) {
-        PinVerificationDialog(
-            title = "Enter Owner PIN",
-            subtitle = "This section is protected by Owner Security PIN",
-            onDismissRequest = { pendingNavigation = null },
-            onVerify = { pin, onError ->
-                scope.launch {
-                    if (viewModel.verifySecurityPin(pin)) {
-                        val action = pendingNavigation
-                        pendingNavigation = null
-                        action?.invoke()
-                    } else {
-                        onError("Incorrect PIN. Please try again.")
-                    }
-                }
-            }
-        )
-    }
+    val shopProfile by viewModel.shopProfile.collectAsState()
 
     Scaffold(
         topBar = {
-            TopDokandaarHeader(
-                storeName = "Dokandaar",
-                subtitle = strings.appSubtitle,
-                onNotificationClick = onNavigateToInvoices,
-                onMenuClick = { /* Current Tab */ }
-            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = PrimaryPurple,
+                shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
+                            )
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color.White.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.GridView,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "More",
+                                    color = Color.White,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Kirana Store POS",
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        // Store front decorative icon
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Storefront,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
+            }
         },
         bottomBar = {
             BottomDokandaarNav(
@@ -152,7 +203,6 @@ fun MoreScreen(
                 onTabSelected = onNavigateToTab
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
@@ -160,14 +210,18 @@ fun MoreScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header Card
+            // 1. Store Profile Card
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNavigateToStoreProfile() },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -177,221 +231,358 @@ fun MoreScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AddProductBg),
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(PastelPurpleBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Settings,
+                            imageVector = Icons.Default.Store,
                             contentDescription = null,
-                            tint = HeaderGradientStart,
-                            modifier = Modifier.size(24.dp)
+                            tint = PrimaryPurple,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = strings.moreTitle,
-                            fontSize = 18.sp,
+                            text = shopProfile.name.ifBlank { "My Kirana Store" },
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = DokandaarTheme.textPrimary
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = strings.moreSubtitle,
-                            fontSize = 12.sp,
+                            text = "Kirana, Grocery & Daily Needs",
+                            fontSize = 11.sp,
                             color = DokandaarTheme.textMuted
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(PastelGreenContent)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "Store Active",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PastelGreenContent
+                            )
+                        }
                     }
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Open",
+                        tint = DokandaarTheme.textMuted,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            // 2. Store Management Section (8 pastel tiles)
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Storefront,
+                        contentDescription = null,
+                        tint = PrimaryPurple,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Store Management",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DokandaarTheme.textPrimary
+                    )
+                }
 
-            // 1. Group: Business
-            Text(
-                text = strings.groupBusiness,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = DokandaarTheme.textPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column {
-                    MoreOptionItem(
-                        icon = Icons.Default.Storefront,
-                        title = strings.storeProfile,
-                        subtitle = "Store info, logo, address",
-                        onClick = onNavigateToStoreProfile
+                // Row 1: Categories | Customers | Suppliers | Expenses
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Category,
+                        iconBg = PastelPurpleBg,
+                        iconTint = PastelPurpleContent,
+                        title = "Categories",
+                        onClick = onNavigateToCategories
                     )
-                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
-                    MoreOptionItem(
-                        icon = Icons.Default.Group,
-                        title = strings.userAccess,
-                        subtitle = "Add staff, set permissions",
-                        onClick = { requirePinBeforeNavigate(onNavigateToUserAccess) }
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.People,
+                        iconBg = PastelBlueBg,
+                        iconTint = PastelBlueContent,
+                        title = "Customers",
+                        onClick = onNavigateToCustomers
                     )
-                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
-                    MoreOptionItem(
-                        icon = Icons.Default.Print,
-                        title = strings.printerSetup,
-                        subtitle = "Thermal/Bluetooth printer",
-                        onClick = onNavigateToPrinterSetup
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.LocalShipping,
+                        iconBg = PastelOrangeBg,
+                        iconTint = PastelOrangeContent,
+                        title = "Suppliers",
+                        onClick = onNavigateToSuppliers
                     )
-                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
-                    MoreOptionItem(
-                        icon = Icons.Default.CreditCard,
-                        title = strings.paymentSettings,
-                        subtitle = "UPI, cash and other options",
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Payments,
+                        iconBg = PastelPinkBg,
+                        iconTint = PastelPinkContent,
+                        title = "Expenses",
+                        onClick = onNavigateToExpenses
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Row 2: Discounts | Tax/GST | Payment Methods | Settings
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.LocalOffer,
+                        iconBg = PastelGreenBg,
+                        iconTint = PastelGreenContent,
+                        title = "Discounts",
+                        onClick = {}
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Receipt,
+                        iconBg = PastelIndigoBg,
+                        iconTint = PastelIndigoContent,
+                        title = "Tax / GST",
                         onClick = onNavigateToPaymentSettings
                     )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // 2. Group: Data & Reports
-            Text(
-                text = strings.groupDataReports,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = DokandaarTheme.textPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column {
-                    MoreOptionItem(
-                        icon = Icons.Default.BarChart,
-                        title = strings.salesReport,
-                        subtitle = "Daily, weekly and monthly reports",
-                        onClick = { requirePinBeforeNavigate(onNavigateToSalesReport) }
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.CreditCard,
+                        iconBg = PastelTealBg,
+                        iconTint = PastelTealContent,
+                        title = "Payment Methods",
+                        onClick = onNavigateToPaymentSettings
                     )
-                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
-                    MoreOptionItem(
-                        icon = Icons.Default.CloudDownload,
-                        title = strings.backupRestore,
-                        subtitle = "Backup your data and restore anytime",
-                        onClick = { requirePinBeforeNavigate(onNavigateToBackupRestore) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // 3. Group: App
-            Text(
-                text = strings.groupApp,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = DokandaarTheme.textPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column {
-                    MoreOptionItem(
-                        icon = Icons.Default.Palette,
-                        title = strings.appearance,
-                        subtitle = "Theme, color and display",
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Settings,
+                        iconBg = PastelSlateBg,
+                        iconTint = PastelSlateContent,
+                        title = "Settings",
                         onClick = onNavigateToAppearance
                     )
-                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
-                    MoreOptionItem(
-                        icon = Icons.Default.Language,
-                        title = strings.language,
-                        subtitle = "English, বাংলা, हिंदी",
-                        onClick = onNavigateToLanguage
+                }
+            }
+
+            // 3. Tools & Utilities Section (4 pastel tiles)
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Layers,
+                        contentDescription = null,
+                        tint = PrimaryPurple,
+                        modifier = Modifier.size(18.dp)
                     )
-                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Tools & Utilities",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DokandaarTheme.textPrimary
+                    )
+                }
 
-                    // Notifications Switch Row
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(AddProductBg),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = null,
-                                tint = HeaderGradientStart,
-                                modifier = Modifier.size(20.dp)
-                            )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.QrCodeScanner,
+                        iconBg = PastelPurpleBg,
+                        iconTint = PastelPurpleContent,
+                        title = "Barcode / QR Scanner",
+                        onClick = onNavigateToScanner
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.FileDownload,
+                        iconBg = PastelGreenBg,
+                        iconTint = PastelGreenContent,
+                        title = "Import / Export (Excel)",
+                        onClick = onNavigateToImportExport
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Backup,
+                        iconBg = PastelBlueBg,
+                        iconTint = PastelBlueContent,
+                        title = "Data Backup & Restore",
+                        onClick = onNavigateToBackupRestore
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.CloudSync,
+                        iconBg = PastelOrangeBg,
+                        iconTint = PastelOrangeContent,
+                        title = "Sync Data",
+                        onClick = {}
+                    )
+                }
+            }
+
+            // 4. Business & Support Section (4 pastel tiles)
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.HeadsetMic,
+                        contentDescription = null,
+                        tint = PrimaryPurple,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Business & Support",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DokandaarTheme.textPrimary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.AutoMirrored.Filled.HelpOutline,
+                        iconBg = PastelBlueBg,
+                        iconTint = PastelBlueContent,
+                        title = "Help & Support",
+                        onClick = {}
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.HeadsetMic,
+                        iconBg = PastelGreenBg,
+                        iconTint = PastelGreenContent,
+                        title = "WhatsApp Support",
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/919999999999"))
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
                         }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Notifications",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DokandaarTheme.textPrimary
-                            )
-                            Text(
-                                text = "Sale, stock and app alerts",
-                                fontSize = 12.sp,
-                                color = DokandaarTheme.textMuted
-                            )
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Star,
+                        iconBg = PastelOrangeBg,
+                        iconTint = PastelOrangeContent,
+                        title = "Rate the App",
+                        onClick = {}
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Share,
+                        iconBg = PastelPurpleBg,
+                        iconTint = PastelPurpleContent,
+                        title = "Share App",
+                        onClick = {
+                            val sendIntent: Intent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, "Download Dokandaar - Best Billing & POS app for Kirana stores!")
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(sendIntent, "Share Dokandaar"))
                         }
+                    )
+                }
+            }
 
-                        Switch(
-                            checked = notificationsEnabled,
-                            onCheckedChange = { enabled ->
-                                if (enabled) {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        viewModel.setNotificationsEnabled(true)
-                                        viewModel.triggerSalesSummaryNotification(context)
-                                        FeedbackManager.showToast(context, "Notifications Enabled")
-                                    }
-                                } else {
-                                    viewModel.setNotificationsEnabled(false)
-                                    FeedbackManager.showToast(context, "Notifications Muted")
-                                }
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = HeaderGradientStart
-                            )
-                        )
-                    }
-
-                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
-                    MoreOptionItem(
+            // 5. Options List Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column {
+                    MoreListItem(
+                        icon = Icons.Default.Notifications,
+                        title = "Notifications",
+                        badge = "3",
+                        onClick = {}
+                    )
+                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    MoreListItem(
                         icon = Icons.Default.Info,
-                        title = strings.about,
-                        subtitle = "App version, update and support",
+                        title = "About App",
+                        subtitle = "v2.0.0",
                         onClick = onNavigateToAbout
+                    )
+                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    MoreListItem(
+                        icon = Icons.Default.Policy,
+                        title = "Privacy Policy",
+                        onClick = onNavigateToPrivacyPolicy
+                    )
+                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    MoreListItem(
+                        icon = Icons.Default.Security,
+                        title = "Terms & Conditions",
+                        onClick = onNavigateToTerms
+                    )
+                }
+            }
+
+            // 6. Logout Button
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {
+                        com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Logged out successfully")
+                    },
+                color = PastelRedBg,
+                border = androidx.compose.foundation.BorderStroke(1.dp, PastelRedContent.copy(alpha = 0.3f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = null,
+                        tint = ErrorColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Logout",
+                        color = ErrorColor,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -402,50 +593,110 @@ fun MoreScreen(
 }
 
 @Composable
-private fun MoreOptionItem(
+private fun MoreTile(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    iconBg: Color,
+    iconTint: Color,
+    title: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .height(86.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = title,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = DokandaarTheme.textPrimary,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun MoreListItem(
     icon: ImageVector,
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
+    badge: String? = null,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(14.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(AddProductBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = HeaderGradientStart,
-                modifier = Modifier.size(20.dp)
-            )
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = PrimaryPurple,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = DokandaarTheme.textPrimary,
+            modifier = Modifier.weight(1f)
+        )
+        if (badge != null) {
+            Surface(
+                shape = CircleShape,
+                color = ErrorColor
+            ) {
+                Text(
+                    text = badge,
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
         }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = DokandaarTheme.textPrimary
-            )
+        if (subtitle != null) {
             Text(
                 text = subtitle,
                 fontSize = 12.sp,
                 color = DokandaarTheme.textMuted
             )
+            Spacer(modifier = Modifier.width(6.dp))
         }
-
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,

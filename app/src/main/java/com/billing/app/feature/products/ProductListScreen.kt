@@ -3,6 +3,7 @@ package com.billing.app.feature.products
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,21 +17,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DoNotDisturbOn
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -50,23 +56,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
-import com.billing.app.core.ui.components.StockStatusBadge
-import com.billing.app.core.ui.components.TopDokandaarHeader
-import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
-import com.billing.app.core.ui.theme.HeaderGradientStart
-import com.billing.app.core.ui.theme.LowStockBg
-import com.billing.app.core.ui.theme.LowStockText
-import com.billing.app.core.ui.theme.OutOfStockBg
-import com.billing.app.core.ui.theme.OutOfStockText
-import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.theme.ErrorColor
+import com.billing.app.core.ui.theme.PastelGreenBg
+import com.billing.app.core.ui.theme.PastelGreenContent
+import com.billing.app.core.ui.theme.PastelPurpleBg
+import com.billing.app.core.ui.theme.PastelPurpleContent
+import com.billing.app.core.ui.theme.PastelRedBg
+import com.billing.app.core.ui.theme.PastelRedContent
+import com.billing.app.core.ui.theme.PrimaryPurple
+import com.billing.app.core.ui.theme.SecondaryPurple
 import com.billing.app.domain.model.Product
 
 @Composable
@@ -76,19 +83,65 @@ fun ProductListScreen(
     onNavigateToAddProduct: () -> Unit,
     onNavigateToEditProduct: (String) -> Unit,
     onNavigateToScannerForSearch: () -> Unit,
-    onNavigateToTab: (DokandaarTab) -> Unit,
-    onNavigateToInvoices: () -> Unit = { onNavigateToTab(DokandaarTab.INVOICES) },
-    onNavigateToSettings: () -> Unit = { onNavigateToTab(DokandaarTab.MORE) }
+    onNavigateToTab: (DokandaarTab) -> Unit
 ) {
     val filteredProducts by viewModel.filteredProducts.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val activeFilter by viewModel.activeFilter.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
     val allCount by viewModel.allCount.collectAsState()
-    val lowStockCount by viewModel.lowStockCount.collectAsState()
-    val outOfStockCount by viewModel.outOfStockCount.collectAsState()
 
     var productToDelete by remember { mutableStateOf<Product?>(null) }
+    var productToAdjustStock by remember { mutableStateOf<Product?>(null) }
+    var adjustStockStr by remember { mutableStateOf("") }
+    var showFilterMenu by remember { mutableStateOf(false) }
 
+    val categoriesList = listOf(
+        "All", "Grocery", "Oil & Ghee", "Pulses & Dal", "Spices & Masala",
+        "Snacks & Biscuits", "Beverages", "Household Items", "Dairy Products"
+    )
+
+    // Stock Adjustment Dialog
+    if (productToAdjustStock != null) {
+        val prod = productToAdjustStock!!
+        AlertDialog(
+            onDismissRequest = { productToAdjustStock = null },
+            title = { Text("Adjust Stock: ${prod.name}", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Current stock: ${prod.stock} ${prod.unit}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = adjustStockStr,
+                        onValueChange = { adjustStockStr = it },
+                        label = { Text("New Stock Quantity") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val newQty = adjustStockStr.toIntOrNull()
+                        if (newQty != null) {
+                            viewModel.adjustStock(prod.id, newQty)
+                        }
+                        productToAdjustStock = null
+                    }
+                ) {
+                    Text("Update", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { productToAdjustStock = null }) {
+                    Text("Cancel", color = DokandaarTheme.textMuted)
+                }
+            }
+        )
+    }
+
+    // Delete Confirmation Dialog
     if (productToDelete != null) {
         val product = productToDelete!!
         AlertDialog(
@@ -102,27 +155,140 @@ fun ProductListScreen(
                         productToDelete = null
                     }
                 ) {
-                    Text("Delete", color = Color.Red, fontWeight = FontWeight.Bold)
+                    Text("Delete", color = ErrorColor, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { productToDelete = null }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text("Cancel", color = DokandaarTheme.textMuted)
                 }
             }
         )
     }
 
-    val strings = appStrings()
-
     Scaffold(
         topBar = {
-            TopDokandaarHeader(
-                storeName = "Dokandaar",
-                subtitle = strings.appSubtitle,
-                onNotificationClick = onNavigateToInvoices,
-                onMenuClick = onNavigateToSettings
-            )
+            // Purple Top App Bar matching Screenshot 4
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = PrimaryPurple,
+                shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
+                            )
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = onNavigateBack,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = Color.White
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Column {
+                                Text(
+                                    text = "Products",
+                                    color = Color.White,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Kirana Store Items",
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Filter Button
+                            Box {
+                                IconButton(
+                                    onClick = { showFilterMenu = true },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FilterList,
+                                        contentDescription = "Filter",
+                                        tint = Color.White
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showFilterMenu,
+                                    onDismissRequest = { showFilterMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("All Products") },
+                                        onClick = {
+                                            viewModel.setFilter(StockFilter.ALL)
+                                            showFilterMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Low Stock (1-5)") },
+                                        onClick = {
+                                            viewModel.setFilter(StockFilter.LOW_STOCK)
+                                            showFilterMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Out of Stock (0)") },
+                                        onClick = {
+                                            viewModel.setFilter(StockFilter.OUT_OF_STOCK)
+                                            showFilterMenu = false
+                                        }
+                                    )
+                                }
+                            }
+
+                            // "+ Add Product" Button
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White,
+                                modifier = Modifier.clickable { onNavigateToAddProduct() }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = PrimaryPurple,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Add Product",
+                                        color = PrimaryPurple,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
         bottomBar = {
             BottomDokandaarNav(
@@ -136,193 +302,98 @@ fun ProductListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Products Header Card with [+ Add Product]
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AddProductBg),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Inventory2,
-                            contentDescription = null,
-                            tint = HeaderGradientStart,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = strings.productsTitle,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DokandaarTheme.textPrimary
-                        )
-                        Text(
-                            text = strings.productsSubtitle,
-                            fontSize = 12.sp,
-                            color = TextMutedColor
-                        )
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable { onNavigateToAddProduct() },
-                        color = HeaderGradientStart,
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = strings.quickAddProduct,
-                                color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Search Bar with Barcode Scanner Icon
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            // Search Input with Barcode Scanner Icon
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.searchQuery.value = it },
                     placeholder = {
                         Text(
-                            text = strings.searchProducts,
+                            text = "Search items by name, SKU or barcode...",
                             fontSize = 13.sp,
-                            color = TextMutedColor
+                            color = DokandaarTheme.textMuted
                         )
                     },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = Color(0xFF94A3B8)
+                            tint = DokandaarTheme.textMuted,
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     trailingIcon = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            if (searchQuery.isNotBlank()) {
-                                IconButton(
-                                    onClick = { viewModel.searchQuery.value = "" },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.searchQuery.value = "" }) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Clear search",
-                                        tint = Color(0xFF64748B),
+                                        contentDescription = "Clear",
+                                        tint = DokandaarTheme.textMuted,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(2.dp))
                             }
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(AddProductBg)
-                                    .clickable { onNavigateToScannerForSearch() },
-                                contentAlignment = Alignment.Center
-                            ) {
+                            IconButton(onClick = onNavigateToScannerForSearch) {
                                 Icon(
                                     imageVector = Icons.Default.QrCodeScanner,
-                                    contentDescription = "Scan Barcode",
-                                    tint = HeaderGradientStart,
-                                    modifier = Modifier.size(20.dp)
+                                    contentDescription = "Scan",
+                                    tint = PrimaryPurple,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
                     },
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryPurple,
+                        unfocusedBorderColor = BorderColor,
                         focusedContainerColor = DokandaarTheme.cardBackground,
-                        unfocusedContainerColor = DokandaarTheme.cardBackground,
-                        focusedBorderColor = HeaderGradientStart,
-                        unfocusedBorderColor = BorderColor
+                        unfocusedContainerColor = DokandaarTheme.cardBackground
                     ),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    singleLine = true
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Stock Filter Chips Row
+            // Category Filter Chips
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // All Chip
-                FilterChipPill(
-                    label = "${strings.filterAll} ($allCount)",
-                    isSelected = activeFilter == StockFilter.ALL,
-                    onClick = { viewModel.setFilter(StockFilter.ALL) }
-                )
+                categoriesList.forEach { cat ->
+                    val isSelected = (selectedCategory.equals(cat, ignoreCase = true)) ||
+                            (cat == "All" && (selectedCategory == "All" || selectedCategory.isBlank()))
 
-                // Low Stock Chip
-                FilterChipPill(
-                    label = "${strings.filterLowStock} ($lowStockCount)",
-                    icon = Icons.Default.Warning,
-                    isSelected = activeFilter == StockFilter.LOW_STOCK,
-                    onClick = { viewModel.setFilter(StockFilter.LOW_STOCK) },
-                    selectedBg = HeaderGradientStart,
-                    unselectedBg = LowStockBg,
-                    unselectedText = LowStockText
-                )
+                    val label = if (cat == "All") "All ($allCount)" else cat
 
-                // Out of Stock Chip
-                FilterChipPill(
-                    label = "${strings.filterOutOfStock} ($outOfStockCount)",
-                    icon = Icons.Default.DoNotDisturbOn,
-                    isSelected = activeFilter == StockFilter.OUT_OF_STOCK,
-                    onClick = { viewModel.setFilter(StockFilter.OUT_OF_STOCK) },
-                    selectedBg = HeaderGradientStart,
-                    unselectedBg = OutOfStockBg,
-                    unselectedText = OutOfStockText
-                )
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isSelected) PastelPurpleBg else DokandaarTheme.cardBackground,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isSelected) PrimaryPurple else BorderColor
+                        ),
+                        modifier = Modifier.clickable {
+                            viewModel.setCategory(cat)
+                        }
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (isSelected) PrimaryPurple else DokandaarTheme.textPrimary,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Products List
             if (filteredProducts.isEmpty()) {
@@ -332,73 +403,84 @@ fun ProductListScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = if (searchQuery.isBlank()) "No products in inventory.\nTap '+ Add Product' to start." else "No matching products found.",
-                        color = TextMutedColor,
-                        fontSize = 14.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Inventory2,
+                            contentDescription = null,
+                            tint = DokandaarTheme.textMuted,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "No products found",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DokandaarTheme.textMuted
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(filteredProducts, key = { it.id }) { product ->
                         ProductItemCard(
                             product = product,
                             onEdit = { onNavigateToEditProduct(product.id) },
+                            onAdjustStock = {
+                                productToAdjustStock = product
+                                adjustStockStr = product.stock.toString()
+                            },
                             onDelete = { productToDelete = product }
                         )
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(10.dp))
+                }
+            }
+
+            // Bottom Pagination / Results Indicator
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = DokandaarTheme.cardBackground,
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Showing 1 - ${filteredProducts.size} of $allCount products",
+                        fontSize = 11.sp,
+                        color = DokandaarTheme.textMuted
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = PrimaryPurple,
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "1",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun FilterChipPill(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    selectedBg: Color = HeaderGradientStart,
-    unselectedBg: Color = Color.White,
-    unselectedText: Color = Color(0xFF475569)
-) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (isSelected) selectedBg else unselectedBg)
-            .border(
-                width = 1.dp,
-                color = if (isSelected) selectedBg else BorderColor,
-                shape = RoundedCornerShape(20.dp)
-            )
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isSelected) Color.White else unselectedText,
-                    modifier = Modifier.size(13.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) Color.White else unselectedText
-            )
         }
     }
 }
@@ -407,13 +489,17 @@ private fun FilterChipPill(
 private fun ProductItemCard(
     product: Product,
     onEdit: () -> Unit,
+    onAdjustStock: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -421,11 +507,11 @@ private fun ProductItemCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Product image or placeholder
+            // Product Thumbnail
             ProductThumbnail(
                 imageUri = product.imageUri,
-                size = 52.dp,
-                shape = RoundedCornerShape(10.dp)
+                size = 54.dp,
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -434,72 +520,113 @@ private fun ProductItemCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = product.name,
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary
+                    color = DokandaarTheme.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+
                 Spacer(modifier = Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "||||||",
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        color = DokandaarTheme.textMuted,
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = product.barcode,
-                        fontSize = 12.sp,
-                        color = DokandaarTheme.textMuted
-                    )
+
+                Text(
+                    text = "SKU: ${product.sku.ifBlank { "N/A" }} | Barcode: ${product.barcode}",
+                    fontSize = 11.sp,
+                    color = DokandaarTheme.textMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Stock Badge
+                val isLow = product.stock in 1..5
+                val isOut = product.stock <= 0
+                val badgeBg = if (isOut || isLow) PastelRedBg else PastelGreenBg
+                val badgeColor = if (isOut || isLow) PastelRedContent else PastelGreenContent
+                val badgeText = if (isOut) "Out of Stock" else "In Stock: ${product.stock}"
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = badgeBg
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Inventory2,
+                            contentDescription = null,
+                            tint = badgeColor,
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = badgeText,
+                            color = badgeColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                StockStatusBadge(stock = product.stock)
             }
 
-            // Price & Actions
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = product.price.format(),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(AddProductBg)
-                            .clickable { onEdit() },
-                        contentAlignment = Alignment.Center
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Price & 3-dots Menu
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Product",
-                            tint = HeaderGradientStart,
-                            modifier = Modifier.size(16.dp)
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Options",
+                            tint = DokandaarTheme.textMuted,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFFEE2E2))
-                            .clickable { onDelete() },
-                        contentAlignment = Alignment.Center
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Product",
-                            tint = Color(0xFFEF4444),
-                            modifier = Modifier.size(16.dp)
+                        DropdownMenuItem(
+                            text = { Text("Edit Product") },
+                            onClick = {
+                                menuExpanded = false
+                                onEdit()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Adjust Stock") },
+                            onClick = {
+                                menuExpanded = false
+                                onAdjustStock()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = ErrorColor) },
+                            onClick = {
+                                menuExpanded = false
+                                onDelete()
+                            }
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = product.price.format(),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryPurple
+                )
             }
         }
     }

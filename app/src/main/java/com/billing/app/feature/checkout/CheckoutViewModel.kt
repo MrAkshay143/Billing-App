@@ -6,13 +6,18 @@ import com.billing.app.BillingApplication
 import com.billing.app.core.datastore.SettingsDataStore
 import com.billing.app.core.notification.DokandaarNotificationManager
 import com.billing.app.core.util.Money
+import com.billing.app.data.local.entity.CategoryEntity
+import com.billing.app.data.local.entity.CustomerEntity
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
 import com.billing.app.data.local.entity.InvoiceStatus
 import com.billing.app.domain.model.CartItem
 import com.billing.app.domain.model.InvoiceReceipt
+import com.billing.app.domain.model.Product
 import com.billing.app.domain.model.ReceiptItem
 import com.billing.app.domain.model.ShopProfile
+import com.billing.app.domain.repository.CategoryRepository
+import com.billing.app.domain.repository.CustomerRepository
 import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
 import com.billing.app.domain.repository.ProductRepository
@@ -21,7 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -37,7 +42,9 @@ class CheckoutViewModel(
     private val printerRepository: PrinterRepository,
     private val invoiceRepository: InvoiceRepository,
     private val settingsDataStore: SettingsDataStore? = null,
-    private val productRepository: ProductRepository? = null
+    private val productRepository: ProductRepository? = null,
+    private val customerRepository: CustomerRepository? = null,
+    private val categoryRepository: CategoryRepository? = null
 ) : ViewModel() {
 
     val shopProfile: StateFlow<ShopProfile> = shopRepository.getShopProfile()
@@ -46,8 +53,41 @@ class CheckoutViewModel(
     val selectedPaymentMethod = MutableStateFlow(PaymentMethodMode.UPI)
     val discountPaise = MutableStateFlow(0L)
     val cashReceivedPaise = MutableStateFlow(0L)
-    val customerName = MutableStateFlow("")
+    val customerName = MutableStateFlow("Walk-in Customer")
     val customerPhone = MutableStateFlow("")
+
+    val selectedCategory = MutableStateFlow("All")
+    val searchQuery = MutableStateFlow("")
+
+    // Customers stream
+    val customers: StateFlow<List<CustomerEntity>> = customerRepository?.getAllCustomers()
+        ?.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+        ?: MutableStateFlow(emptyList<CustomerEntity>()).asStateFlow()
+
+    // Categories stream
+    val categories: StateFlow<List<CategoryEntity>> = categoryRepository?.getAllCategories()
+        ?.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+        ?: MutableStateFlow(emptyList<CategoryEntity>()).asStateFlow()
+
+    // Filtered Products stream for POS
+    val products: StateFlow<List<Product>> = if (productRepository != null) {
+        combine(
+            productRepository.getProducts(),
+            selectedCategory,
+            searchQuery
+        ) { allProducts, cat, query ->
+            allProducts.filter { prod ->
+                val matchesCat = cat.equals("All", ignoreCase = true) || prod.category.equals(cat, ignoreCase = true)
+                val matchesQuery = query.isBlank() ||
+                        prod.name.contains(query, ignoreCase = true) ||
+                        prod.barcode.contains(query, ignoreCase = true) ||
+                        prod.sku.contains(query, ignoreCase = true)
+                matchesCat && matchesQuery
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    } else {
+        MutableStateFlow(emptyList<Product>()).asStateFlow()
+    }
 
     // Track resumed draft without deleting it until sale succeeds (H4)
     var resumedDraftInvoiceNumber: String? = null
@@ -116,8 +156,22 @@ class CheckoutViewModel(
         selectedPaymentMethod.value = method
     }
 
+    fun setCustomer(name: String, phone: String) {
+        customerName.value = name.ifBlank { "Walk-in Customer" }
+        customerPhone.value = phone
+    }
+
+    fun addNewCustomer(name: String, phone: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            customerRepository?.addCustomer(
+                CustomerEntity(name = name.trim(), phone = phone.trim())
+            )
+            setCustomer(name.trim(), phone.trim())
+        }
+    }
+
     fun setDiscount(amountPaise: Long, subtotalPaise: Long) {
-        // Enforce discount does not exceed subtotal (H5)
         discountPaise.value = amountPaise.coerceIn(0L, subtotalPaise.coerceAtLeast(0L))
     }
 
@@ -143,20 +197,19 @@ class CheckoutViewModel(
             PaymentMethodMode.CASH -> {
                 val cash = cashReceivedPaise.value
                 if (cash < grandTotalPaise) {
-                    Pair(grandTotalPaise - cash, 0L) // due, change
+                    Pair(grandTotalPaise - cash, 0L)
                 } else {
-                    Pair(0L, cash - grandTotalPaise) // due, change
+                    Pair(0L, cash - grandTotalPaise)
                 }
             }
             PaymentMethodMode.OTHER -> {
-                // If OTHER and customer entered cash, compute due
                 val cash = cashReceivedPaise.value
                 if (cash > 0 && cash < grandTotalPaise) {
                     Pair(grandTotalPaise - cash, 0L)
                 } else if (cash >= grandTotalPaise) {
                     Pair(0L, cash - grandTotalPaise)
                 } else {
-                    Pair(grandTotalPaise, 0L) // Full credit/due
+                    Pair(grandTotalPaise, 0L)
                 }
             }
             PaymentMethodMode.UPI -> Pair(0L, 0L)
@@ -164,7 +217,7 @@ class CheckoutViewModel(
     }
 
     fun completeSale(items: List<CartItem>, subtotal: Money, onSuccess: () -> Unit) {
-        if (_isCompletingSale.value) return // Prevent multi-click race condition
+        if (_isCompletingSale.value) return
         if (items.isEmpty()) {
             _errorMessage.value = "Cart is empty"
             return
@@ -180,16 +233,14 @@ class CheckoutViewModel(
                 val grandTotalPaise = (subtotal.paise - discount + tax).coerceAtLeast(0L)
                 val (duePaise, changeReturnedPaise) = calculateDueAndChange(grandTotalPaise)
 
-                // If credit/due sale, require customer identification (H5)
                 val custName = customerName.value.trim()
                 val custPhone = customerPhone.value.trim()
                 if (duePaise > 0 && custName.isBlank()) {
-                    _errorMessage.value = "Customer name is required for partial/credit due sales (Balance Due: Rs. ${Money(duePaise).format(false)})"
+                    _errorMessage.value = "Customer name is required for partial/credit due sales"
                     _isCompletingSale.value = false
                     return@launch
                 }
 
-                // Generate strictly consecutive monotonic invoice number (H1)
                 val invoiceNumber = invoiceRepository.generateNextInvoiceNumber()
 
                 val invoice = InvoiceEntity(
@@ -206,7 +257,8 @@ class CheckoutViewModel(
                     customerName = custName.ifBlank { null },
                     customerPhone = custPhone.ifBlank { null },
                     cashReceivedPaise = cashReceivedPaise.value,
-                    changeReturnedPaise = changeReturnedPaise
+                    changeReturnedPaise = changeReturnedPaise,
+                    invoiceType = "SALE"
                 )
 
                 val invoiceItems = items.map { item ->
@@ -222,7 +274,6 @@ class CheckoutViewModel(
                     )
                 }
 
-                // Execute transactional sale with stock decrement & draft cleanup (H1, H2, H4)
                 val result = invoiceRepository.completeSale(
                     invoice = invoice,
                     items = invoiceItems,
@@ -238,78 +289,53 @@ class CheckoutViewModel(
                     _isCompletingSale.value = false
                     onSuccess()
 
-                    // Offline low stock notification check (Fixes C4)
-                    if (settingsDataStore != null && settingsDataStore.areNotificationsEnabled() && productRepository != null) {
-                        try {
-                            val purchasedProductIds = items.map { it.product.id }.toSet()
-                            val lowStockList = productRepository.getLowAndOutOfStockProducts()
-                                .filter { it.id in purchasedProductIds }
-                            if (lowStockList.isNotEmpty()) {
-                                val sampleNames = lowStockList.take(3).joinToString(", ") { "${it.name} (${it.stock} left)" }
+                    // Check low stock trigger
+                    productRepository?.let { repo ->
+                        for (item in items) {
+                            val updatedProd = repo.getProductById(item.product.id)
+                            if (updatedProd != null && updatedProd.stock <= 5) {
                                 DokandaarNotificationManager.showLowStockNotification(
-                                    context = BillingApplication.instance,
-                                    productCount = lowStockList.size,
-                                    sampleNames = sampleNames
+                                    BillingApplication.instance,
+                                    1,
+                                    "${updatedProd.name} (${updatedProd.stock} left)"
                                 )
                             }
-                        } catch (_: Exception) {}
+                        }
                     }
                 } else {
-                    _isCompletingSale.value = false
                     _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to complete sale"
+                    _isCompletingSale.value = false
                 }
             } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "Failed to complete sale"
                 _isCompletingSale.value = false
-                _errorMessage.value = "Failed to complete sale: ${e.message}"
             }
         }
     }
 
-    fun holdSaleAsDraft(
-        items: List<CartItem>,
-        subtotal: Money,
-        onSuccess: () -> Unit
-    ) {
-        if (_isCompletingSale.value) return
-        if (items.isEmpty()) {
-            _errorMessage.value = "Cart is empty"
-            return
-        }
-
-        _isCompletingSale.value = true
-        _errorMessage.value = null
-
+    fun holdDraft(items: List<CartItem>, subtotal: Money, onSuccess: () -> Unit) {
+        if (items.isEmpty()) return
         viewModelScope.launch {
             try {
-                val discount = discountPaise.value.coerceIn(0L, subtotal.paise)
-                val tax = calculateTax(subtotal.paise, discount)
-                val grandTotalPaise = (subtotal.paise - discount + tax).coerceAtLeast(0L)
-
-                // DRAFT prefix
-                val draftNumber = resumedDraftInvoiceNumber
-                    ?: ("DRAFT-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()))
-
+                val invoiceNumber = resumedDraftInvoiceNumber ?: invoiceRepository.generateNextInvoiceNumber()
                 val invoice = InvoiceEntity(
                     id = 0L,
-                    invoiceNumber = draftNumber,
+                    invoiceNumber = invoiceNumber,
                     timestamp = System.currentTimeMillis(),
                     subtotalPaise = subtotal.paise,
-                    discountPaise = discount,
-                    taxPaise = tax,
-                    grandTotalPaise = grandTotalPaise,
-                    duePaise = 0L,
+                    discountPaise = discountPaise.value,
+                    taxPaise = 0L,
+                    grandTotalPaise = subtotal.paise - discountPaise.value,
                     status = InvoiceStatus.DRAFT,
                     paymentMethod = selectedPaymentMethod.value.name,
-                    customerName = customerName.value.trim().ifBlank { null },
-                    customerPhone = customerPhone.value.trim().ifBlank { null },
-                    cashReceivedPaise = 0L,
-                    changeReturnedPaise = 0L
+                    customerName = customerName.value.ifBlank { null },
+                    customerPhone = customerPhone.value.ifBlank { null },
+                    invoiceType = "SALE"
                 )
-
                 val invoiceItems = items.map { item ->
                     InvoiceItemEntity(
                         id = 0L,
-                        invoiceNumber = draftNumber,
+                        invoiceNumber = invoiceNumber,
                         productId = item.product.id,
                         productName = item.product.name,
                         barcode = item.product.barcode,
@@ -318,97 +344,43 @@ class CheckoutViewModel(
                         lineTotalPaise = item.total.paise
                     )
                 }
-
-                val result = invoiceRepository.saveDraft(invoice, invoiceItems)
-                if (result.isSuccess) {
-                    _isCompletingSale.value = false
-                    onSuccess()
-                } else {
-                    _isCompletingSale.value = false
-                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to save draft"
-                }
+                invoiceRepository.saveDraft(invoice, invoiceItems)
+                onSuccess()
             } catch (e: Exception) {
-                _isCompletingSale.value = false
                 _errorMessage.value = "Failed to hold draft: ${e.message}"
             }
         }
     }
 
-    /**
-     * Prints receipt with accurate subtotal, discount, taxes, and payment details (Fixes C4 & M2)
-     */
-    fun printReceipt(items: List<CartItem>, subtotal: Money) {
-        if (_isPrinting.value) return
+    fun printLastReceipt(onDone: () -> Unit = {}) {
+        val invoice = lastCompletedInvoice ?: return
+        val items = lastCompletedItems
+        val profile = shopProfile.value
+
         _isPrinting.value = true
-        _printSuccess.value = false
-        _errorMessage.value = null
-
         viewModelScope.launch {
-            try {
-                val shop = shopRepository.getShopProfileSync()
-                val discount = discountPaise.value.coerceIn(0L, subtotal.paise)
-                val tax = calculateTax(subtotal.paise, discount)
-                val grandTotalPaise = (subtotal.paise - discount + tax).coerceAtLeast(0L)
-                val (duePaise, changeReturnedPaise) = calculateDueAndChange(grandTotalPaise)
-
-                val invNumber = lastCompletedInvoice?.invoiceNumber ?: "INV-PREPRINT"
-                val receiptItems = items.map {
-                    ReceiptItem(
-                        name = it.product.name,
-                        quantity = it.quantity,
-                        unitPricePaise = it.product.price.paise,
-                        lineTotalPaise = it.total.paise
-                    )
-                }
-
-                val receipt = InvoiceReceipt(
-                    shopName = shop.name,
-                    shopAddressLine1 = shop.addressLine1,
-                    shopAddressLine2 = shop.addressLine2,
-                    shopPhone = shop.phoneNumber,
-                    shopGstin = gstin,
-                    footerText = shop.footerText,
-                    invoiceNumber = invNumber,
-                    timestamp = lastCompletedInvoice?.timestamp ?: System.currentTimeMillis(),
-                    items = receiptItems,
-                    subtotalPaise = subtotal.paise,
-                    discountPaise = discount,
-                    taxPaise = tax,
-                    grandTotalPaise = grandTotalPaise,
-                    paymentMethod = selectedPaymentMethod.value.name,
-                    cashReceivedPaise = cashReceivedPaise.value,
-                    changeReturnedPaise = changeReturnedPaise,
-                    duePaise = duePaise,
-                    customerName = customerName.value.trim().ifBlank { null },
-                    customerPhone = customerPhone.value.trim().ifBlank { null }
-                )
-
-                val result = printerRepository.printInvoiceReceipt(receipt)
-                if (result.isSuccess) {
-                    _printSuccess.value = true
-                } else {
-                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Printer not connected. Please pair via Settings."
-                }
-            } catch (e: Exception) {
-                _errorMessage.value = "Printing error: ${e.message}"
-            } finally {
-                _isPrinting.value = false
-            }
+            val result = printerRepository.printInvoice(invoice, items, profile)
+            _isPrinting.value = false
+            _printSuccess.value = result.isSuccess
+            onDone()
         }
     }
 
-    fun resetSaleState() {
-        _saleSuccess.value = false
-        discountPaise.value = 0L
-        cashReceivedPaise.value = 0L
-        customerName.value = ""
-        customerPhone.value = ""
-        resumedDraftInvoiceNumber = null
-        lastCompletedInvoice = null
-        lastCompletedItems = emptyList()
+    fun printReceipt(cartItems: List<CartItem>, subtotal: Money) {
+        printLastReceipt()
+    }
+
+    fun holdSaleAsDraft(cartItems: List<CartItem>, subtotal: Money, onSuccess: () -> Unit) {
+        holdDraft(cartItems, subtotal, onSuccess)
     }
 
     fun clearError() {
+        clearMessages()
+    }
+
+    fun clearMessages() {
         _errorMessage.value = null
+        _saleSuccess.value = false
+        _printSuccess.value = false
     }
 }

@@ -8,6 +8,7 @@ data class AppStrings(
     val navHome: String,
     val navProducts: String,
     val navInvoices: String,
+    val navReports: String,
     val navMore: String,
 
     // topHeader
@@ -68,6 +69,7 @@ val EnStrings = AppStrings(
     navHome = "Home",
     navProducts = "Products",
     navInvoices = "Invoices",
+    navReports = "Reports",
     navMore = "More",
     appSubtitle = "Billing & POS",
     quickAddProduct = "Add Product",
@@ -116,6 +118,7 @@ val BnStrings = AppStrings(
     navHome = "হোম",
     navProducts = "পণ্যসমূহ",
     navInvoices = "ইনভয়েস",
+    navReports = "রিপোর্ট",
     navMore = "আরও",
     appSubtitle = "বিলিং ও পিওএস",
     quickAddProduct = "পণ্য যোগ",
@@ -164,6 +167,7 @@ val HiStrings = AppStrings(
     navHome = "होम",
     navProducts = "उत्पाद",
     navInvoices = "इनवॉइस",
+    navReports = "रिपोर्ट्स",
     navMore = "अन्य",
     appSubtitle = "बिलिंग और पीओएस",
     quickAddProduct = "उत्पाद जोड़ें",

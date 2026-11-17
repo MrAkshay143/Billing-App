@@ -1,5 +1,7 @@
 package com.billing.app.domain.repository
 
+import com.billing.app.data.local.dao.CategorySalesSummary
+import com.billing.app.data.local.dao.TopProductSummary
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
 import com.billing.app.data.local.entity.InvoiceStatus
@@ -7,16 +9,23 @@ import kotlinx.coroutines.flow.Flow
 
 interface InvoiceRepository {
     fun getAllInvoices(): Flow<List<InvoiceEntity>>
+    fun getInvoicesByType(type: String): Flow<List<InvoiceEntity>>
     fun getInvoicesByStatus(status: InvoiceStatus): Flow<List<InvoiceEntity>>
     fun getInvoicesSince(startTime: Long): Flow<List<InvoiceEntity>>
     fun getInvoicesBetween(startTime: Long, endTime: Long): Flow<List<InvoiceEntity>>
-    fun searchInvoices(query: String, status: InvoiceStatus? = null): Flow<List<InvoiceEntity>>
+    fun searchInvoices(query: String, status: InvoiceStatus? = null, type: String? = null): Flow<List<InvoiceEntity>>
     fun getTotalInvoiceCount(): Flow<Int>
     fun getInvoiceCountBetween(startTime: Long, endTime: Long): Flow<Int>
     fun getTotalSalesBetween(startTime: Long, endTime: Long): Flow<Long>
+    fun getTotalItemsSoldBetween(startTime: Long, endTime: Long): Flow<Int>
+    fun getTotalItemsSoldAllTime(): Flow<Int>
     fun getAverageBillBetween(startTime: Long, endTime: Long): Flow<Double>
     fun getCreditDuesInvoices(): Flow<List<InvoiceEntity>>
     fun getTotalDuePaise(): Flow<Long>
+    fun getPendingBillBetween(startTime: Long, endTime: Long): Flow<Long>
+    fun getInvoicesByCustomerPhone(phone: String): Flow<List<InvoiceEntity>>
+    fun getTopSellingProducts(startTime: Long, endTime: Long, limit: Int = 10): Flow<List<TopProductSummary>>
+    fun getSalesByCategory(startTime: Long, endTime: Long): Flow<List<CategorySalesSummary>>
 
     suspend fun getInvoiceByNumber(invoiceNumber: String): InvoiceEntity?
     suspend fun getInvoiceItems(invoiceNumber: String): List<InvoiceItemEntity>

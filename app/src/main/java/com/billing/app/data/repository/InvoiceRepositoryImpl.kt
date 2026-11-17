@@ -2,6 +2,8 @@ package com.billing.app.data.repository
 
 import androidx.room.withTransaction
 import com.billing.app.core.database.AppDatabase
+import com.billing.app.data.local.dao.CategorySalesSummary
+import com.billing.app.data.local.dao.TopProductSummary
 import com.billing.app.data.local.entity.InvoiceCounterEntity
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
@@ -20,6 +22,9 @@ class InvoiceRepositoryImpl(
     override fun getAllInvoices(): Flow<List<InvoiceEntity>> =
         database.invoiceDao().getAllInvoices()
 
+    override fun getInvoicesByType(type: String): Flow<List<InvoiceEntity>> =
+        database.invoiceDao().getInvoicesByType(type)
+
     override fun getInvoicesByStatus(status: InvoiceStatus): Flow<List<InvoiceEntity>> =
         database.invoiceDao().getInvoicesByStatus(status)
 
@@ -29,16 +34,16 @@ class InvoiceRepositoryImpl(
     override fun getInvoicesBetween(startTime: Long, endTime: Long): Flow<List<InvoiceEntity>> =
         database.invoiceDao().getInvoicesBetween(startTime, endTime)
 
-    override fun searchInvoices(query: String, status: InvoiceStatus?): Flow<List<InvoiceEntity>> {
+    override fun searchInvoices(query: String, status: InvoiceStatus?, type: String?): Flow<List<InvoiceEntity>> {
         val escaped = query
             .replace("\\", "\\\\")
             .replace("%", "\\%")
             .replace("_", "\\_")
 
-        return if (status != null) {
-            database.invoiceDao().searchInvoicesByStatus(escaped, status)
-        } else {
-            database.invoiceDao().searchInvoices(escaped)
+        return when {
+            status != null -> database.invoiceDao().searchInvoicesByStatus(escaped, status)
+            !type.isNullOrBlank() && !type.equals("ALL", ignoreCase = true) -> database.invoiceDao().searchInvoicesByType(escaped, type)
+            else -> database.invoiceDao().searchInvoices(escaped)
         }
     }
 
@@ -51,6 +56,12 @@ class InvoiceRepositoryImpl(
     override fun getTotalSalesBetween(startTime: Long, endTime: Long): Flow<Long> =
         database.invoiceDao().getTotalSalesBetween(startTime, endTime)
 
+    override fun getTotalItemsSoldBetween(startTime: Long, endTime: Long): Flow<Int> =
+        database.invoiceDao().getTotalItemsSoldBetween(startTime, endTime)
+
+    override fun getTotalItemsSoldAllTime(): Flow<Int> =
+        database.invoiceDao().getTotalItemsSoldAllTime()
+
     override fun getAverageBillBetween(startTime: Long, endTime: Long): Flow<Double> =
         database.invoiceDao().getAverageBillBetween(startTime, endTime)
 
@@ -59,6 +70,18 @@ class InvoiceRepositoryImpl(
 
     override fun getTotalDuePaise(): Flow<Long> =
         database.invoiceDao().getTotalDuePaise()
+
+    override fun getPendingBillBetween(startTime: Long, endTime: Long): Flow<Long> =
+        database.invoiceDao().getPendingBillBetween(startTime, endTime)
+
+    override fun getInvoicesByCustomerPhone(phone: String): Flow<List<InvoiceEntity>> =
+        database.invoiceDao().getInvoicesByCustomerPhone(phone)
+
+    override fun getTopSellingProducts(startTime: Long, endTime: Long, limit: Int): Flow<List<TopProductSummary>> =
+        database.invoiceDao().getTopSellingProducts(startTime, endTime, limit)
+
+    override fun getSalesByCategory(startTime: Long, endTime: Long): Flow<List<CategorySalesSummary>> =
+        database.invoiceDao().getSalesByCategory(startTime, endTime)
 
     override suspend fun getInvoiceByNumber(invoiceNumber: String): InvoiceEntity? =
         database.invoiceDao().getInvoiceByNumber(invoiceNumber)

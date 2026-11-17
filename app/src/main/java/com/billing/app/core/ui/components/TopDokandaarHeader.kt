@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,56 +29,61 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.billing.app.core.ui.theme.HeaderGradientEnd
-import com.billing.app.core.ui.theme.HeaderGradientStart
+import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.NotificationBadge
+import com.billing.app.core.ui.theme.PrimaryPurple
+import com.billing.app.core.ui.theme.SecondaryPurple
 
 @Composable
 fun TopDokandaarHeader(
-    storeName: String = "Dokandaar",
+    storeName: String = "My Store",
     subtitle: String = "Billing & POS",
+    icon: ImageVector = Icons.Default.Storefront,
     hasUnreadNotification: Boolean = true,
     navigationIcon: (@Composable () -> Unit)? = null,
+    onSearchClick: (() -> Unit)? = null,
     onNotificationClick: () -> Unit = {},
-    onMenuClick: () -> Unit = {}
+    onMenuClick: () -> Unit = {},
+    actions: (@Composable RowScope.() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+            .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
             .background(
                 Brush.linearGradient(
-                    colors = listOf(HeaderGradientStart, HeaderGradientEnd)
+                    colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
                 )
             )
             .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: Back button or Store Logo + Title & Subtitle
+            // Left: Navigation Icon or Logo + Title & Subtitle
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (navigationIcon != null) {
                     navigationIcon()
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.18f)),
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color.White.copy(alpha = 0.20f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Storefront,
+                            imageVector = icon,
                             contentDescription = "Store",
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
@@ -88,7 +95,7 @@ fun TopDokandaarHeader(
                 Column {
                     Text(
                         text = storeName,
-                        fontSize = 20.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         letterSpacing = 0.2.sp
@@ -102,46 +109,64 @@ fun TopDokandaarHeader(
                 }
             }
 
-            // Notification Bell + Overflow Menu
+            // Right: Actions (Search, Notifications, Menu, or Custom)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .clickable { onNotificationClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    if (hasUnreadNotification) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .align(Alignment.TopEnd)
-                                .padding(end = 4.dp, top = 4.dp)
-                                .clip(CircleShape)
-                                .background(NotificationBadge)
+                if (actions != null) {
+                    actions()
+                } else {
+                    if (onSearchClick != null) {
+                        IconButton(
+                            onClick = onSearchClick,
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .clickable { onNotificationClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        if (hasUnreadNotification) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .align(Alignment.TopEnd)
+                                    .padding(end = 4.dp, top = 4.dp)
+                                    .clip(CircleShape)
+                                    .background(NotificationBadge)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Menu",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
-                }
-
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Menu",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
                 }
             }
         }

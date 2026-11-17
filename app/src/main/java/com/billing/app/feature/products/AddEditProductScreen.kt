@@ -25,28 +25,29 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,10 +66,7 @@ import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
-import com.billing.app.core.ui.theme.TextMutedColor
 import com.billing.app.domain.model.Product
-import java.io.File
-import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,30 +80,33 @@ fun AddEditProductScreen(
 ) {
     val context = LocalContext.current
     val isSaving by viewModel.isSaving.collectAsState()
-    val productKey = existingProduct?.id ?: "new_product"
-    var name by rememberSaveable(key = "prod_name_$productKey") {
-        mutableStateOf(existingProduct?.name ?: "")
-    }
-    var barcode by rememberSaveable(key = "prod_barcode_$productKey") {
-        mutableStateOf(existingProduct?.barcode ?: "")
-    }
-    var priceStr by rememberSaveable(key = "prod_price_$productKey") {
-        mutableStateOf(existingProduct?.price?.format(includeSymbol = false) ?: "")
-    }
-    var stockStr by rememberSaveable(key = "prod_stock_$productKey") {
-        mutableStateOf(existingProduct?.stock?.toString() ?: "0")
-    }
-    var imageUri by rememberSaveable(key = "prod_image_$productKey") {
-        mutableStateOf(existingProduct?.imageUri)
-    }
+
+    val name by viewModel.draftName.collectAsState()
+    val barcode by viewModel.draftBarcode.collectAsState()
+    val priceStr by viewModel.draftPrice.collectAsState()
+    val stockStr by viewModel.draftStock.collectAsState()
+    val category by viewModel.draftCategory.collectAsState()
+    val sku by viewModel.draftSku.collectAsState()
+    val imageUri by viewModel.draftImageUri.collectAsState()
+    val unit by viewModel.draftUnit.collectAsState()
+
+    var categoryExpanded by remember { mutableStateOf(false) }
+    val categoriesList = listOf(
+        "Grocery", "Oil & Ghee", "Pulses & Dal", "Spices & Masala",
+        "Snacks & Biscuits", "Beverages", "Household Items", "Dairy Products",
+        "Personal Care", "Fruits & Vegetables", "Others"
+    )
 
     LaunchedEffect(existingProduct) {
-        if (existingProduct != null && name.isBlank() && barcode.isBlank() && priceStr.isBlank()) {
-            name = existingProduct.name
-            barcode = existingProduct.barcode
-            priceStr = existingProduct.price.format(includeSymbol = false)
-            stockStr = existingProduct.stock.toString()
-            imageUri = existingProduct.imageUri
+        if (existingProduct != null) {
+            viewModel.setDraftFromProduct(existingProduct)
+        }
+    }
+
+    LaunchedEffect(scannedBarcode) {
+        if (!scannedBarcode.isNullOrBlank()) {
+            viewModel.setScannedBarcode(scannedBarcode)
+            onBarcodeConsumed()
         }
     }
 
@@ -113,7 +114,7 @@ fun AddEditProductScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Gallery Picker Launcher with downscaling and cleanup
+    // Gallery Picker Launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -124,14 +125,14 @@ fun AddEditProductScreen(
                 if (oldPath != null && oldPath != existingProduct?.imageUri) {
                     com.billing.app.core.util.ImageUtil.deleteImageFile(oldPath)
                 }
-                imageUri = newPath
+                viewModel.draftImageUri.value = newPath
             } else {
                 com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Failed to process image")
             }
         }
     }
 
-    // Camera Capture Launcher with cleanup
+    // Camera Capture Launcher
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
@@ -142,17 +143,10 @@ fun AddEditProductScreen(
                 if (oldPath != null && oldPath != existingProduct?.imageUri) {
                     com.billing.app.core.util.ImageUtil.deleteImageFile(oldPath)
                 }
-                imageUri = newPath
+                viewModel.draftImageUri.value = newPath
             } else {
                 com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Failed to capture image")
             }
-        }
-    }
-
-    LaunchedEffect(scannedBarcode) {
-        if (!scannedBarcode.isNullOrBlank()) {
-            barcode = scannedBarcode
-            onBarcodeConsumed()
         }
     }
 
@@ -191,9 +185,28 @@ fun AddEditProductScreen(
                         isLoading = isSaving,
                         onClick = {
                             if (existingProduct == null) {
-                                viewModel.addProduct(name, barcode, priceStr, stockStr, imageUri)
+                                viewModel.addProduct(
+                                    name = name,
+                                    barcode = barcode,
+                                    priceStr = priceStr,
+                                    stockStr = stockStr,
+                                    category = category,
+                                    sku = sku,
+                                    imageUri = imageUri,
+                                    unit = unit
+                                )
                             } else {
-                                viewModel.updateProduct(existingProduct.id, name, barcode, priceStr, stockStr, imageUri)
+                                viewModel.updateProduct(
+                                    id = existingProduct.id,
+                                    name = name,
+                                    barcode = barcode,
+                                    priceStr = priceStr,
+                                    stockStr = stockStr,
+                                    category = category,
+                                    sku = sku,
+                                    imageUri = imageUri,
+                                    unit = unit
+                                )
                             }
                         }
                     )
@@ -264,7 +277,7 @@ fun AddEditProductScreen(
                                 Surface(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
-                                        .clickable { imageUri = null },
+                                        .clickable { viewModel.draftImageUri.value = null },
                                     color = Color(0xFFFEE2E2)
                                 ) {
                                     Row(
@@ -367,14 +380,14 @@ fun AddEditProductScreen(
             InputField(
                 label = "Product Name *",
                 value = name,
-                onValueChange = { name = it },
-                placeholder = "e.g. Amul Milk 500 ml, Maggi"
+                onValueChange = { viewModel.draftName.value = it },
+                placeholder = "e.g. Aashirvaad Atta (5 kg)"
             )
 
             InputField(
                 label = "Barcode *",
                 value = barcode,
-                onValueChange = { barcode = it },
+                onValueChange = { viewModel.draftBarcode.value = it },
                 placeholder = "Scan or type barcode",
                 trailingIcon = {
                     IconButton(onClick = onNavigateToScanner) {
@@ -388,17 +401,70 @@ fun AddEditProductScreen(
             )
 
             InputField(
-                label = "Price (₹) *",
+                label = "SKU Code (Optional)",
+                value = sku,
+                onValueChange = { viewModel.draftSku.value = it },
+                placeholder = "e.g. ATT-5KG"
+            )
+
+            // Category Selector
+            Text(
+                text = "Category",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = DokandaarTheme.textMuted
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = HeaderGradientStart,
+                        unfocusedBorderColor = BorderColor,
+                        focusedContainerColor = DokandaarTheme.cardBackground,
+                        unfocusedContainerColor = DokandaarTheme.cardBackground
+                    )
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    categoriesList.forEach { cat ->
+                        DropdownMenuItem(
+                            text = { Text(cat) },
+                            onClick = {
+                                viewModel.draftCategory.value = cat
+                                categoryExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            InputField(
+                label = "Selling Price (₹) *",
                 value = priceStr,
-                onValueChange = { priceStr = it },
+                onValueChange = { viewModel.draftPrice.value = it },
                 placeholder = "0.00",
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
 
             InputField(
-                label = "Initial Stock",
+                label = "Initial Stock Quantity",
                 value = stockStr,
-                onValueChange = { stockStr = it },
+                onValueChange = { viewModel.draftStock.value = it },
                 placeholder = "0",
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )

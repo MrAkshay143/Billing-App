@@ -21,6 +21,7 @@ import com.billing.app.feature.checkout.CheckoutViewModel
 import com.billing.app.feature.home.HomeViewModel
 import com.billing.app.feature.invoices.InvoiceViewModel
 import com.billing.app.feature.products.ProductViewModel
+import com.billing.app.feature.reports.ReportsViewModel
 import com.billing.app.feature.settings.SettingsViewModel
 import com.billing.app.navigation.AppNavHost
 import java.util.Locale
@@ -49,7 +50,7 @@ class MainActivity : ComponentActivity() {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return HomeViewModel(app.productRepository, app.soundHapticManager, app.shopRepository) as T
+                    return HomeViewModel(app.productRepository, app.invoiceRepository, app.customerRepository, app.shopRepository) as T
                 }
             }
         )[HomeViewModel::class.java]
@@ -83,6 +84,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         )[InvoiceViewModel::class.java]
+
+        val reportsViewModel = ViewModelProvider(
+            this,
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return ReportsViewModel(app.invoiceRepository, app.productRepository) as T
+                }
+            }
+        )[ReportsViewModel::class.java]
 
         val settingsViewModel = ViewModelProvider(
             this,
@@ -122,7 +133,13 @@ class MainActivity : ComponentActivity() {
                         checkoutViewModel = checkoutViewModel,
                         productViewModel = productViewModel,
                         invoiceViewModel = invoiceViewModel,
+                        reportsViewModel = reportsViewModel,
                         settingsViewModel = settingsViewModel,
+                        cartManager = app.cartManager,
+                        customerRepository = app.customerRepository,
+                        supplierRepository = app.supplierRepository,
+                        expenseRepository = app.expenseRepository,
+                        categoryRepository = app.categoryRepository,
                         soundHapticManager = app.soundHapticManager
                     )
                 }

@@ -13,11 +13,21 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.billing.app.core.audio.SoundHapticManager
+import com.billing.app.core.cart.CartManager
 import com.billing.app.core.ui.components.DokandaarTab
+import com.billing.app.domain.repository.CategoryRepository
+import com.billing.app.domain.repository.CustomerRepository
+import com.billing.app.domain.repository.ExpenseRepository
+import com.billing.app.domain.repository.SupplierRepository
+import com.billing.app.feature.categories.CategoriesScreen
 import com.billing.app.feature.checkout.CheckoutScreen
 import com.billing.app.feature.checkout.CheckoutViewModel
+import com.billing.app.feature.checkout.SaleScreen
+import com.billing.app.feature.customers.CustomersScreen
+import com.billing.app.feature.expenses.ExpensesScreen
 import com.billing.app.feature.home.HomeScreen
 import com.billing.app.feature.home.HomeViewModel
+import com.billing.app.feature.importexport.ImportExportScreen
 import com.billing.app.feature.invoices.InvoiceViewModel
 import com.billing.app.feature.invoices.InvoicesScreen
 import com.billing.app.feature.more.MoreScreen
@@ -33,9 +43,12 @@ import com.billing.app.feature.more.subscreens.UserAccessScreen
 import com.billing.app.feature.products.AddEditProductScreen
 import com.billing.app.feature.products.ProductListScreen
 import com.billing.app.feature.products.ProductViewModel
+import com.billing.app.feature.reports.ReportsScreen
+import com.billing.app.feature.reports.ReportsViewModel
 import com.billing.app.feature.scanner.FullScannerScreen
 import com.billing.app.feature.settings.SettingsViewModel
 import com.billing.app.feature.splash.SplashScreen
+import com.billing.app.feature.suppliers.SuppliersScreen
 
 @Composable
 fun AppNavHost(
@@ -44,14 +57,16 @@ fun AppNavHost(
     checkoutViewModel: CheckoutViewModel,
     productViewModel: ProductViewModel,
     invoiceViewModel: InvoiceViewModel,
+    reportsViewModel: ReportsViewModel,
     settingsViewModel: SettingsViewModel,
+    cartManager: CartManager,
+    customerRepository: CustomerRepository,
+    supplierRepository: SupplierRepository,
+    expenseRepository: ExpenseRepository,
+    categoryRepository: CategoryRepository,
     soundHapticManager: SoundHapticManager
 ) {
-    val homeUiState by homeViewModel.uiState.collectAsState()
-    val totalAmount by homeViewModel.totalAmount.collectAsState()
-
-    var scannedBarcodeForAddProduct by rememberSaveable { mutableStateOf<String?>(null) }
-    var scanTargetMode by rememberSaveable { mutableStateOf("add") } // "add" or "search"
+    var scanTargetMode by rememberSaveable { mutableStateOf("cart") } // "cart", "add", "search"
 
     fun navigateToTab(tab: DokandaarTab) {
         when (tab) {
@@ -68,6 +83,11 @@ fun AppNavHost(
             }
             DokandaarTab.INVOICES -> {
                 navController.navigate(Screen.Invoices.route) {
+                    launchSingleTop = true
+                }
+            }
+            DokandaarTab.REPORTS -> {
+                navController.navigate(Screen.Reports.route) {
                     launchSingleTop = true
                 }
             }
@@ -96,36 +116,54 @@ fun AppNavHost(
         composable(Screen.Home.route) {
             HomeScreen(
                 viewModel = homeViewModel,
-                onNavigateToCheckout = { navController.navigate(Screen.Checkout.route) },
+                onNavigateToSale = { navController.navigate(Screen.Sale.route) },
                 onNavigateToProducts = { navigateToTab(DokandaarTab.PRODUCTS) },
                 onNavigateToInvoices = { navigateToTab(DokandaarTab.INVOICES) },
-                onNavigateToSettings = { navigateToTab(DokandaarTab.MORE) },
-                onNavigateToAddProduct = {
-                    scannedBarcodeForAddProduct = null
-                    navController.navigate(Screen.AddProduct.route)
+                onNavigateToReports = { navigateToTab(DokandaarTab.REPORTS) },
+                onNavigateToMore = { navigateToTab(DokandaarTab.MORE) },
+                onNavigateToScanner = {
+                    scanTargetMode = "cart"
+                    navController.navigate(Screen.FullScanner.route)
                 },
-                onNavigateToPrinter = { navController.navigate(Screen.PrinterSetup.route) }
+                onNavigateToPrinter = { navController.navigate(Screen.PrinterSetup.route) },
+                onNavigateToCustomers = { navController.navigate(Screen.Customers.route) },
+                onNavigateToImportExport = { navController.navigate(Screen.ImportExport.route) }
+            )
+        }
+
+        composable(Screen.Sale.route) {
+            SaleScreen(
+                viewModel = checkoutViewModel,
+                cartManager = cartManager,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToScanner = {
+                    scanTargetMode = "cart"
+                    navController.navigate(Screen.FullScanner.route)
+                },
+                onSaleCompleted = {
+                    cartManager.clearCart()
+                    navController.navigate(Screen.Invoices.route) {
+                        popUpTo(Screen.Home.route) { inclusive = false }
+                    }
+                }
             )
         }
 
         composable(Screen.Checkout.route) {
-            CheckoutScreen(
+            SaleScreen(
                 viewModel = checkoutViewModel,
-                cartItems = homeUiState.cartItems,
-                subtotalAmount = totalAmount,
-                onNavigateBack = {
-                    // DO NOT clear cart on back navigation
-                    navController.popBackStack()
+                cartManager = cartManager,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToScanner = {
+                    scanTargetMode = "cart"
+                    navController.navigate(Screen.FullScanner.route)
                 },
                 onSaleCompleted = {
-                    // Reset cart and checkout state on successful sale
-                    checkoutViewModel.resetSaleState()
-                    homeViewModel.clearCart()
+                    cartManager.clearCart()
                     navController.navigate(Screen.Invoices.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
-                },
-                onNavigateToTab = { tab -> navigateToTab(tab) }
+                }
             )
         }
 
@@ -134,7 +172,7 @@ fun AppNavHost(
                 viewModel = productViewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAddProduct = {
-                    scannedBarcodeForAddProduct = null
+                    productViewModel.clearDraft()
                     navController.navigate(Screen.AddProduct.route)
                 },
                 onNavigateToEditProduct = { productId ->
@@ -155,11 +193,20 @@ fun AppNavHost(
                 onNavigateToHome = { navigateToTab(DokandaarTab.HOME) },
                 onNavigateToSettings = { navigateToTab(DokandaarTab.MORE) },
                 onNavigateToSalesReport = { navController.navigate(Screen.SalesReport.route) },
+                onNavigateToNewSale = { navController.navigate(Screen.Sale.route) },
                 onResumeDraft = { items, draftInvoiceNumber ->
-                    homeViewModel.loadCartItems(items)
-                    checkoutViewModel.setResumedDraft(draftInvoiceNumber)
-                    navController.navigate(Screen.Checkout.route)
+                    cartManager.setResumedDraft(draftInvoiceNumber, items)
+                    navController.navigate(Screen.Sale.route)
                 }
+            )
+        }
+
+        composable(Screen.Reports.route) {
+            ReportsScreen(
+                viewModel = reportsViewModel,
+                onNavigateToTab = { tab -> navigateToTab(tab) },
+                onNavigateToSalesReport = { navController.navigate(Screen.SalesReport.route) },
+                onNavigateToStockReport = { navigateToTab(DokandaarTab.PRODUCTS) }
             )
         }
 
@@ -176,11 +223,22 @@ fun AppNavHost(
                 onNavigateToLanguage = { navController.navigate(Screen.Language.route) },
                 onNavigateToAbout = { navController.navigate(Screen.About.route) },
                 onNavigateToInvoices = { navigateToTab(DokandaarTab.INVOICES) },
-                onNavigateToTab = { tab -> navigateToTab(tab) }
+                onNavigateToTab = { tab -> navigateToTab(tab) },
+                onNavigateToScanner = {
+                    scanTargetMode = "cart"
+                    navController.navigate(Screen.FullScanner.route)
+                },
+                onNavigateToCustomers = { navController.navigate(Screen.Customers.route) },
+                onNavigateToSuppliers = { navController.navigate(Screen.Suppliers.route) },
+                onNavigateToExpenses = { navController.navigate(Screen.Expenses.route) },
+                onNavigateToCategories = { navController.navigate(Screen.Categories.route) },
+                onNavigateToImportExport = { navController.navigate(Screen.ImportExport.route) },
+                onNavigateToPrivacyPolicy = { navController.navigate(Screen.PrivacyPolicy.route) },
+                onNavigateToTerms = { navController.navigate(Screen.TermsConditions.route) }
             )
         }
 
-        // Subscreens for More
+        // Subscreens
         composable(Screen.StoreProfile.route) {
             StoreProfileScreen(
                 viewModel = settingsViewModel,
@@ -244,12 +302,62 @@ fun AppNavHost(
             )
         }
 
+        composable(Screen.Customers.route) {
+            CustomersScreen(
+                customerRepository = customerRepository,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Suppliers.route) {
+            SuppliersScreen(
+                supplierRepository = supplierRepository,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Expenses.route) {
+            ExpensesScreen(
+                expenseRepository = expenseRepository,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Categories.route) {
+            CategoriesScreen(
+                categoryRepository = categoryRepository,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ImportExport.route) {
+            ImportExportScreen(
+                productRepository = productViewModel.let {
+                    // productRepository from BillingApplication
+                    com.billing.app.BillingApplication.instance.productRepository
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.PrivacyPolicy.route) {
+            AboutDokandaarScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.TermsConditions.route) {
+            AboutDokandaarScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Screen.AddProduct.route) {
             AddEditProductScreen(
                 viewModel = productViewModel,
                 existingProduct = null,
-                scannedBarcode = scannedBarcodeForAddProduct,
-                onBarcodeConsumed = { scannedBarcodeForAddProduct = null },
+                scannedBarcode = null,
+                onBarcodeConsumed = {},
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToScanner = {
                     scanTargetMode = "add"
@@ -269,8 +377,8 @@ fun AppNavHost(
             AddEditProductScreen(
                 viewModel = productViewModel,
                 existingProduct = product,
-                scannedBarcode = scannedBarcodeForAddProduct,
-                onBarcodeConsumed = { scannedBarcodeForAddProduct = null },
+                scannedBarcode = null,
+                onBarcodeConsumed = {},
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToScanner = {
                     scanTargetMode = "add"
@@ -281,16 +389,22 @@ fun AppNavHost(
 
         composable(Screen.FullScanner.route) {
             FullScannerScreen(
-                soundHapticManager = soundHapticManager,
+                cartManager = cartManager,
                 onNavigateBack = { navController.popBackStack() },
-                onBarcodeCaptured = { barcode ->
-                    if (scanTargetMode == "add") {
-                        scannedBarcodeForAddProduct = barcode
-                    } else {
-                        productViewModel.searchQuery.value = barcode
+                onDoneScanning = {
+                    navController.navigate(Screen.Sale.route)
+                },
+                onBarcodeCaptured = if (scanTargetMode == "add" || scanTargetMode == "search") {
+                    { barcode ->
+                        if (scanTargetMode == "add") {
+                            productViewModel.setScannedBarcode(barcode)
+                        } else {
+                            productViewModel.searchQuery.value = barcode
+                        }
+                        scanTargetMode = "cart"
+                        navController.popBackStack()
                     }
-                    navController.popBackStack()
-                }
+                } else null
             )
         }
     }

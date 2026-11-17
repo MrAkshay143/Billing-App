@@ -1,15 +1,5 @@
 package com.billing.app.feature.home
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,572 +14,616 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.FlashlightOff
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.filled.VideocamOff
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.billing.app.core.scanner.BarcodeAnalyzer
-import com.billing.app.core.scanner.BarcodeDebounceManager
-import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
-import com.billing.app.core.ui.components.FloatingCheckoutBar
-import com.billing.app.core.ui.components.ProductThumbnail
-import com.billing.app.core.ui.components.QuickActionBar
 import com.billing.app.core.ui.components.TopDokandaarHeader
-import com.billing.app.core.ui.components.ViewfinderLaserOverlay
-import com.billing.app.core.ui.theme.AddProductBg
-import com.billing.app.core.ui.theme.AddProductContent
-import com.billing.app.core.ui.theme.BorderColor
+import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
-import com.billing.app.core.ui.theme.HeaderGradientStart
-import com.billing.app.core.ui.theme.Slate800Color
-import com.billing.app.core.ui.theme.TextMutedColor
-import com.billing.app.core.ui.util.FeedbackManager
-import com.billing.app.core.ui.util.debouncedClickable
-import com.billing.app.domain.model.CartItem
-import java.util.concurrent.Executors
+import com.billing.app.core.ui.theme.PastelBlueBg
+import com.billing.app.core.ui.theme.PastelBlueContent
+import com.billing.app.core.ui.theme.PastelGreenBg
+import com.billing.app.core.ui.theme.PastelGreenContent
+import com.billing.app.core.ui.theme.PastelIndigoBg
+import com.billing.app.core.ui.theme.PastelIndigoContent
+import com.billing.app.core.ui.theme.PastelOrangeBg
+import com.billing.app.core.ui.theme.PastelOrangeContent
+import com.billing.app.core.ui.theme.PastelPinkBg
+import com.billing.app.core.ui.theme.PastelPinkContent
+import com.billing.app.core.ui.theme.PastelPurpleBg
+import com.billing.app.core.ui.theme.PastelPurpleContent
+import com.billing.app.core.ui.theme.PastelSlateBg
+import com.billing.app.core.ui.theme.PastelSlateContent
+import com.billing.app.core.ui.theme.PastelTealBg
+import com.billing.app.core.ui.theme.PastelTealContent
+import com.billing.app.core.ui.theme.PrimaryPurple
+import com.billing.app.core.ui.theme.SecondaryPurple
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNavigateToCheckout: () -> Unit,
+    onNavigateToSale: () -> Unit,
     onNavigateToProducts: () -> Unit,
     onNavigateToInvoices: () -> Unit,
-    onNavigateToSettings: () -> Unit,
-    onNavigateToAddProduct: () -> Unit,
-    onNavigateToPrinter: () -> Unit = onNavigateToSettings
+    onNavigateToReports: () -> Unit,
+    onNavigateToMore: () -> Unit,
+    onNavigateToScanner: () -> Unit,
+    onNavigateToPrinter: () -> Unit,
+    onNavigateToCustomers: () -> Unit,
+    onNavigateToImportExport: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val totalAmount by viewModel.totalAmount.collectAsState()
-    val totalItems by viewModel.totalItems.collectAsState()
     val storeName by viewModel.storeName.collectAsState()
-    val strings = appStrings()
-    val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
-    var showClearConfirmation by rememberSaveable { mutableStateOf(false) }
+    val totalSales by viewModel.totalSales.collectAsState()
+    val totalInvoices by viewModel.totalInvoices.collectAsState()
+    val totalProducts by viewModel.totalProducts.collectAsState()
+    val totalCustomers by viewModel.totalCustomers.collectAsState()
+    val selectedPeriod by viewModel.selectedPeriod.collectAsState()
 
-    var hasCameraPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasCameraPermission = isGranted
-    }
-
-    LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { error ->
-            FeedbackManager.showToast(context, error)
-            snackbarHostState.showSnackbar(error)
-            viewModel.clearError()
-        }
-    }
-
-    if (showClearConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showClearConfirmation = false },
-            title = { Text("Clear Shopping Cart?", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to remove all items from the current cart?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.clearCart()
-                        showClearConfirmation = false
-                    }
-                ) {
-                    Text("Clear All", color = Color.Red, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearConfirmation = false }) {
-                    Text("Cancel", color = Color.Gray)
-                }
-            }
-        )
-    }
+    var showPeriodMenu by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = DokandaarTheme.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopDokandaarHeader(
                 storeName = storeName,
-                subtitle = strings.appSubtitle,
-                onNotificationClick = onNavigateToInvoices,
-                onMenuClick = onNavigateToSettings
+                subtitle = "Billing & POS",
+                onSearchClick = onNavigateToProducts,
+                onNotificationClick = { /* Handled in settings/more */ },
+                onMenuClick = onNavigateToMore
             )
         },
         bottomBar = {
-            Column {
-                FloatingCheckoutBar(
-                    totalItems = totalItems,
-                    totalAmount = totalAmount,
-                    onCheckoutClick = onNavigateToCheckout
-                )
-                BottomDokandaarNav(
-                    selectedTab = DokandaarTab.HOME,
-                    onTabSelected = { tab ->
-                        when (tab) {
-                            DokandaarTab.HOME -> { /* Already on Home */ }
-                            DokandaarTab.PRODUCTS -> onNavigateToProducts()
-                            DokandaarTab.INVOICES -> onNavigateToInvoices()
-                            DokandaarTab.MORE -> onNavigateToSettings()
-                        }
+            BottomDokandaarNav(
+                selectedTab = DokandaarTab.HOME,
+                onTabSelected = { tab ->
+                    when (tab) {
+                        DokandaarTab.HOME -> { /* Already here */ }
+                        DokandaarTab.PRODUCTS -> onNavigateToProducts()
+                        DokandaarTab.INVOICES -> onNavigateToInvoices()
+                        DokandaarTab.REPORTS -> onNavigateToReports()
+                        DokandaarTab.MORE -> onNavigateToMore()
                     }
-                )
-            }
-        }
+                }
+            )
+        },
+        containerColor = DokandaarTheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(DokandaarTheme.background)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Scanner Viewfinder Card (Mockup 2.1)
+            // 1. Hero Promotional Card (Mockup 1)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(205.dp)
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(22.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Black)
+                    .clip(RoundedCornerShape(22.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (hasCameraPermission && uiState.isCameraOn) {
-                        CameraPreviewView(
-                            isFlashOn = uiState.isFlashOn,
-                            onBarcodeDetected = { barcode ->
-                                viewModel.onBarcodeScanned(barcode)
-                            }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
+                            )
                         )
-                        ViewfinderLaserOverlay()
-                    } else if (!uiState.isCameraOn) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Slate800Color),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.VideocamOff,
-                                    contentDescription = null,
-                                    tint = Color.LightGray,
-                                    modifier = Modifier.size(44.dp)
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = "Camera is paused",
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = HeaderGradientStart,
-                                    modifier = Modifier.clickable { viewModel.toggleCamera() }
+                        .padding(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Manage Your Store",
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Billing, Products, Customers & Reports",
+                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White,
+                                shadowElevation = 2.dp,
+                                modifier = Modifier.clickable { onNavigateToSale() }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Turn on Camera",
-                                        color = Color.White,
-                                        fontSize = 12.sp,
+                                        text = "New Sale (POS)",
+                                        color = PrimaryPurple,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                        fontSize = 13.sp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        tint = PrimaryPurple,
+                                        modifier = Modifier.size(14.dp)
                                     )
                                 }
                             }
                         }
-                    } else {
+
+                        // Right POS Terminal Visual Illustration
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black),
+                                .size(88.dp)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(Color.White.copy(alpha = 0.18f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Camera permission required to scan",
-                                color = Color.White,
-                                fontSize = 13.sp
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Default.ShoppingCart,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(38.dp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "FAST POS",
+                                    color = Color.White,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
                         }
-                    }
-
-                    // Top-Right Floating Controls Column (Mockup: Settings, Flash, Pause)
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = 10.dp, end = 10.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OverlayActionButton(
-                            icon = Icons.Default.Settings,
-                            onClick = onNavigateToSettings
-                        )
-                        if (uiState.isCameraOn) {
-                            OverlayActionButton(
-                                icon = if (uiState.isFlashOn) Icons.Default.FlashlightOff else Icons.Default.FlashOn,
-                                onClick = { viewModel.toggleFlash() }
-                            )
-                        }
-                        OverlayActionButton(
-                            icon = if (uiState.isCameraOn) Icons.Default.Videocam else Icons.Default.VideocamOff,
-                            onClick = { viewModel.toggleCamera() }
-                        )
                     }
                 }
             }
 
-            // 4 Quick Action Cards (Add Product, Products, Invoices, Print)
-            QuickActionBar(
-                onAddProductClick = onNavigateToAddProduct,
-                onProductsClick = onNavigateToProducts,
-                onInvoicesClick = onNavigateToInvoices,
-                onPrintClick = onNavigateToPrinter
-            )
+            // 2. Quick Navigation Grid (8 Pastel Tiles)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Row 1
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.ShoppingCart,
+                        title = "New Sale",
+                        subtitle = "(POS)",
+                        bgColor = PastelPurpleBg,
+                        contentColor = PastelPurpleContent,
+                        onClick = onNavigateToSale
+                    )
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Inventory2,
+                        title = "Products",
+                        subtitle = "Manage Items",
+                        bgColor = PastelBlueBg,
+                        contentColor = PastelBlueContent,
+                        onClick = onNavigateToProducts
+                    )
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                        title = "Invoices",
+                        subtitle = "Sales & Returns",
+                        bgColor = PastelOrangeBg,
+                        contentColor = PastelOrangeContent,
+                        onClick = onNavigateToInvoices
+                    )
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Print,
+                        title = "Print",
+                        subtitle = "Bills & Reports",
+                        bgColor = PastelGreenBg,
+                        contentColor = PastelGreenContent,
+                        onClick = onNavigateToPrinter
+                    )
+                }
 
-            // Cart Section Header
-            Row(
+                // Row 2
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.People,
+                        title = "Customers",
+                        subtitle = "Manage",
+                        bgColor = PastelPinkBg,
+                        contentColor = PastelPinkContent,
+                        onClick = onNavigateToCustomers
+                    )
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.BarChart,
+                        title = "Reports",
+                        subtitle = "Sales & Stock",
+                        bgColor = PastelIndigoBg,
+                        contentColor = PastelIndigoContent,
+                        onClick = onNavigateToReports
+                    )
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.FileDownload,
+                        title = "Import/Export",
+                        subtitle = "Excel/CSV",
+                        bgColor = PastelTealBg,
+                        contentColor = PastelTealContent,
+                        onClick = onNavigateToImportExport
+                    )
+                    QuickNavTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Settings,
+                        title = "Settings",
+                        subtitle = "Store & App",
+                        bgColor = PastelSlateBg,
+                        contentColor = PastelSlateContent,
+                        onClick = onNavigateToMore
+                    )
+                }
+            }
+
+            // 3. Overview Section (Mockup 1)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.BarChart,
+                            contentDescription = null,
+                            tint = PrimaryPurple,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Overview",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DokandaarTheme.textPrimary
+                        )
+                    }
+
+                    // Period Filter Dropdown
+                    Box {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = DokandaarTheme.cardBackground,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+                            modifier = Modifier.clickable { showPeriodMenu = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = selectedPeriod.label,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = DokandaarTheme.textPrimary
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = DokandaarTheme.textMuted,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = showPeriodMenu,
+                            onDismissRequest = { showPeriodMenu = false }
+                        ) {
+                            OverviewPeriod.entries.forEach { period ->
+                                DropdownMenuItem(
+                                    text = { Text(period.label) },
+                                    onClick = {
+                                        viewModel.setPeriod(period)
+                                        showPeriodMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 2x2 KPI Cards
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OverviewKpiCard(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.ShoppingCart,
+                        iconBg = PastelGreenBg,
+                        iconTint = PastelGreenContent,
+                        title = "Total Sales",
+                        value = totalSales.format()
+                    )
+                    OverviewKpiCard(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Description,
+                        iconBg = PastelBlueBg,
+                        iconTint = PastelBlueContent,
+                        title = "Total Invoices",
+                        value = totalInvoices.toString()
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OverviewKpiCard(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Inventory2,
+                        iconBg = PastelPurpleBg,
+                        iconTint = PastelPurpleContent,
+                        title = "Total Products",
+                        value = totalProducts.toString()
+                    )
+                    OverviewKpiCard(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.People,
+                        iconBg = PastelPinkBg,
+                        iconTint = PastelPinkContent,
+                        title = "Total Customers",
+                        value = totalCustomers.toString()
+                    )
+                }
+            }
+
+            // 4. Unified Scan QR / Barcode Banner
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .clip(RoundedCornerShape(18.dp))
+                    .clickable { onNavigateToScanner() },
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = "Cart",
-                        tint = DokandaarTheme.textPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "${strings.cartTitle} (${uiState.cartItems.size})",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DokandaarTheme.textPrimary
-                    )
-                }
-
-                if (uiState.cartItems.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AddProductBg)
-                            .clickable { showClearConfirmation = true }
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Clear",
-                                tint = AddProductContent,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = strings.clearCart,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AddProductContent
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Cart Items List
-            if (uiState.cartItems.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
+                            )
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.ShoppingCart,
-                            contentDescription = null,
-                            tint = DokandaarTheme.textMuted,
-                            modifier = Modifier.size(56.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = strings.cartEmpty,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DokandaarTheme.textMuted
-                        )
-                        Text(
-                            text = strings.cartEmptySub,
-                            fontSize = 12.sp,
-                            color = DokandaarTheme.textMuted
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.cartItems, key = { it.product.id }) { item ->
-                        CartItemRow(
-                            item = item,
-                            onIncrement = { viewModel.incrementQuantity(item.product.id) },
-                            onDecrement = { viewModel.decrementQuantity(item.product.id) },
-                            onDelete = { viewModel.removeItem(item.product.id) }
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color.White.copy(alpha = 0.20f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Scan QR / Barcode",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Scan product barcode or QR code",
+                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
 
 @Composable
-fun CartItemRow(
-    item: CartItem,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit,
-    onDelete: () -> Unit
+private fun QuickNavTile(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    bgColor: Color,
+    contentColor: Color,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        modifier = modifier
+            .height(100.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else bgColor
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        if (DokandaarTheme.isDark) bgColor else Color.White.copy(alpha = 0.65f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = contentColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = DokandaarTheme.textPrimary,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+            Text(
+                text = subtitle,
+                fontSize = 9.sp,
+                color = DokandaarTheme.textMuted,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun OverviewKpiCard(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    iconBg: Color,
+    iconTint: Color,
+    title: String,
+    value: String
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Product Thumbnail Image
-            ProductThumbnail(
-                imageUri = item.product.imageUri,
-                size = 46.dp,
-                shape = RoundedCornerShape(10.dp)
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Name & Barcode
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.product.name,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = iconTint,
+                    modifier = Modifier.size(22.dp)
                 )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
                 Text(
-                    text = item.product.barcode,
-                    fontSize = 12.sp,
+                    text = title,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
                     color = DokandaarTheme.textMuted
                 )
-            }
-
-            // Stepper Pill: [-] qty [+]
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, DokandaarTheme.border, RoundedCornerShape(10.dp))
-                    .background(DokandaarTheme.background)
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .debouncedClickable(debounceMs = 200L) { onDecrement() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Remove,
-                        contentDescription = "Decrease",
-                        tint = DokandaarTheme.textPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "${item.quantity}",
-                    fontSize = 14.sp,
+                    text = value,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    color = DokandaarTheme.textPrimary
                 )
-
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .debouncedClickable(debounceMs = 200L) { onIncrement() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Increase",
-                        tint = HeaderGradientStart,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Line Total Price
-            Text(
-                text = item.total.format(),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = DokandaarTheme.textPrimary
-            )
         }
     }
-}
-
-@Composable
-fun OverlayActionButton(
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(38.dp)
-            .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.55f))
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(20.dp)
-        )
-    }
-}
-
-@Composable
-fun CameraPreviewView(
-    isFlashOn: Boolean,
-    onBarcodeDetected: (String) -> Unit
-) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var camera by remember { mutableStateOf<Camera?>(null) }
-    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    val debounceManager = remember { BarcodeDebounceManager(2000L) }
-
-    LaunchedEffect(isFlashOn) {
-        camera?.cameraControl?.enableTorch(isFlashOn)
-    }
-
-    DisposableEffect(lifecycleOwner) {
-        onDispose {
-            try {
-                ProcessCameraProvider.getInstance(context).get()?.unbindAll()
-            } catch (_: Exception) {}
-            cameraExecutor.shutdown()
-        }
-    }
-
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { ctx ->
-            val previewView = PreviewView(ctx)
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-
-            cameraProviderFuture.addListener({
-                try {
-                    val cameraProvider = cameraProviderFuture.get()
-                    val preview = Preview.Builder().build().also {
-                        it.surfaceProvider = previewView.surfaceProvider
-                    }
-
-                    val imageAnalysis = ImageAnalysis.Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build()
-
-                    imageAnalysis.setAnalyzer(
-                        cameraExecutor,
-                        BarcodeAnalyzer(debounceManager, onBarcodeDetected)
-                    )
-
-                    cameraProvider.unbindAll()
-                    camera = cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        imageAnalysis
-                    )
-                } catch (_: Exception) {}
-            }, ContextCompat.getMainExecutor(ctx))
-
-            previewView
-        }
-    )
 }

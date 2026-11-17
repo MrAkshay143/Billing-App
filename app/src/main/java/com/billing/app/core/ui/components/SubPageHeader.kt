@@ -23,26 +23,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.billing.app.core.ui.theme.HeaderGradientEnd
-import com.billing.app.core.ui.theme.HeaderGradientStart
+import com.billing.app.core.ui.theme.DarkPurple
+import com.billing.app.core.ui.theme.PrimaryPurple
+import com.billing.app.core.ui.theme.SecondaryPurple
 
 @Composable
 fun SubPageHeader(
     title: String,
     subtitle: String? = null,
+    icon: ImageVector? = null,
     onNavigateBack: () -> Unit,
     actions: (@Composable RowScope.() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+            .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
             .background(
                 Brush.linearGradient(
-                    colors = listOf(HeaderGradientStart, HeaderGradientEnd)
+                    colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
                 )
             )
             .statusBarsPadding()
@@ -63,7 +66,26 @@ fun SubPageHeader(
                     modifier = Modifier.size(24.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(6.dp))
+            if (icon != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White.copy(alpha = 0.20f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+            } else {
+                Spacer(modifier = Modifier.width(6.dp))
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,

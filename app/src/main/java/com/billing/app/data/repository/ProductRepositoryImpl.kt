@@ -20,11 +20,28 @@ class ProductRepositoryImpl(
         }
     }
 
+    override fun getProductsByCategory(category: String): Flow<List<Product>> {
+        return productDao.getProductsByCategory(category).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun searchProducts(query: String, category: String?): Flow<List<Product>> {
+        val flow = if (category.isNullOrBlank() || category.equals("All", ignoreCase = true)) {
+            productDao.searchProducts(query)
+        } else {
+            productDao.searchProductsByCategory(query, category)
+        }
+        return flow.map { entities -> entities.map { it.toDomain() } }
+    }
+
     override fun getTotalCount(): Flow<Int> = productDao.getTotalCount()
 
     override fun getLowStockCount(): Flow<Int> = productDao.getLowStockCount()
 
     override fun getOutOfStockCount(): Flow<Int> = productDao.getOutOfStockCount()
+
+    override fun getAllCategories(): Flow<List<String>> = productDao.getAllCategories()
 
     override suspend fun getProductByBarcode(barcode: String): Product? {
         return productDao.getProductByBarcode(barcode)?.toDomain()
@@ -32,6 +49,10 @@ class ProductRepositoryImpl(
 
     override suspend fun getProductById(id: String): Product? {
         return productDao.getProductById(id)?.toDomain()
+    }
+
+    override suspend fun getProductBySku(sku: String): Product? {
+        return productDao.getProductBySku(sku)?.toDomain()
     }
 
     override suspend fun getLowAndOutOfStockProducts(): List<Product> = withContext(Dispatchers.IO) {
@@ -47,13 +68,31 @@ class ProductRepositoryImpl(
         }
     }
 
+    override suspend fun addProducts(products: List<Product>): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            productDao.insertAll(products.map { it.toEntity() })
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun updateProduct(product: Product): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val existing = productDao.getProductById(product.id)
             val entity = product.toEntity().copy(
-                createdAt = existing?.createdAt ?: System.currentTimeMillis()
+                createdAt = existing?.createdAt ?: product.createdAt
             )
             productDao.updateProduct(entity)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun adjustStock(id: String, newStock: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            productDao.updateStock(id, newStock)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -80,7 +119,16 @@ class ProductRepositoryImpl(
             barcode = barcode,
             price = Money(pricePaise),
             stock = stock,
-            imageUri = imageUri
+            imageUri = imageUri,
+            sku = sku,
+            category = category,
+            unit = unit,
+            purchasePrice = Money(purchasePricePaise),
+            mrp = Money(mrpPaise),
+            minStockAlert = minStockAlert,
+            gstRate = gstRate,
+            description = description,
+            createdAt = createdAt
         )
     }
 
@@ -91,7 +139,16 @@ class ProductRepositoryImpl(
             barcode = barcode,
             pricePaise = price.paise,
             stock = stock,
-            imageUri = imageUri
+            imageUri = imageUri,
+            sku = sku,
+            category = category,
+            unit = unit,
+            purchasePricePaise = purchasePrice.paise,
+            mrpPaise = mrp.paise,
+            minStockAlert = minStockAlert,
+            gstRate = gstRate,
+            description = description,
+            createdAt = createdAt
         )
     }
 }

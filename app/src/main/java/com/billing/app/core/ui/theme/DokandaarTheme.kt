@@ -8,9 +8,15 @@ object DokandaarTheme {
         @Composable
         get() = LocalIsDarkTheme.current
 
+    val primary: Color
+        get() = PrimaryPurple
+
+    val secondary: Color
+        get() = SecondaryPurple
+
     val background: Color
         @Composable
-        get() = if (LocalIsDarkTheme.current) Color(0xFF0B1120) else Color(0xFFF8FAFC)
+        get() = if (LocalIsDarkTheme.current) Color(0xFF0B1120) else Color(0xFFF7F7FC)
 
     val cardBackground: Color
         @Composable
@@ -18,7 +24,7 @@ object DokandaarTheme {
 
     val textPrimary: Color
         @Composable
-        get() = if (LocalIsDarkTheme.current) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+        get() = if (LocalIsDarkTheme.current) Color(0xFFF8FAFC) else Color(0xFF111827)
 
     val textMuted: Color
         @Composable
