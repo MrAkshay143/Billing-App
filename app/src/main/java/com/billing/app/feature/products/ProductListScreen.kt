@@ -464,27 +464,29 @@ fun ProductListScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Showing 1 - ${filteredProducts.size} of $allCount products",
+                        text = if (allCount == 0) "0 products" else "Showing 1 - ${filteredProducts.size} of $allCount products",
                         fontSize = 11.sp,
                         color = DokandaarTheme.textMuted
                     )
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = PrimaryPurple,
-                            modifier = Modifier.size(28.dp)
+                    if (allCount > 0) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "1",
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = PrimaryPurple,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "1",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }
