@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.components.PinVerificationDialog
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
@@ -246,7 +245,7 @@ fun UserAccessScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text("Access Role:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                    Text("Access Role:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
 
                     listOf(
                         "Cashier (Billing Only)" to "Can scan products and complete sales",
@@ -259,10 +258,10 @@ fun UserAccessScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable { role = r },
-                            color = if (isSelected) AddProductBg else Color(0xFFF8FAFC),
+                            color = if (isSelected) AddProductBg else DokandaarTheme.surfaceVariant,
                             border = androidx.compose.foundation.BorderStroke(
                                 width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) HeaderGradientStart else BorderColor
+                                color = if (isSelected) HeaderGradientStart else DokandaarTheme.border
                             )
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
@@ -354,7 +353,7 @@ fun UserAccessScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text("Owner PIN Lock", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                                Text("Owner PIN Lock", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                                 Text(
                                     text = if (isPinEnabled) "PIN protection is active" else "Protect reports & settings with PIN",
                                     fontSize = 12.sp,
@@ -477,7 +476,7 @@ fun UserAccessScreen(
                             text = "Staff & Cashiers",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                         Text(
                             text = "${staffList.size} active team member(s)",
@@ -548,7 +547,7 @@ fun UserAccessScreen(
                                         modifier = Modifier
                                             .size(42.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFFEDE9FE)),
+                                            .background(AddProductBg),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -566,7 +565,7 @@ fun UserAccessScreen(
                                             text = staff.name,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF0F172A)
+                                            color = DokandaarTheme.textPrimary
                                         )
                                         if (staff.phone.isNotBlank()) {
                                             Text(

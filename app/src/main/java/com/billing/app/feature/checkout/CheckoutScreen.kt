@@ -80,7 +80,6 @@ import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.TopDokandaarHeader
 import com.billing.app.core.ui.theme.AddProductBg
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.InStockText
@@ -239,7 +238,7 @@ fun CheckoutScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -253,7 +252,7 @@ fun CheckoutScreen(
                             Icon(
                                 imageVector = Icons.Default.ShoppingCart,
                                 contentDescription = null,
-                                tint = Color(0xFF0F172A),
+                                tint = DokandaarTheme.textPrimary,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -261,7 +260,7 @@ fun CheckoutScreen(
                                 text = "Items (${cartItems.size})",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
+                                color = DokandaarTheme.textPrimary
                             )
                         }
 
@@ -302,19 +301,19 @@ fun CheckoutScreen(
                             Text(
                                 text = "GST / Taxes",
                                 fontSize = 14.sp,
-                                color = Color(0xFF475569)
+                                color = DokandaarTheme.textMuted
                             )
                             Text(
                                 text = "+ ${Money.fromPaise(taxPaise).format()}",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF0F172A)
+                                color = DokandaarTheme.textPrimary
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.6f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.6f))
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Line Items
@@ -338,12 +337,12 @@ fun CheckoutScreen(
                                     text = item.product.name,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF0F172A)
+                                    color = DokandaarTheme.textPrimary
                                 )
                                 Text(
                                     text = item.product.barcode,
                                     fontSize = 11.sp,
-                                    color = Color(0xFF64748B)
+                                    color = DokandaarTheme.textMuted
                                 )
                             }
 
@@ -351,20 +350,20 @@ fun CheckoutScreen(
                                 Text(
                                     text = "${item.quantity} × ${item.product.price.format()}",
                                     fontSize = 12.sp,
-                                    color = Color(0xFF64748B)
+                                    color = DokandaarTheme.textMuted
                                 )
                                 Text(
                                     text = item.total.format(),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
+                                    color = DokandaarTheme.textPrimary
                                 )
                             }
                         }
 
                         if (index < cartItems.size - 1) {
                             HorizontalDivider(
-                                color = BorderColor.copy(alpha = 0.4f),
+                                color = DokandaarTheme.border.copy(alpha = 0.4f),
                                 modifier = Modifier.padding(vertical = 2.dp)
                             )
                         }
@@ -378,7 +377,7 @@ fun CheckoutScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -391,13 +390,13 @@ fun CheckoutScreen(
                         Text(
                             text = "Subtotal",
                             fontSize = 14.sp,
-                            color = Color(0xFF475569)
+                            color = DokandaarTheme.textMuted
                         )
                         Text(
                             text = subtotalAmount.format(),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                     }
 
@@ -413,7 +412,7 @@ fun CheckoutScreen(
                             Text(
                                 text = "Discount",
                                 fontSize = 14.sp,
-                                color = Color(0xFF475569)
+                                color = DokandaarTheme.textMuted
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Surface(
@@ -447,7 +446,7 @@ fun CheckoutScreen(
                             text = "- ${Money.fromPaise(discountPaise).format()}",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (discountPaise > 0L) Color(0xFFEF4444) else Color(0xFF64748B)
+                            color = if (discountPaise > 0L) Color(0xFFEF4444) else DokandaarTheme.textMuted
                         )
                     }
 
@@ -461,19 +460,19 @@ fun CheckoutScreen(
                             Text(
                                 text = "GST / Taxes",
                                 fontSize = 14.sp,
-                                color = Color(0xFF475569)
+                                color = DokandaarTheme.textMuted
                             )
                             Text(
                                 text = "+ ${Money.fromPaise(taxPaise).format()}",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF0F172A)
+                                color = DokandaarTheme.textPrimary
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.6f))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.6f))
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // Grand Total
@@ -486,7 +485,7 @@ fun CheckoutScreen(
                             text = "Grand Total",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                         Text(
                             text = grandTotal.format(),
@@ -564,7 +563,7 @@ fun CheckoutScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -572,7 +571,7 @@ fun CheckoutScreen(
                         Icon(
                             imageVector = Icons.Default.Payments,
                             contentDescription = null,
-                            tint = Color(0xFF0F172A),
+                            tint = DokandaarTheme.textPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -580,7 +579,7 @@ fun CheckoutScreen(
                             text = "Payment Method",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = DokandaarTheme.textPrimary
                         )
                     }
 
@@ -645,7 +644,7 @@ fun CheckoutScreen(
                                             .size(96.dp)
                                             .clip(RoundedCornerShape(8.dp))
                                             .background(Color.White)
-                                            .border(1.dp, BorderColor, RoundedCornerShape(8.dp))
+                                            .border(1.dp, DokandaarTheme.border, RoundedCornerShape(8.dp))
                                             .padding(4.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -664,7 +663,7 @@ fun CheckoutScreen(
                                         text = "Scan & Pay (UPI)",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A)
+                                        color = DokandaarTheme.textPrimary
                                     )
                                     Spacer(modifier = Modifier.height(3.dp))
                                     Row(
@@ -797,7 +796,7 @@ fun CheckoutScreen(
                                             text = "Change to Return:",
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF0F172A)
+                                            color = DokandaarTheme.textPrimary
                                         )
                                         Text(
                                             text = Money.fromPaise(changeReturnedPaise).format(),
@@ -982,10 +981,10 @@ private fun PaymentTabPill(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) AddProductBg else Color.White)
+            .background(if (isSelected) AddProductBg else DokandaarTheme.cardBackground)
             .border(
                 width = if (isSelected) 1.5.dp else 1.dp,
-                color = if (isSelected) HeaderGradientStart else BorderColor,
+                color = if (isSelected) HeaderGradientStart else DokandaarTheme.border,
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable { onClick() }
@@ -996,7 +995,7 @@ private fun PaymentTabPill(
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = if (isSelected) HeaderGradientStart else Color(0xFF64748B),
+                tint = if (isSelected) HeaderGradientStart else DokandaarTheme.textMuted,
                 modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -1004,7 +1003,7 @@ private fun PaymentTabPill(
                 text = title,
                 fontSize = 12.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) HeaderGradientStart else Color(0xFF64748B)
+                color = if (isSelected) HeaderGradientStart else DokandaarTheme.textMuted
             )
         }
     }
@@ -1019,14 +1018,14 @@ private fun QuickCashChip(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .clickable { onClick() },
-        color = Color.White,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+        color = DokandaarTheme.cardBackground,
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
     ) {
         Text(
             text = label,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF0F172A),
+            color = DokandaarTheme.textPrimary,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }

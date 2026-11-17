@@ -77,6 +77,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.billing.app.core.cart.CartManager
 import com.billing.app.core.scanner.BarcodeAnalyzer
 import com.billing.app.core.scanner.BarcodeDebounceManager
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.components.ViewfinderLaserOverlay
@@ -102,6 +103,7 @@ fun FullScannerScreen(
     onNavigateToAddProductWithBarcode: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val debounceManager = remember { BarcodeDebounceManager(1200L) }
@@ -158,52 +160,68 @@ fun FullScannerScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Scan & Add Items",
-                subtitle = "Auto scan and add multiple items",
+                title = strings.scanAddItems,
+                subtitle = strings.scanSubtitleFull,
                 icon = Icons.Default.QrCodeScanner,
                 onNavigateBack = onNavigateBack,
                 actions = {
                     // Flashlight Toggle
-                    IconButton(
-                        onClick = {
-                            isFlashOn = !isFlashOn
-                            cameraControl?.cameraControl?.enableTorch(isFlashOn)
-                        },
-                        modifier = Modifier.size(36.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                            .clickable {
+                                isFlashOn = !isFlashOn
+                                cameraControl?.cameraControl?.enableTorch(isFlashOn)
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = if (isFlashOn) Icons.Default.FlashOn else Icons.Default.FlashlightOff,
                             contentDescription = "Flashlight",
                             tint = if (isFlashOn) Color.Yellow else Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     // Flip Camera
-                    IconButton(
-                        onClick = {
-                            useFrontCamera = !useFrontCamera
-                        },
-                        modifier = Modifier.size(36.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                            .clickable {
+                                useFrontCamera = !useFrontCamera
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.FlipCameraAndroid,
                             contentDescription = "Switch Camera",
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     // Help Dialog
-                    IconButton(
-                        onClick = { showHelpDialog = true },
-                        modifier = Modifier.size(36.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                            .clickable { showHelpDialog = true },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                             contentDescription = "Help",
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -277,8 +295,8 @@ fun FullScannerScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Done (${cartItems.sumOf { it.quantity }} Items)",
-                                color = DokandaarTheme.cardBackground,
+                                text = "${strings.done} (${cartItems.sumOf { it.quantity }} ${strings.items})",
+                                color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -370,7 +388,7 @@ fun FullScannerScreen(
                     ) {
                         Text(
                             text = "Camera permission needed",
-                            color = DokandaarTheme.cardBackground,
+                            color = Color.White,
                             fontSize = 14.sp
                         )
                     }
@@ -385,11 +403,7 @@ fun FullScannerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AnimatedVisibility(
-                    visible = showAddedBadge,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
+                if (cartItems.isNotEmpty()) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = PastelGreenBg
@@ -406,7 +420,11 @@ fun FullScannerScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Item Added: ${lastAddedProductName ?: "Product"}",
+                                text = if (showAddedBadge && lastAddedProductName != null) {
+                                    "Added: $lastAddedProductName"
+                                } else {
+                                    strings.itemAddedToCart
+                                },
                                 color = PastelGreenContent,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -414,10 +432,30 @@ fun FullScannerScreen(
                             )
                         }
                     }
-                }
-
-                if (!showAddedBadge) {
-                    Spacer(modifier = Modifier.width(1.dp))
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = DokandaarTheme.surfaceVariant
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = null,
+                                tint = DokandaarTheme.textMuted,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = strings.pointAtBarcode,
+                                color = DokandaarTheme.textMuted,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
 
                 Surface(
@@ -431,13 +469,13 @@ fun FullScannerScreen(
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
                             contentDescription = null,
-                            tint = PastelPurpleContent,
+                            tint = PrimaryPurple,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Total: ${cartItems.sumOf { it.quantity }} Items",
-                            color = PastelPurpleContent,
+                            text = "Total: ${cartItems.sumOf { it.quantity }} ${strings.items}",
+                            color = PrimaryPurple,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -460,7 +498,7 @@ fun FullScannerScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Scanned Items",
+                    text = strings.scannedItems,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = DokandaarTheme.textPrimary

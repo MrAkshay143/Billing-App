@@ -156,8 +156,17 @@ class CartManager(
         _customerPhone.value = phone.trim()
     }
 
-    fun setResumedDraft(draftNumber: String?, items: List<CartItem>) {
+    fun setResumedDraft(
+        draftNumber: String?,
+        items: List<CartItem>,
+        customerName: String? = null,
+        customerPhone: String? = null,
+        discountPaise: Long = 0L
+    ) {
         _resumedDraftNumber.value = draftNumber
         _cartItems.value = items
+        _customerName.value = customerName?.ifBlank { "Walk-in Customer" } ?: "Walk-in Customer"
+        _customerPhone.value = customerPhone?.trim() ?: ""
+        _discountPaise.value = discountPaise.coerceAtLeast(0L)
     }
 }

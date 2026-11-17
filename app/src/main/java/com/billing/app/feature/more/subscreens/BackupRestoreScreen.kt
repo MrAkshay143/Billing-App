@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.TextMutedColor
@@ -289,20 +288,20 @@ fun BackupRestoreScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
+                                .border(1.dp, DokandaarTheme.border, RoundedCornerShape(12.dp))
                                 .clickable(enabled = !isWorking) {
                                     importLauncher.launch(arrayOf("application/json", "*/*"))
                                 },
-                            color = Color.White
+                            color = DokandaarTheme.cardBackground
                         ) {
                             Row(
                                 modifier = Modifier.padding(vertical = 11.dp),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(imageVector = Icons.Default.CloudUpload, contentDescription = null, tint = Color(0xFF0F172A), modifier = Modifier.size(16.dp))
+                                Icon(imageVector = Icons.Default.CloudUpload, contentDescription = null, tint = DokandaarTheme.textPrimary, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Import File", color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Import File", color = DokandaarTheme.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }
@@ -313,13 +312,13 @@ fun BackupRestoreScreen(
 
             // Saved Backups List Header
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = Icons.Default.History, contentDescription = null, tint = Color(0xFF0F172A), modifier = Modifier.size(18.dp))
+                Icon(imageVector = Icons.Default.History, contentDescription = null, tint = DokandaarTheme.textPrimary, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "Saved Backups (${backupFiles.size})",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = DokandaarTheme.textPrimary
                 )
             }
 

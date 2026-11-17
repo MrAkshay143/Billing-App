@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -61,11 +62,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
@@ -96,6 +97,7 @@ fun ProductListScreen(
     val activeFilter by viewModel.activeFilter.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val allCount by viewModel.allCount.collectAsState()
+    val strings = appStrings()
 
     var productToDelete by remember { mutableStateOf<Product?>(null) }
     var productToAdjustStock by remember { mutableStateOf<Product?>(null) }
@@ -138,7 +140,7 @@ fun ProductListScreen(
             },
             dismissButton = {
                 TextButton(onClick = { productToAdjustStock = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -158,12 +160,12 @@ fun ProductListScreen(
                         productToDelete = null
                     }
                 ) {
-                    Text("Delete", color = ErrorColor, fontWeight = FontWeight.Bold)
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { productToDelete = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -207,13 +209,13 @@ fun ProductListScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Column {
                                 Text(
-                                    text = "Products",
+                                    text = strings.productsTitle,
                                     color = Color.White,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Kirana Store Items",
+                                    text = strings.productsSubtitle,
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 11.sp
                                 )
@@ -222,8 +224,20 @@ fun ProductListScreen(
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            // Search Icon
+                            IconButton(
+                                onClick = { /* Search is available in bar below */ },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = Color.White
+                                )
+                            }
+
                             // Filter Button
                             Box {
                                 IconButton(
@@ -241,21 +255,21 @@ fun ProductListScreen(
                                     onDismissRequest = { showFilterMenu = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("All Products") },
+                                        text = { Text(strings.filterAll) },
                                         onClick = {
                                             viewModel.setFilter(StockFilter.ALL)
                                             showFilterMenu = false
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Low Stock (1-5)") },
+                                        text = { Text("${strings.filterLowStock} (1-5)") },
                                         onClick = {
                                             viewModel.setFilter(StockFilter.LOW_STOCK)
                                             showFilterMenu = false
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Out of Stock (0)") },
+                                        text = { Text("${strings.filterOutOfStock} (0)") },
                                         onClick = {
                                             viewModel.setFilter(StockFilter.OUT_OF_STOCK)
                                             showFilterMenu = false
@@ -282,7 +296,7 @@ fun ProductListScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Add Product",
+                                        text = "+ Add Product",
                                         color = PrimaryPurple,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
@@ -314,7 +328,7 @@ fun ProductListScreen(
                     onValueChange = { viewModel.searchQuery.value = it },
                     placeholder = {
                         Text(
-                            text = "Search items by name, SKU or barcode...",
+                            text = strings.searchProducts,
                             fontSize = 13.sp,
                             color = DokandaarTheme.textMuted
                         )
@@ -353,7 +367,7 @@ fun ProductListScreen(
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = BorderColor,
+                        unfocusedBorderColor = DokandaarTheme.border,
                         focusedContainerColor = DokandaarTheme.cardBackground,
                         unfocusedContainerColor = DokandaarTheme.cardBackground
                     ),
@@ -384,9 +398,8 @@ fun ProductListScreen(
 
                 // Dynamic Category cards from database
                 items(dbCategories, key = { it.id }) { cat ->
-                    val count = categoryCounts[cat.name] ?: 0
                     CategoryCard(
-                        title = "${cat.name} ($count)",
+                        title = cat.name,
                         isSelected = selectedCategory.equals(cat.name, ignoreCase = true),
                         iconName = cat.iconName,
                         imageUri = cat.imageUri,
@@ -396,6 +409,15 @@ fun ProductListScreen(
             }
 
             Spacer(modifier = Modifier.height(6.dp))
+
+            // Pagination setup
+            val pageSize = 10
+            val currentPageVal by viewModel.currentPage.collectAsState()
+            val totalPages = maxOf(1, kotlin.math.ceil(filteredProducts.size.toDouble() / pageSize).toInt())
+            val page = currentPageVal.coerceIn(1, totalPages)
+            val startIndex = if (filteredProducts.isEmpty()) 0 else (page - 1) * pageSize
+            val endIndex = minOf(startIndex + pageSize, filteredProducts.size)
+            val pageProducts = if (filteredProducts.isEmpty()) emptyList() else filteredProducts.subList(startIndex, endIndex)
 
             // Products List
             if (filteredProducts.isEmpty()) {
@@ -429,7 +451,7 @@ fun ProductListScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(filteredProducts, key = { it.id }) { product ->
+                    items(pageProducts, key = { it.id }) { product ->
                         ProductItemCard(
                             product = product,
                             onEdit = { onNavigateToEditProduct(product.id) },
@@ -443,11 +465,11 @@ fun ProductListScreen(
                 }
             }
 
-            // Bottom Pagination / Results Indicator
+            // Bottom Pagination / Results Indicator matching Screenshot 4
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = DokandaarTheme.cardBackground,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 Row(
                     modifier = Modifier
@@ -457,27 +479,75 @@ fun ProductListScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (allCount == 0) "0 products" else "Showing 1 - ${filteredProducts.size} of $allCount products",
+                        text = if (filteredProducts.isEmpty()) "0 products" else "Showing ${startIndex + 1} - $endIndex of ${filteredProducts.size} products",
                         fontSize = 11.sp,
                         color = DokandaarTheme.textMuted
                     )
 
-                    if (allCount > 0) {
+                    if (filteredProducts.isNotEmpty()) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // Previous Button "<"
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = PrimaryPurple,
-                                modifier = Modifier.size(28.dp)
+                                color = DokandaarTheme.surfaceVariant,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clickable(enabled = page > 1) { viewModel.currentPage.value = page - 1 }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "1",
-                                        color = Color.White,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Previous Page",
+                                        tint = if (page > 1) DokandaarTheme.textPrimary else DokandaarTheme.textMuted.copy(alpha = 0.4f),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+
+                            // Page numbers (up to 5)
+                            val startP = maxOf(1, minOf(page - 2, totalPages - 4))
+                            val endP = minOf(totalPages, maxOf(startP + 4, 1))
+
+                            for (p in startP..endP) {
+                                val isCurrent = p == page
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isCurrent) PrimaryPurple else DokandaarTheme.surfaceVariant,
+                                    border = if (isCurrent) null else androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clickable { viewModel.currentPage.value = p }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = "$p",
+                                            color = if (isCurrent) Color.White else DokandaarTheme.textPrimary,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Next Button ">"
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = DokandaarTheme.surfaceVariant,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clickable(enabled = page < totalPages) { viewModel.currentPage.value = page + 1 }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "Next Page",
+                                        tint = if (page < totalPages) DokandaarTheme.textPrimary else DokandaarTheme.textMuted.copy(alpha = 0.4f),
+                                        modifier = Modifier.size(14.dp)
                                     )
                                 }
                             }
@@ -502,7 +572,7 @@ private fun ProductItemCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(

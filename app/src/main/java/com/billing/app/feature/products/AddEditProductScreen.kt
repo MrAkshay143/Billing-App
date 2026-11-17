@@ -63,7 +63,6 @@ import com.billing.app.core.ui.components.PrimaryButton
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.domain.model.Product
@@ -91,6 +90,7 @@ fun AddEditProductScreen(
     val unit by viewModel.draftUnit.collectAsState()
 
     var categoryExpanded by remember { mutableStateOf(false) }
+    var unitExpanded by remember { mutableStateOf(false) }
     val dbCategories by viewModel.categories.collectAsState()
     val categoriesList = remember(dbCategories) {
         if (dbCategories.isNotEmpty()) {
@@ -437,7 +437,7 @@ fun AddEditProductScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = HeaderGradientStart,
-                        unfocusedBorderColor = BorderColor,
+                        unfocusedBorderColor = DokandaarTheme.border,
                         focusedContainerColor = DokandaarTheme.cardBackground,
                         unfocusedContainerColor = DokandaarTheme.cardBackground
                     )
@@ -468,13 +468,69 @@ fun AddEditProductScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
 
-            InputField(
-                label = "Initial Stock Quantity",
-                value = stockStr,
-                onValueChange = { viewModel.draftStock.value = it },
-                placeholder = "0",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Stock Quantity
+                Box(modifier = Modifier.weight(1.2f)) {
+                    InputField(
+                        label = "Initial Stock Quantity",
+                        value = stockStr,
+                        onValueChange = { viewModel.draftStock.value = it },
+                        placeholder = "0",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+
+                // Unit Dropdown
+                Box(modifier = Modifier.weight(0.8f)) {
+                    Column {
+                        Text(
+                            text = "Unit",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = DokandaarTheme.textMuted
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        ExposedDropdownMenuBox(
+                            expanded = unitExpanded,
+                            onExpandedChange = { unitExpanded = it }
+                        ) {
+                            OutlinedTextField(
+                                value = unit,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = HeaderGradientStart,
+                                    unfocusedBorderColor = DokandaarTheme.border,
+                                    focusedContainerColor = DokandaarTheme.cardBackground,
+                                    unfocusedContainerColor = DokandaarTheme.cardBackground
+                                )
+                            )
+                            ExposedDropdownMenu(
+                                expanded = unitExpanded,
+                                onDismissRequest = { unitExpanded = false }
+                            ) {
+                                listOf("pc", "kg", "g", "l", "ml", "pack", "box", "dozen").forEach { u ->
+                                    DropdownMenuItem(
+                                        text = { Text(u) },
+                                        onClick = {
+                                            viewModel.draftUnit.value = u
+                                            unitExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
         }

@@ -47,14 +47,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.SubPageHeader
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
 import com.billing.app.core.ui.theme.PastelOrangeBg
@@ -69,6 +71,7 @@ fun SuppliersScreen(
     supplierRepository: SupplierRepository,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val suppliers by supplierRepository.getAllSuppliers().collectAsState(initial = emptyList())
 
@@ -243,7 +246,7 @@ fun SuppliersScreen(
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = BorderColor,
+                        unfocusedBorderColor = DokandaarTheme.border,
                         focusedContainerColor = DokandaarTheme.cardBackground,
                         unfocusedContainerColor = DokandaarTheme.cardBackground
                     ),
@@ -287,7 +290,7 @@ fun SuppliersScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -324,18 +327,26 @@ fun SuppliersScreen(
                                             color = DokandaarTheme.textMuted
                                         )
                                     }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.clickable(enabled = sup.phone.isNotBlank()) {
+                                            try {
+                                                val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${sup.phone.trim()}"))
+                                                context.startActivity(dialIntent)
+                                            } catch (_: Exception) {}
+                                        }
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Default.Phone,
-                                            contentDescription = null,
-                                            tint = DokandaarTheme.textMuted,
+                                            contentDescription = "Call",
+                                            tint = if (sup.phone.isNotBlank()) PrimaryPurple else DokandaarTheme.textMuted,
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = sup.phone,
+                                            text = sup.phone.ifBlank { "No phone" },
                                             fontSize = 12.sp,
-                                            color = DokandaarTheme.textMuted
+                                            color = if (sup.phone.isNotBlank()) PrimaryPurple else DokandaarTheme.textMuted
                                         )
                                     }
                                 }

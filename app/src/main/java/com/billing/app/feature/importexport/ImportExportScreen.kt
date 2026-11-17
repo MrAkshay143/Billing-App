@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Inventory2
@@ -49,7 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.billing.app.core.ui.components.SubPageHeader
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.PastelBlueBg
 import com.billing.app.core.ui.theme.PastelBlueContent
@@ -120,7 +120,7 @@ fun ImportExportScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -192,7 +192,7 @@ fun ImportExportScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -247,6 +247,46 @@ fun ImportExportScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .clickable(enabled = !isProcessing) {
+                                scope.launch {
+                                    try {
+                                        shareSampleCsvTemplate(context)
+                                    } catch (e: Exception) {
+                                        FeedbackManager.showToast(context, "Error sharing template: ${e.message}")
+                                    }
+                                }
+                            },
+                        color = DokandaarTheme.surfaceVariant,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = null,
+                                tint = PrimaryPurple,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Share / Download Sample CSV Template",
+                                color = PrimaryPurple,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -274,6 +314,26 @@ private suspend fun exportProductsToCsv(context: Context, products: List<Product
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(shareIntent, "Export Products CSV"))
+}
+
+private suspend fun shareSampleCsvTemplate(context: Context) = withContext(Dispatchers.IO) {
+    val file = File(context.cacheDir, "dokandaar_products_sample_template.csv")
+    file.printWriter().use { out ->
+        out.println("ID,Name,Barcode,SKU,Category,Price(Rupees),Stock,Unit")
+        out.println(",Aashirvaad Atta 5kg,8901512567890,ATTA-5KG,Grocery,285.00,28,kg")
+        out.println(",Fortune Sunflower Oil 1L,8901156101234,OIL-SF-1L,Oil & Ghee,155.00,42,l")
+        out.println(",Tata Salt 1kg,8901052000123,SALT-1KG,Grocery,28.00,60,kg")
+        out.println(",Amul Gold Milk 1L,8901262078901,MILK-1L,Dairy Products,68.00,8,l")
+        out.println(",Sugar 1kg,8906001056789,SUGAR-1KG,Grocery,44.00,75,kg")
+    }
+
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/csv"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, "Share Sample Products Template"))
 }
 
 private fun parseCsvLine(line: String): List<String> {

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +35,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import com.billing.app.core.ui.components.SubPageHeader
 import androidx.compose.runtime.Composable
@@ -69,12 +72,24 @@ fun PaymentSettingsScreen(
     val context = LocalContext.current
     val shopProfile by viewModel.shopProfile.collectAsState()
     val defaultPaymentMethod by viewModel.defaultPaymentMethod.collectAsState()
+    val isGstEnabled by viewModel.isGstEnabled.collectAsState()
+    val gstin by viewModel.gstin.collectAsState()
+    val taxRate by viewModel.taxRate.collectAsState()
 
     var upiInput by remember(shopProfile.upiId) {
         mutableStateOf(shopProfile.upiId.ifBlank { "dokandaar@upi" })
     }
     var selectedDefaultMethod by remember(defaultPaymentMethod) {
         mutableStateOf(defaultPaymentMethod)
+    }
+    var gstEnabledState by remember(isGstEnabled) {
+        mutableStateOf(isGstEnabled)
+    }
+    var gstinInput by remember(gstin) {
+        mutableStateOf(gstin)
+    }
+    var selectedTaxRate by remember(taxRate) {
+        mutableStateOf(taxRate.ifBlank { "0" })
     }
 
     val sampleQr = remember(upiInput, shopProfile.name) {
@@ -89,7 +104,7 @@ fun PaymentSettingsScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Payment Settings",
+                title = "Payment & GST Settings",
                 onNavigateBack = onNavigateBack
             )
         },
@@ -124,7 +139,7 @@ fun PaymentSettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text("UPI QR Code Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
-                            Text("Used to generate dynamic Scan & Pay QR on checkout", fontSize = 12.sp, color = TextMutedColor)
+                            Text("Used to generate dynamic Scan & Pay QR on checkout", fontSize = 12.sp, color = DokandaarTheme.textMuted)
                         }
                     }
 
@@ -139,7 +154,7 @@ fun PaymentSettingsScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = HeaderGradientStart,
-                            unfocusedBorderColor = BorderColor
+                            unfocusedBorderColor = DokandaarTheme.border
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -152,7 +167,7 @@ fun PaymentSettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFFF8FAFC))
+                                .background(DokandaarTheme.surfaceVariant)
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -162,13 +177,13 @@ fun PaymentSettingsScreen(
                                 modifier = Modifier
                                     .size(72.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .border(1.dp, BorderColor, RoundedCornerShape(8.dp))
+                                    .border(1.dp, DokandaarTheme.border, RoundedCornerShape(8.dp))
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text("Live QR Verification", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text("Live QR Verification", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                                 Text("VPA: $upiInput", fontSize = 11.sp, color = HeaderGradientStart, fontWeight = FontWeight.SemiBold)
-                                Text("Ready to accept payments from GPay, PhonePe, Paytm", fontSize = 11.sp, color = TextMutedColor)
+                                Text("Ready to accept payments from GPay, PhonePe, Paytm", fontSize = 11.sp, color = DokandaarTheme.textMuted)
                             }
                         }
                     }
@@ -196,7 +211,7 @@ fun PaymentSettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text("Default Payment Method", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
-                            Text("Pre-selected tab when opening checkout", fontSize = 12.sp, color = TextMutedColor)
+                            Text("Pre-selected tab when opening checkout", fontSize = 12.sp, color = DokandaarTheme.textMuted)
                         }
                     }
 
@@ -230,7 +245,7 @@ fun PaymentSettingsScreen(
                                     Icon(
                                         imageVector = icon,
                                         contentDescription = title,
-                                        tint = if (isSelected) HeaderGradientStart else Color(0xFF64748B),
+                                        tint = if (isSelected) HeaderGradientStart else DokandaarTheme.textMuted,
                                         modifier = Modifier.size(22.dp)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -238,8 +253,117 @@ fun PaymentSettingsScreen(
                                         text = title,
                                         fontSize = 12.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) HeaderGradientStart else Color(0xFF64748B)
+                                        color = if (isSelected) HeaderGradientStart else DokandaarTheme.textMuted
                                     )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. GST & Tax Configuration Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(AddProductBg),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Receipt,
+                                    contentDescription = null,
+                                    tint = HeaderGradientStart,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("GST & Tax Configuration", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                                Text("Enable GST calculations on sales & print GSTIN", fontSize = 12.sp, color = DokandaarTheme.textMuted)
+                            }
+                        }
+                        Switch(
+                            checked = gstEnabledState,
+                            onCheckedChange = { gstEnabledState = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = HeaderGradientStart
+                            )
+                        )
+                    }
+
+                    if (gstEnabledState) {
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        OutlinedTextField(
+                            value = gstinInput,
+                            onValueChange = { gstinInput = it.uppercase() },
+                            label = { Text("Store GSTIN Number") },
+                            placeholder = { Text("e.g. 22AAAAA0000A1Z5") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = HeaderGradientStart,
+                                unfocusedBorderColor = DokandaarTheme.border
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Text(
+                            text = "Default Tax Rate (%)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DokandaarTheme.textPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("0", "5", "12", "18", "28").forEach { rate ->
+                                val isSelected = selectedTaxRate == rate
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { selectedTaxRate = rate },
+                                    color = if (isSelected) HeaderGradientStart else DokandaarTheme.surfaceVariant,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isSelected) HeaderGradientStart else DokandaarTheme.border
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "$rate%",
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else DokandaarTheme.textPrimary
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -254,13 +378,14 @@ fun PaymentSettingsScreen(
                     .clip(RoundedCornerShape(14.dp))
                     .clickable {
                         viewModel.updatePaymentSettings(upiInput, selectedDefaultMethod)
-                        FeedbackManager.showToast(context, "Payment settings updated successfully!")
+                        viewModel.saveGstConfiguration(gstEnabledState, gstinInput, selectedTaxRate)
+                        FeedbackManager.showToast(context, "Payment & GST settings updated successfully!")
                         onNavigateBack()
                     },
                 color = HeaderGradientStart
             ) {
                 Text(
-                    text = "Save Payment Settings",
+                    text = "Save Settings",
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,

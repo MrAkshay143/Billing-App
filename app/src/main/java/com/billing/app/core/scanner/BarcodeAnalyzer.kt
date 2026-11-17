@@ -59,8 +59,12 @@ class BarcodeAnalyzer(
                     imageProxy.imageInfo.rotationDegrees
                 )
 
-                val imgWidth = imageProxy.width
-                val imgHeight = imageProxy.height
+                val rotation = imageProxy.imageInfo.rotationDegrees
+                val (viewWidth, viewHeight) = if (rotation == 90 || rotation == 270) {
+                    Pair(imageProxy.height, imageProxy.width)
+                } else {
+                    Pair(imageProxy.width, imageProxy.height)
+                }
 
                 scanner.process(inputImage)
                     .addOnSuccessListener { barcodes ->
@@ -68,11 +72,11 @@ class BarcodeAnalyzer(
                             val rawValue = barcode.rawValue ?: continue
                             // ROI filtering: verify barcode is within central viewfinder area
                             val box = barcode.boundingBox
-                            if (box != null && imgWidth > 0 && imgHeight > 0) {
+                            if (box != null && viewWidth > 0 && viewHeight > 0) {
                                 val centerX = box.centerX()
                                 val centerY = box.centerY()
-                                val isInFocus = (centerX >= imgWidth * 0.08 && centerX <= imgWidth * 0.92) &&
-                                               (centerY >= imgHeight * 0.08 && centerY <= imgHeight * 0.92)
+                                val isInFocus = (centerX >= viewWidth * 0.15 && centerX <= viewWidth * 0.85) &&
+                                               (centerY >= viewHeight * 0.15 && centerY <= viewHeight * 0.85)
                                 if (!isInFocus) continue
                             }
                             if (debounceManager.shouldProcess(rawValue)) {

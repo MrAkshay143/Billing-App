@@ -130,7 +130,7 @@ fun ProductThumbnail(
             Icon(
                 imageVector = Icons.Default.Inventory2,
                 contentDescription = "Product Placeholder",
-                tint = if (DokandaarTheme.isDark) Color(0xFF64748B) else Color(0xFF94A3B8),
+                tint = DokandaarTheme.textMuted,
                 modifier = Modifier.size(size * 0.55f)
             )
         }

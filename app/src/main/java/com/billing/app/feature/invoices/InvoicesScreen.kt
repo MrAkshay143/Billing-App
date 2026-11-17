@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -71,9 +73,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
@@ -105,13 +107,14 @@ fun InvoicesScreen(
     onNavigateToHome: () -> Unit = { onNavigateToTab(DokandaarTab.HOME) },
     onNavigateToSettings: () -> Unit = { onNavigateToTab(DokandaarTab.MORE) },
     onNavigateToSalesReport: () -> Unit = onNavigateToSettings,
-    onResumeDraft: (List<CartItem>, String) -> Unit = { _, _ -> },
+    onResumeDraft: (List<CartItem>, InvoiceEntity) -> Unit = { _, _ -> },
     onNavigateToNewSale: () -> Unit = { onNavigateToTab(DokandaarTab.HOME) }
 ) {
     val invoices by viewModel.filteredInvoices.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val dateFilter by viewModel.dateFilter.collectAsState()
     val statusTab by viewModel.statusTab.collectAsState()
+    val strings = appStrings()
 
     val scope = rememberCoroutineScope()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -172,7 +175,7 @@ fun InvoicesScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Invoices",
+                                    text = strings.invoicesTitle,
                                     color = Color.White,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold
@@ -187,8 +190,32 @@ fun InvoicesScreen(
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            // Search Icon
+                            IconButton(
+                                onClick = { /* Search field is directly below */ },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = Color.White
+                                )
+                            }
+
+                            // Filter Icon
+                            IconButton(
+                                onClick = { showDateFilterMenu = true },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FilterList,
+                                    contentDescription = "Filter",
+                                    tint = Color.White
+                                )
+                            }
+
                             // "+ New Invoice" Button
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
@@ -207,7 +234,7 @@ fun InvoicesScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "New Invoice",
+                                        text = strings.newInvoice,
                                         color = PrimaryPurple,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
@@ -232,42 +259,52 @@ fun InvoicesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 4 Filter Tabs: All Invoices | Sales | Purchase | Return
-            ScrollableTabRow(
-                selectedTabIndex = selectedTabIndex,
-                containerColor = DokandaarTheme.cardBackground,
-                contentColor = PrimaryPurple,
-                edgePadding = 16.dp,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                        color = PrimaryPurple,
-                        height = 3.dp
-                    )
-                }
+            // 4 Filter Tabs: All Invoices | Sales | Purchase | Return matching Screenshot 5
+            val filterTabs = listOf(
+                Triple(strings.allInvoices, Icons.AutoMirrored.Filled.ReceiptLong, InvoiceStatusTab.ALL),
+                Triple(strings.sales, Icons.Default.ShoppingCart, InvoiceStatusTab.COMPLETED),
+                Triple(strings.purchase, Icons.Default.Inventory2, InvoiceStatusTab.DRAFT),
+                Triple(strings.returns, Icons.Default.Undo, InvoiceStatusTab.RETURN)
+            )
+
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                tabTitles.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = {
-                            selectedTabIndex = index
-                            when (index) {
-                                0 -> viewModel.statusTab.value = InvoiceStatusTab.ALL
-                                1 -> viewModel.statusTab.value = InvoiceStatusTab.COMPLETED
-                                2 -> viewModel.statusTab.value = InvoiceStatusTab.DRAFT
-                                3 -> viewModel.statusTab.value = InvoiceStatusTab.DUES
-                                4 -> viewModel.statusTab.value = InvoiceStatusTab.RETURN
-                            }
-                        },
-                        text = {
+                items(filterTabs) { (title, icon, tab) ->
+                    val isSelected = statusTab == tab
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) PastelPurpleBg else DokandaarTheme.cardBackground,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isSelected) PrimaryPurple else DokandaarTheme.border
+                        ),
+                        modifier = Modifier.clickable {
+                            viewModel.statusTab.value = tab
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = if (isSelected) PrimaryPurple else DokandaarTheme.textMuted,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = title,
-                                fontSize = 13.sp,
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium,
-                                color = if (selectedTabIndex == index) PrimaryPurple else DokandaarTheme.textMuted
+                                color = if (isSelected) PrimaryPurple else DokandaarTheme.textPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
                         }
-                    )
+                    }
                 }
             }
 
@@ -289,7 +326,7 @@ fun InvoicesScreen(
                         icon = Icons.Default.ShoppingCart,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
-                        title = "Today Sales",
+                        title = "Today ${strings.sales}",
                         value = Money(todaySalesAmount).format()
                     )
                     InvoiceKpiCard(
@@ -297,7 +334,7 @@ fun InvoicesScreen(
                         icon = Icons.Default.Receipt,
                         iconBg = PastelPurpleBg,
                         iconTint = PastelPurpleContent,
-                        title = "Invoices",
+                        title = strings.totalInvoices,
                         value = invoicesCount.toString()
                     )
                 }
@@ -311,15 +348,16 @@ fun InvoicesScreen(
                         icon = Icons.Default.Schedule,
                         iconBg = PastelOrangeBg,
                         iconTint = PastelOrangeContent,
-                        title = "Pending Bill",
-                        value = Money(pendingBillsAmount).format()
+                        title = strings.pendingBill,
+                        value = Money(pendingBillsAmount).format(),
+                        valueColor = Color(0xFFD97706)
                     )
                     InvoiceKpiCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Inventory2,
                         iconBg = PastelBlueBg,
                         iconTint = PastelBlueContent,
-                        title = "Total Items",
+                        title = "Total ${strings.items}",
                         value = totalItemsCount.toString()
                     )
                 }
@@ -340,7 +378,7 @@ fun InvoicesScreen(
                     onValueChange = { viewModel.searchQuery.value = it },
                     placeholder = {
                         Text(
-                            text = "Search by Invoice No., Customer...",
+                            text = "Search by Invoice No., Customer, or Mobile...",
                             fontSize = 12.sp,
                             color = DokandaarTheme.textMuted
                         )
@@ -369,7 +407,7 @@ fun InvoicesScreen(
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = BorderColor,
+                        unfocusedBorderColor = DokandaarTheme.border,
                         focusedContainerColor = DokandaarTheme.cardBackground,
                         unfocusedContainerColor = DokandaarTheme.cardBackground
                     ),
@@ -381,7 +419,7 @@ fun InvoicesScreen(
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
                         modifier = Modifier.clickable { showDateFilterMenu = true }
                     ) {
                         Row(
@@ -494,7 +532,7 @@ fun InvoicesScreen(
                             onResumeDraft = {
                                 scope.launch {
                                     val items = viewModel.getCartItemsForInvoice(invoice.invoiceNumber)
-                                    onResumeDraft(items, invoice.invoiceNumber)
+                                    onResumeDraft(items, invoice)
                                 }
                             },
                             onDiscardDraft = { invoiceToDiscard = invoice },
@@ -631,13 +669,14 @@ private fun InvoiceKpiCard(
     iconBg: Color,
     iconTint: Color,
     title: String,
-    value: String
+    value: String,
+    valueColor: Color = DokandaarTheme.textPrimary
 ) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -673,7 +712,7 @@ private fun InvoiceKpiCard(
                     text = value,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary
+                    color = valueColor
                 )
             }
         }
@@ -705,7 +744,7 @@ private fun InvoiceItemCard(
             },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -730,7 +769,7 @@ private fun InvoiceItemCard(
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
             // Invoice details
             Column(modifier = Modifier.weight(1f)) {
@@ -770,136 +809,152 @@ private fun InvoiceItemCard(
                 }
             }
 
-            // Date, Items & Badge
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formattedDate,
-                    fontSize = 10.sp,
-                    color = DokandaarTheme.textMuted
-                )
+            // Date, Items & Badge matching Screenshot 5
+            Column(horizontalAlignment = Alignment.Start, modifier = Modifier.padding(horizontal = 6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        tint = DokandaarTheme.textMuted,
+                        modifier = Modifier.size(11.dp)
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = formattedDate,
+                        fontSize = 10.sp,
+                        color = DokandaarTheme.textMuted
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                Text(
-                    text = "${invoice.itemsCount} Items",
-                    fontSize = 11.sp,
-                    color = DokandaarTheme.textMuted
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = null,
+                        tint = DokandaarTheme.textMuted,
+                        modifier = Modifier.size(11.dp)
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = "${invoice.itemsCount} Items",
+                        fontSize = 11.sp,
+                        color = DokandaarTheme.textMuted
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 // Payment Status Badge matching Screenshot 5
-                val (badgeBg, badgeText, badgeColor) = when {
-                    invoice.status == InvoiceStatus.DRAFT -> Triple(PastelBlueBg, "Draft", PastelBlueContent)
-                    invoice.status == InvoiceStatus.CANCELLED -> Triple(PastelRedBg, "Returned", PastelRedContent)
-                    invoice.duePaise > 0 -> Triple(PastelOrangeBg, "Pending", PastelOrangeContent)
-                    else -> Triple(PastelGreenBg, "Paid", PastelGreenContent)
+                val (badgeBg, badgeText, badgeColor, badgeIcon) = when {
+                    invoice.status == InvoiceStatus.DRAFT -> listOf(PastelBlueBg, "Draft", PastelBlueContent, Icons.Default.Edit)
+                    invoice.status == InvoiceStatus.CANCELLED -> listOf(PastelRedBg, "Returned", PastelRedContent, Icons.Default.Undo)
+                    invoice.duePaise > 0 -> listOf(PastelOrangeBg, "Pending", PastelOrangeContent, Icons.Default.Schedule)
+                    else -> listOf(PastelGreenBg, "Paid", PastelGreenContent, Icons.Default.CheckCircle)
                 }
 
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = badgeBg
+                    color = badgeBg as Color
                 ) {
-                    Text(
-                        text = badgeText,
-                        color = badgeColor,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = badgeIcon as ImageVector,
+                            contentDescription = null,
+                            tint = badgeColor as Color,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = badgeText as String,
+                            color = badgeColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
-            // Amount & 3-dots
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Box {
-                    IconButton(
-                        onClick = { menuExpanded = true },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Options",
-                            tint = DokandaarTheme.textMuted,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+            // Amount & 3-dots matching Screenshot 5
+            val isCancelled = invoice.status == InvoiceStatus.CANCELLED
+            Text(
+                text = if (isCancelled) "-${Money(invoice.grandTotalPaise).format()}" else Money(invoice.grandTotalPaise).format(),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isCancelled) ErrorColor else PrimaryPurple
+            )
 
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Options",
+                        tint = DokandaarTheme.textMuted,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("View Details") },
+                        onClick = {
+                            menuExpanded = false
+                            onViewDetails()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Print Receipt") },
+                        onClick = {
+                            menuExpanded = false
+                            onPrint()
+                        }
+                    )
+                    if (invoice.status == InvoiceStatus.DRAFT) {
                         DropdownMenuItem(
-                            text = { Text("View Details") },
+                            text = { Text("Resume in POS", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
                             onClick = {
                                 menuExpanded = false
-                                onViewDetails()
+                                onResumeDraft()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Print Receipt") },
+                            text = { Text("Discard Draft", color = ErrorColor) },
                             onClick = {
                                 menuExpanded = false
-                                onPrint()
+                                onDiscardDraft()
                             }
                         )
-                        if (invoice.status == InvoiceStatus.DRAFT) {
-                            DropdownMenuItem(
-                                text = { Text("Resume in POS", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onResumeDraft()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Discard Draft", color = ErrorColor) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onDiscardDraft()
-                                }
-                            )
-                        }
-                        if (invoice.duePaise > 0 && invoice.status == InvoiceStatus.COMPLETED) {
-                            DropdownMenuItem(
-                                text = { Text("Settle Due (${Money(invoice.duePaise).format()})", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onSettleDue()
-                                }
-                            )
-                        }
-                        if (invoice.status == InvoiceStatus.COMPLETED) {
-                            DropdownMenuItem(
-                                text = { Text("Void / Return Bill", color = ErrorColor) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onVoidInvoice()
-                                }
-                            )
-                        }
+                    }
+                    if (invoice.duePaise > 0 && invoice.status == InvoiceStatus.COMPLETED) {
+                        DropdownMenuItem(
+                            text = { Text("Settle Due (${Money(invoice.duePaise).format()})", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
+                            onClick = {
+                                menuExpanded = false
+                                onSettleDue()
+                            }
+                        )
+                    }
+                    if (invoice.status == InvoiceStatus.COMPLETED) {
+                        DropdownMenuItem(
+                            text = { Text("Void / Return Bill", color = ErrorColor) },
+                            onClick = {
+                                menuExpanded = false
+                                onVoidInvoice()
+                            }
+                        )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                val amountText = if (invoice.status == InvoiceStatus.CANCELLED) {
-                    "-${Money(invoice.grandTotalPaise).format()}"
-                } else {
-                    Money(invoice.grandTotalPaise).format()
-                }
-                val amountColor = if (invoice.status == InvoiceStatus.CANCELLED) PastelRedContent else PrimaryPurple
-
-                Text(
-                    text = amountText,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = amountColor
-                )
             }
         }
     }

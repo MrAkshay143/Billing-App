@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Fastfood
@@ -81,10 +82,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.cart.CartManager
 import com.billing.app.core.qr.UpiQrGenerator
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.SubPageHeader
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
@@ -108,6 +109,7 @@ fun SaleScreen(
     onNavigateToHeldDrafts: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val cartItems by cartManager.cartItems.collectAsState()
@@ -246,12 +248,17 @@ fun SaleScreen(
                             .height(48.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .clickable {
-                                viewModel.holdDraft(cartItems, cartManager.subtotal) {
-                                    cartManager.clearCart()
-                                    onNavigateBack()
+                                if (cartItems.isNotEmpty()) {
+                                    viewModel.setCustomer(customerName, customerPhone)
+                                    viewModel.setDiscount(discountPaise, cartManager.subtotal.paise)
+                                    viewModel.holdDraft(cartItems, cartManager.subtotal) {
+                                        cartManager.clearCart()
+                                        onNavigateBack()
+                                    }
                                 }
                             },
-                        color = PastelPurpleBg
+                        color = DokandaarTheme.cardBackground,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
                     ) {
                         Column(
                             modifier = Modifier.padding(horizontal = 14.dp),
@@ -259,12 +266,12 @@ fun SaleScreen(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Pause,
-                                contentDescription = null,
-                                tint = PrimaryPurple,
+                                imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                                contentDescription = strings.holdBill,
+                                tint = DokandaarTheme.textPrimary,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Text("Hold", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                            Text(strings.holdBill, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                         }
                     }
 
@@ -274,7 +281,8 @@ fun SaleScreen(
                             .height(48.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .clickable { cartManager.clearCart() },
-                        color = Color(0xFFFEE2E2)
+                        color = DokandaarTheme.cardBackground,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
                     ) {
                         Column(
                             modifier = Modifier.padding(horizontal = 12.dp),
@@ -283,11 +291,11 @@ fun SaleScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = null,
-                                tint = ErrorColor,
+                                contentDescription = strings.discardBill,
+                                tint = DokandaarTheme.textPrimary,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Text("Discard", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ErrorColor)
+                            Text(strings.discardBill, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                         }
                     }
 
@@ -322,7 +330,7 @@ fun SaleScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Proceed to Pay",
+                                    text = strings.proceedToPay,
                                     color = Color.White,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
@@ -404,7 +412,7 @@ fun SaleScreen(
                         onDismissRequest = { showCustomerMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Walk-in Customer", fontWeight = FontWeight.Bold) },
+                            text = { Text(strings.walkInCustomer, fontWeight = FontWeight.Bold) },
                             onClick = {
                                 cartManager.setCustomer("Walk-in Customer", "")
                                 showCustomerMenu = false
@@ -440,7 +448,7 @@ fun SaleScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Add Customer",
+                            text = strings.addCustomer,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryPurple
@@ -475,7 +483,7 @@ fun SaleScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.searchQuery.value = it },
-                        placeholder = { Text("Search product by name, barcode or SKU...", fontSize = 12.sp) },
+                        placeholder = { Text(strings.searchProducts, fontSize = 12.sp) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
@@ -506,7 +514,7 @@ fun SaleScreen(
             ) {
                 item(key = "all") {
                     CategoryCard(
-                        title = "All",
+                        title = strings.filterAll,
                         isSelected = selectedCategory.isBlank() || selectedCategory.equals("All", ignoreCase = true),
                         isAllItem = true,
                         onClick = { viewModel.selectedCategory.value = "All" }
@@ -628,7 +636,7 @@ fun SaleScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Cart (${cartManager.totalItemsCount} Items)",
+                                text = "${strings.cartTitle} (${cartManager.totalItemsCount} ${strings.items})",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DokandaarTheme.textPrimary
@@ -653,7 +661,7 @@ fun SaleScreen(
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Clear Cart", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ErrorColor)
+                                    Text(strings.clearCart, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ErrorColor)
                                 }
                             }
 
@@ -674,7 +682,7 @@ fun SaleScreen(
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Add Discount", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                                    Text(strings.addDiscount, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
                                 }
                             }
                         }
@@ -695,7 +703,7 @@ fun SaleScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Cart is empty. Tap products above or scan barcodes.",
+                                text = strings.cartEmptySub,
                                 fontSize = 12.sp,
                                 color = DokandaarTheme.textMuted
                             )
@@ -797,7 +805,7 @@ fun SaleScreen(
                                         modifier = Modifier.size(24.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Delete,
+                                            imageVector = Icons.Default.Close,
                                             contentDescription = "Remove",
                                             tint = DokandaarTheme.textMuted,
                                             modifier = Modifier.size(16.dp)
@@ -815,17 +823,31 @@ fun SaleScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Items: ${cartManager.totalItemsCount}   Qty: ${cartManager.totalQuantityCount}", fontSize = 11.sp, color = DokandaarTheme.textMuted)
-                        Text("Subtotal: ${cartManager.subtotal.format()}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
+                        Text("${strings.items}: ${cartManager.totalItemsCount}   Qty: ${cartManager.totalQuantityCount}", fontSize = 11.sp, color = DokandaarTheme.textMuted)
+                        Text("${strings.subtotal}: ${cartManager.subtotal.format()}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
                     }
 
                     if (discountPaise > 0) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Discount (-)", fontSize = 11.sp, color = PastelGreenContent)
-                            Text("-${Money(discountPaise).format()}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PastelGreenContent)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text("-${Money(discountPaise).format()}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PastelGreenContent)
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit Discount",
+                                    tint = PastelGreenContent,
+                                    modifier = Modifier
+                                        .size(13.dp)
+                                        .clickable { showDiscountDialog = true }
+                                )
+                            }
                         }
                     }
 
@@ -840,23 +862,32 @@ fun SaleScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Row(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        shape = RoundedCornerShape(12.dp),
+                        color = PastelPurpleBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryPurple.copy(alpha = 0.2f))
                     ) {
-                        Text(
-                            text = "Grand Total",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryPurple
-                        )
-                        Text(
-                            text = grandTotalMoney.format(),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = PrimaryPurple
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = strings.grandTotal,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryPurple
+                            )
+                            Text(
+                                text = grandTotalMoney.format(),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = PrimaryPurple
+                            )
+                        }
                     }
                 }
             }
@@ -909,23 +940,70 @@ fun SaleScreen(
 
     // Add Discount Dialog
     if (showDiscountDialog) {
-        var discountInput by remember { mutableStateOf((discountPaise / 100.0).toString()) }
+        var isPercent by remember { mutableStateOf(false) }
+        var discountInput by remember { mutableStateOf(if (discountPaise > 0) (discountPaise / 100.0).toString() else "") }
 
         AlertDialog(
             onDismissRequest = { showDiscountDialog = false },
             title = { Text("Apply Bill Discount", fontWeight = FontWeight.Bold) },
             text = {
-                OutlinedTextField(
-                    value = discountInput,
-                    onValueChange = { discountInput = it },
-                    label = { Text("Discount Amount (₹)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { isPercent = false },
+                            color = if (!isPercent) PrimaryPurple else PastelPurpleBg
+                        ) {
+                            Text(
+                                text = "Flat (₹)",
+                                color = if (!isPercent) Color.White else PrimaryPurple,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { isPercent = true },
+                            color = if (isPercent) PrimaryPurple else PastelPurpleBg
+                        ) {
+                            Text(
+                                text = "Percentage (%)",
+                                color = if (isPercent) Color.White else PrimaryPurple,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = discountInput,
+                        onValueChange = { discountInput = it },
+                        label = { Text(if (isPercent) "Discount Percentage (%)" else "Discount Amount (₹)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val discPaise = Money.fromRupees(discountInput).paise
+                    val discPaise = if (isPercent) {
+                        val pct = discountInput.toDoubleOrNull() ?: 0.0
+                        ((cartManager.subtotal.paise * pct) / 100.0).toLong().coerceIn(0L, cartManager.subtotal.paise)
+                    } else {
+                        Money.fromRupees(discountInput).paise.coerceIn(0L, cartManager.subtotal.paise)
+                    }
                     cartManager.setDiscount(discPaise)
                     viewModel.setDiscount(discPaise, cartManager.subtotal.paise)
                     showDiscountDialog = false
@@ -959,7 +1037,7 @@ fun SaleScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Complete Payment", fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                    Text(cartManager.grandTotal.format(), fontWeight = FontWeight.ExtraBold, color = PrimaryPurple, fontSize = 18.sp)
+                    Text(Money(grandTotalPaise).format(), fontWeight = FontWeight.ExtraBold, color = PrimaryPurple, fontSize = 18.sp)
                 }
             },
             text = {
@@ -972,7 +1050,7 @@ fun SaleScreen(
                         listOf(
                             Pair("UPI", PaymentMethodMode.UPI),
                             Pair("Cash", PaymentMethodMode.CASH),
-                            Pair("Card / Due", PaymentMethodMode.OTHER)
+                            Pair("Credit / Due", PaymentMethodMode.OTHER)
                         ).forEach { (label, mode) ->
                             val isSel = selectedMode == mode
                             Surface(
@@ -982,6 +1060,11 @@ fun SaleScreen(
                                     .clickable {
                                         selectedMode = mode
                                         viewModel.setPaymentMethod(mode)
+                                        if (mode == PaymentMethodMode.OTHER && cashGiven == (grandTotalPaise / 100.0).toString()) {
+                                            cashGiven = "0"
+                                        } else if (mode == PaymentMethodMode.CASH && cashGiven == "0") {
+                                            cashGiven = (grandTotalPaise / 100.0).toString()
+                                        }
                                     },
                                 color = if (isSel) PrimaryPurple else PastelPurpleBg
                             ) {
@@ -1022,6 +1105,30 @@ fun SaleScreen(
                                 Text(Money(duePaise).format(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = ErrorColor)
                             }
                         }
+                    } else if (selectedMode == PaymentMethodMode.OTHER) {
+                        OutlinedTextField(
+                            value = cashGiven,
+                            onValueChange = { cashGiven = it },
+                            label = { Text("Amount Paid Now (₹) - Rest is Due") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Balance Due (Khata):", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ErrorColor)
+                            Text(Money(duePaise).format(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = ErrorColor)
+                        }
+                        if (customerName.isBlank() || customerName == "Walk-in Customer") {
+                            Text(
+                                text = "⚠️ Notice: Due/Khata bill requires an actual Customer name.",
+                                color = ErrorColor,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     } else if (selectedMode == PaymentMethodMode.UPI) {
                         Text(
                             text = "Customer can scan UPI QR code via GPay, PhonePe, Paytm",
@@ -1034,12 +1141,13 @@ fun SaleScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val enteredCashPaise = if (selectedMode == PaymentMethodMode.CASH) {
-                            Money.fromRupees(cashGiven).paise
-                        } else {
+                        val enteredCashPaise = if (selectedMode == PaymentMethodMode.UPI) {
                             grandTotalPaise
+                        } else {
+                            Money.fromRupees(cashGiven).paise
                         }
                         viewModel.setCashReceived(enteredCashPaise)
+                        viewModel.setCustomer(customerName, customerPhone)
                         viewModel.completeSale(cartItems, cartManager.subtotal) {
                             // Handled by saleSuccess state
                         }

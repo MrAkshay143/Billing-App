@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Description
@@ -69,10 +71,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
@@ -107,6 +109,7 @@ fun ReportsScreen(
 ) {
     val period by viewModel.selectedPeriod.collectAsState()
     val trendMode by viewModel.trendMode.collectAsState()
+    val strings = appStrings()
 
     val totalSalesPaise by viewModel.totalSalesPaise.collectAsState()
     val totalInvoicesCount by viewModel.totalInvoicesCount.collectAsState()
@@ -165,7 +168,7 @@ fun ReportsScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Reports",
+                                    text = strings.navReports,
                                     color = Color.White,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold
@@ -289,7 +292,7 @@ fun ReportsScreen(
                         icon = Icons.Default.ShoppingCart,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
-                        title = "Total Sales",
+                        title = strings.totalSales,
                         value = Money(totalSalesPaise).format()
                     )
                     ReportKpiCard(
@@ -297,7 +300,7 @@ fun ReportsScreen(
                         icon = Icons.Default.Receipt,
                         iconBg = PastelPurpleBg,
                         iconTint = PastelPurpleContent,
-                        title = "Total Invoices",
+                        title = strings.totalInvoices,
                         value = totalInvoicesCount.toString()
                     )
                 }
@@ -311,7 +314,7 @@ fun ReportsScreen(
                         icon = Icons.Default.Schedule,
                         iconBg = PastelOrangeBg,
                         iconTint = PastelOrangeContent,
-                        title = "Pending Bill",
+                        title = strings.pendingBill,
                         value = Money(pendingBillsPaise).format()
                     )
                     ReportKpiCard(
@@ -319,7 +322,7 @@ fun ReportsScreen(
                         icon = Icons.Default.Inventory2,
                         iconBg = PastelBlueBg,
                         iconTint = PastelBlueContent,
-                        title = "Total Items",
+                        title = "Total ${strings.items}",
                         value = totalItemsCount.toString()
                     )
                 }
@@ -330,7 +333,7 @@ fun ReportsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -348,7 +351,7 @@ fun ReportsScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Sales Trend",
+                                text = strings.salesTrend,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DokandaarTheme.textPrimary
@@ -404,111 +407,117 @@ fun ReportsScreen(
                 }
             }
 
-            // 3. Top Selling Items Card
-            Card(
+            // 3. Side-by-Side: Top Selling Items & Sales by Category matching Screenshot 6
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = null,
-                            tint = Color(0xFFEAB308),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Top Selling Items",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DokandaarTheme.textPrimary
-                        )
-                    }
+                // Left: Top Selling Items
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = null,
+                                tint = Color(0xFFEAB308),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = strings.topSellingItems,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DokandaarTheme.textPrimary
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                    if (topSellingItems.isEmpty()) {
-                        Text(
-                            text = "No sales records for this period.",
-                            fontSize = 12.sp,
-                            color = DokandaarTheme.textMuted
-                        )
-                    } else {
-                        topSellingItems.forEach { item ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                ProductThumbnail(
-                                    imageUri = null,
-                                    size = 40.dp,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = item.productName,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = DokandaarTheme.textPrimary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                        if (topSellingItems.isEmpty()) {
+                            Text(
+                                text = "No sales records",
+                                fontSize = 11.sp,
+                                color = DokandaarTheme.textMuted
+                            )
+                        } else {
+                            topSellingItems.take(4).forEach { item ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    ProductThumbnail(
+                                        imageUri = null,
+                                        size = 32.dp,
+                                        shape = RoundedCornerShape(6.dp)
                                     )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = item.productName,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = DokandaarTheme.textPrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "${item.totalQuantity} pcs",
+                                            fontSize = 10.sp,
+                                            color = DokandaarTheme.textMuted
+                                        )
+                                    }
                                     Text(
-                                        text = "${item.totalQuantity} pcs sold",
+                                        text = Money(item.totalRevenuePaise).format(),
                                         fontSize = 11.sp,
-                                        color = DokandaarTheme.textMuted
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryPurple
                                     )
                                 }
-                                Text(
-                                    text = Money(item.totalRevenuePaise).format(),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = PrimaryPurple
-                                )
                             }
                         }
                     }
                 }
-            }
 
-            // 4. Sales by Category Card (Donut Chart)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.PieChart,
-                            contentDescription = null,
-                            tint = PrimaryPurple,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Sales by Category",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DokandaarTheme.textPrimary
+                // Right: Sales by Category
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.PieChart,
+                                contentDescription = null,
+                                tint = PrimaryPurple,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = strings.salesByCategory,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DokandaarTheme.textPrimary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        CategoryDonutChart(
+                            categories = categorySales,
+                            totalSalesPaise = totalSalesPaise
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    CategoryDonutChart(
-                        categories = categorySales,
-                        totalSalesPaise = totalSalesPaise
-                    )
                 }
             }
 
@@ -516,14 +525,14 @@ fun ReportsScreen(
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                        imageVector = Icons.Default.Bolt,
                         contentDescription = null,
                         tint = PrimaryPurple,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Quick Reports",
+                        text = strings.quickReports,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = DokandaarTheme.textPrimary
@@ -564,8 +573,8 @@ fun ReportsScreen(
                     QuickReportTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Warning,
-                        iconBg = PastelRedBg,
-                        iconTint = PastelRedContent,
+                        iconBg = PastelGreenBg,
+                        iconTint = PastelGreenContent,
                         title = "Low Stock",
                         onClick = onNavigateToStockReport
                     )
@@ -587,7 +596,7 @@ fun ReportsScreen(
                     )
                     QuickReportTile(
                         modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Category,
+                        icon = Icons.Default.BarChart,
                         iconBg = PastelIndigoBg,
                         iconTint = PastelIndigoContent,
                         title = "Category Report",
@@ -595,7 +604,7 @@ fun ReportsScreen(
                     )
                     QuickReportTile(
                         modifier = Modifier.weight(1f),
-                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        icon = Icons.Default.Assessment,
                         iconBg = PastelTealBg,
                         iconTint = PastelTealContent,
                         title = "Profit & Loss",
@@ -688,7 +697,7 @@ fun ReportsScreen(
                                 }
                                 Text(Money(cat.totalRevenuePaise).format(), fontWeight = FontWeight.Bold, color = PrimaryPurple, fontSize = 13.sp)
                             }
-                            HorizontalDivider(color = BorderColor, thickness = 0.5.dp)
+                            HorizontalDivider(color = DokandaarTheme.border, thickness = 0.5.dp)
                         }
                     }
                 }
@@ -765,7 +774,7 @@ private fun ReportKpiCard(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -823,7 +832,7 @@ private fun QuickReportTile(
             .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(

@@ -22,9 +22,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CloudSync
@@ -84,7 +86,6 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
@@ -324,7 +325,7 @@ fun MoreScreen(
                     .clickable { onNavigateToStoreProfile() },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Row(
@@ -441,7 +442,7 @@ fun MoreScreen(
                     )
                     MoreTile(
                         modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Payments,
+                        icon = Icons.Default.AccountBalanceWallet,
                         iconBg = PastelPinkBg,
                         iconTint = PastelPinkContent,
                         title = strings.expenses,
@@ -586,7 +587,7 @@ fun MoreScreen(
                     )
                     MoreTile(
                         modifier = Modifier.weight(1f),
-                        icon = Icons.Default.HeadsetMic,
+                        icon = Icons.AutoMirrored.Filled.Chat,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
                         title = strings.whatsappSupport,
@@ -637,7 +638,7 @@ fun MoreScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column {
@@ -647,48 +648,48 @@ fun MoreScreen(
                         subtitle = "Thermal & Bluetooth",
                         onClick = onNavigateToPrinterSetup
                     )
-                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    HorizontalDivider(color = DokandaarTheme.border, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Language,
                         title = strings.language,
                         subtitle = "English / हिन्दी / বাংলা",
                         onClick = onNavigateToLanguage
                     )
-                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    HorizontalDivider(color = DokandaarTheme.border, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Group,
                         title = strings.userAccess,
                         subtitle = "Staff & Roles",
                         onClick = onNavigateToUserAccess
                     )
-                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    HorizontalDivider(color = DokandaarTheme.border, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Palette,
                         title = strings.appearance,
                         subtitle = "Dark / Light Mode",
                         onClick = onNavigateToAppearance
                     )
-                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    HorizontalDivider(color = DokandaarTheme.border, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Notifications,
                         title = strings.notifications,
                         badge = "3",
                         onClick = { showNotificationsDialog = true }
                     )
-                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    HorizontalDivider(color = DokandaarTheme.border, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Info,
                         title = strings.aboutApp,
                         subtitle = "v2.0.0",
                         onClick = onNavigateToAbout
                     )
-                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    HorizontalDivider(color = DokandaarTheme.border, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Policy,
                         title = strings.privacyPolicy,
                         onClick = onNavigateToPrivacyPolicy
                     )
-                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    HorizontalDivider(color = DokandaarTheme.border, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Security,
                         title = strings.termsConditions,
@@ -750,7 +751,7 @@ private fun MoreTile(
             .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(

@@ -134,7 +134,8 @@ fun HomeScreen(
                     if (lowStockCount > 0) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = PastelRedBg,
+                            color = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else PastelRedBg,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) ErrorColor.copy(alpha = 0.3f) else Color.Transparent),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -158,7 +159,8 @@ fun HomeScreen(
 
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = PastelGreenBg,
+                        color = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else PastelGreenBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) PastelGreenContent.copy(alpha = 0.3f) else Color.Transparent),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -176,7 +178,8 @@ fun HomeScreen(
 
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = PastelPurpleBg,
+                        color = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else PastelPurpleBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) PrimaryPurple.copy(alpha = 0.3f) else Color.Transparent),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -391,7 +394,7 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.People,
                         title = strings.customers,
-                        subtitle = "Manage",
+                        subtitle = "Manage Customers",
                         bgColor = PastelPinkBg,
                         contentColor = PastelPinkContent,
                         onClick = onNavigateToCustomers
@@ -400,7 +403,7 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.BarChart,
                         title = strings.navReports,
-                        subtitle = "Sales & Stock",
+                        subtitle = "Sales, Stock & More",
                         bgColor = PastelIndigoBg,
                         contentColor = PastelIndigoContent,
                         onClick = onNavigateToReports
@@ -409,7 +412,7 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.FileDownload,
                         title = strings.importExport,
-                        subtitle = "Excel/CSV",
+                        subtitle = "Data (CSV/Excel)",
                         bgColor = PastelTealBg,
                         contentColor = PastelTealContent,
                         onClick = onNavigateToImportExport
@@ -578,7 +581,16 @@ fun HomeScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(32.dp)
+                                .background(Color.White.copy(alpha = 0.30f))
+                        )
+
+                        Spacer(modifier = Modifier.width(12.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(

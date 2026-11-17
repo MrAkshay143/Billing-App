@@ -197,9 +197,21 @@ fun AppNavHost(
                 onNavigateToSettings = { navigateToTab(DokandaarTab.MORE) },
                 onNavigateToSalesReport = { navController.navigate(Screen.SalesReport.route) },
                 onNavigateToNewSale = { navController.navigate(Screen.Sale.route) },
-                onResumeDraft = { items, draftInvoiceNumber ->
-                    cartManager.setResumedDraft(draftInvoiceNumber, items)
-                    checkoutViewModel.setResumedDraft(draftInvoiceNumber)
+                onResumeDraft = { items, draftInvoice ->
+                    cartManager.setResumedDraft(
+                        draftNumber = draftInvoice.invoiceNumber,
+                        items = items,
+                        customerName = draftInvoice.customerName,
+                        customerPhone = draftInvoice.customerPhone,
+                        discountPaise = draftInvoice.discountPaise
+                    )
+                    checkoutViewModel.setResumedDraft(draftInvoice.invoiceNumber)
+                    checkoutViewModel.setCustomer(
+                        draftInvoice.customerName ?: "Walk-in Customer",
+                        draftInvoice.customerPhone ?: ""
+                    )
+                    val subtotal = items.fold(0L) { acc, it -> acc + it.total.paise }
+                    checkoutViewModel.setDiscount(draftInvoice.discountPaise, subtotal)
                     navController.navigate(Screen.Sale.route)
                 }
             )

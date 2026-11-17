@@ -52,16 +52,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.SubPageHeader
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
 import com.billing.app.core.ui.theme.PastelBlueBg
 import com.billing.app.core.ui.theme.PastelBlueContent
+import com.billing.app.core.ui.theme.PastelOrangeBg
+import com.billing.app.core.ui.theme.PastelOrangeContent
 import com.billing.app.core.ui.theme.PrimaryPurple
+import com.billing.app.core.util.Money
 import com.billing.app.data.local.entity.CustomerEntity
 import com.billing.app.domain.repository.CustomerRepository
 import kotlinx.coroutines.launch
@@ -71,6 +76,7 @@ fun CustomersScreen(
     customerRepository: CustomerRepository,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val customers by customerRepository.getAllCustomers().collectAsState(initial = emptyList())
 
@@ -238,7 +244,7 @@ fun CustomersScreen(
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = BorderColor,
+                        unfocusedBorderColor = DokandaarTheme.border,
                         focusedContainerColor = DokandaarTheme.cardBackground,
                         unfocusedContainerColor = DokandaarTheme.cardBackground
                     ),
@@ -282,7 +288,7 @@ fun CustomersScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -312,18 +318,34 @@ fun CustomersScreen(
                                         fontWeight = FontWeight.Bold,
                                         color = DokandaarTheme.textPrimary
                                     )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.clickable(enabled = cust.phone.isNotBlank()) {
+                                            try {
+                                                val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${cust.phone.trim()}"))
+                                                context.startActivity(dialIntent)
+                                            } catch (_: Exception) {}
+                                        }
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Default.Phone,
-                                            contentDescription = null,
-                                            tint = DokandaarTheme.textMuted,
+                                            contentDescription = "Call",
+                                            tint = if (cust.phone.isNotBlank()) PrimaryPurple else DokandaarTheme.textMuted,
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = cust.phone,
+                                            text = cust.phone.ifBlank { "No phone" },
                                             fontSize = 12.sp,
-                                            color = DokandaarTheme.textMuted
+                                            color = if (cust.phone.isNotBlank()) PrimaryPurple else DokandaarTheme.textMuted
+                                        )
+                                    }
+                                    if (cust.openingBalancePaise != 0L) {
+                                        Text(
+                                            text = "Due Khata: ${Money(cust.openingBalancePaise).format()}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (cust.openingBalancePaise > 0) Color(0xFFD97706) else PastelBlueContent
                                         )
                                     }
                                     if (!cust.address.isNullOrBlank()) {

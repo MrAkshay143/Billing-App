@@ -235,8 +235,8 @@ class CheckoutViewModel(
 
                 val custName = customerName.value.trim()
                 val custPhone = customerPhone.value.trim()
-                if (duePaise > 0 && custName.isBlank()) {
-                    _errorMessage.value = "Customer name is required for partial/credit due sales"
+                if (duePaise > 0 && (custName.isBlank() || custName.equals("Walk-in Customer", ignoreCase = true))) {
+                    _errorMessage.value = "Please select or add a Customer for Credit / Due bill"
                     _isCompletingSale.value = false
                     return@launch
                 }
@@ -258,7 +258,8 @@ class CheckoutViewModel(
                     customerPhone = custPhone.ifBlank { null },
                     cashReceivedPaise = cashReceivedPaise.value,
                     changeReturnedPaise = changeReturnedPaise,
-                    invoiceType = "SALE"
+                    invoiceType = "SALE",
+                    itemsCount = items.sumOf { it.quantity }.coerceAtLeast(1)
                 )
 
                 val invoiceItems = items.map { item ->
@@ -330,7 +331,8 @@ class CheckoutViewModel(
                     paymentMethod = selectedPaymentMethod.value.name,
                     customerName = customerName.value.ifBlank { null },
                     customerPhone = customerPhone.value.ifBlank { null },
-                    invoiceType = "SALE"
+                    invoiceType = "SALE",
+                    itemsCount = items.sumOf { it.quantity }.coerceAtLeast(1)
                 )
                 val invoiceItems = items.map { item ->
                     InvoiceItemEntity(
