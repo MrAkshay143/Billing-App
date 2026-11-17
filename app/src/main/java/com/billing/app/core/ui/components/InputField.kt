@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.billing.app.core.ui.theme.BorderColor
-import com.billing.app.core.ui.theme.PrimaryColor
+import com.billing.app.core.ui.theme.DokandaarTheme
+import com.billing.app.core.ui.theme.PrimaryPurple
 
 @Composable
 fun InputField(
@@ -35,23 +35,25 @@ fun InputField(
             text = label,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF1E293B),
+            color = DokandaarTheme.textPrimary,
             modifier = Modifier.padding(bottom = 6.dp)
         )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = Color.Gray) },
+            placeholder = { Text(placeholder, color = DokandaarTheme.textMuted) },
             isError = isError,
             singleLine = singleLine,
             shape = RoundedCornerShape(12.dp),
             keyboardOptions = keyboardOptions,
             trailingIcon = trailingIcon,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedBorderColor = PrimaryColor,
-                unfocusedBorderColor = BorderColor
+                focusedContainerColor = DokandaarTheme.cardBackground,
+                unfocusedContainerColor = DokandaarTheme.cardBackground,
+                focusedTextColor = DokandaarTheme.textPrimary,
+                unfocusedTextColor = DokandaarTheme.textPrimary,
+                focusedBorderColor = PrimaryPurple,
+                unfocusedBorderColor = DokandaarTheme.border
             ),
             modifier = Modifier.fillMaxWidth()
         )

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -68,6 +69,8 @@ import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
 import com.billing.app.core.ui.theme.PastelGreenBg
 import com.billing.app.core.ui.theme.PastelGreenContent
+import com.billing.app.core.ui.theme.PastelOrangeBg
+import com.billing.app.core.ui.theme.PastelOrangeContent
 import com.billing.app.core.ui.theme.PastelPurpleBg
 import com.billing.app.core.ui.theme.PastelPurpleContent
 import com.billing.app.core.ui.theme.PastelRedBg
@@ -86,6 +89,7 @@ fun ProductListScreen(
     onNavigateToTab: (DokandaarTab) -> Unit
 ) {
     val filteredProducts by viewModel.filteredProducts.collectAsState()
+    val products by viewModel.products.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val activeFilter by viewModel.activeFilter.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
@@ -182,6 +186,7 @@ fun ProductListScreen(
                                 colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
                             )
                         )
+                        .statusBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
                     Row(
@@ -358,6 +363,10 @@ fun ProductListScreen(
             }
 
             // Category Filter Chips
+            val categoryCounts = remember(products) {
+                products.groupBy { it.category }.mapValues { it.value.size }
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -369,14 +378,14 @@ fun ProductListScreen(
                     val isSelected = (selectedCategory.equals(cat, ignoreCase = true)) ||
                             (cat == "All" && (selectedCategory == "All" || selectedCategory.isBlank()))
 
-                    val label = if (cat == "All") "All ($allCount)" else cat
+                    val label = if (cat == "All") "All ($allCount)" else "$cat (${categoryCounts[cat] ?: 0})"
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = if (isSelected) PastelPurpleBg else DokandaarTheme.cardBackground,
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isSelected) PrimaryPurple else BorderColor
+                            if (isSelected) PrimaryPurple else DokandaarTheme.border
                         ),
                         modifier = Modifier.clickable {
                             viewModel.setCategory(cat)
@@ -539,12 +548,24 @@ private fun ProductItemCard(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Stock Badge
+                // Stock Badge - Tri-state (Out, Low, In Stock)
                 val isLow = product.stock in 1..5
                 val isOut = product.stock <= 0
-                val badgeBg = if (isOut || isLow) PastelRedBg else PastelGreenBg
-                val badgeColor = if (isOut || isLow) PastelRedContent else PastelGreenContent
-                val badgeText = if (isOut) "Out of Stock" else "In Stock: ${product.stock}"
+                val badgeBg = when {
+                    isOut -> PastelRedBg
+                    isLow -> PastelOrangeBg
+                    else -> PastelGreenBg
+                }
+                val badgeColor = when {
+                    isOut -> PastelRedContent
+                    isLow -> PastelOrangeContent
+                    else -> PastelGreenContent
+                }
+                val badgeText = when {
+                    isOut -> "Out of Stock"
+                    isLow -> "Low Stock: ${product.stock}"
+                    else -> "In Stock: ${product.stock}"
+                }
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),

@@ -58,6 +58,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -143,8 +145,10 @@ fun FullScannerScreen(
         }
     }
 
+    var scanTriggerCount by remember { mutableIntStateOf(0) }
+
     // Auto-hide success badge after 2 seconds
-    LaunchedEffect(showAddedBadge) {
+    LaunchedEffect(scanTriggerCount) {
         if (showAddedBadge) {
             delay(2000L)
             showAddedBadge = false
@@ -226,7 +230,7 @@ fun FullScannerScreen(
                             .height(50.dp)
                             .clip(RoundedCornerShape(25.dp))
                             .clickable { cartManager.clearCart() },
-                        color = Color.White,
+                        color = DokandaarTheme.cardBackground,
                         border = androidx.compose.foundation.BorderStroke(1.dp, ErrorColor)
                     ) {
                         Row(
@@ -274,7 +278,7 @@ fun FullScannerScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Done (${cartItems.sumOf { it.quantity }} Items)",
-                                color = Color.White,
+                                color = DokandaarTheme.cardBackground,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -298,61 +302,64 @@ fun FullScannerScreen(
                     .background(Color.Black)
             ) {
                 if (hasCameraPermission) {
-                    AndroidView(
-                        factory = { ctx ->
-                            val previewView = PreviewView(ctx)
-                            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                            cameraProviderFuture.addListener({
-                                val cameraProvider = cameraProviderFuture.get()
-                                val preview = Preview.Builder().build().also {
-                                    it.setSurfaceProvider(previewView.surfaceProvider)
-                                }
-                                val selector = if (useFrontCamera) {
-                                    CameraSelector.DEFAULT_FRONT_CAMERA
-                                } else {
-                                    CameraSelector.DEFAULT_BACK_CAMERA
-                                }
-                                val analyzer = ImageAnalysis.Builder()
-                                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                                    .build()
-                                    .also { imageAnalysis ->
-                                        imageAnalysis.setAnalyzer(
-                                            cameraExecutor,
-                                            BarcodeAnalyzer(debounceManager) { rawBarcode ->
-                                                ContextCompat.getMainExecutor(ctx).execute {
-                                                    if (onBarcodeCaptured != null) {
-                                                        onBarcodeCaptured(rawBarcode)
-                                                    } else {
-                                                        cartManager.scanBarcode(rawBarcode) { success, name, errorMsg ->
-                                                            if (success) {
-                                                                lastAddedProductName = name
-                                                                showAddedBadge = true
-                                                            } else {
-                                                                FeedbackManager.showToast(context, errorMsg ?: "Product not found")
+                    key(useFrontCamera) {
+                        AndroidView(
+                            factory = { ctx ->
+                                val previewView = PreviewView(ctx)
+                                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                                cameraProviderFuture.addListener({
+                                    val cameraProvider = cameraProviderFuture.get()
+                                    val preview = Preview.Builder().build().also {
+                                        it.setSurfaceProvider(previewView.surfaceProvider)
+                                    }
+                                    val selector = if (useFrontCamera) {
+                                        CameraSelector.DEFAULT_FRONT_CAMERA
+                                    } else {
+                                        CameraSelector.DEFAULT_BACK_CAMERA
+                                    }
+                                    val analyzer = ImageAnalysis.Builder()
+                                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                        .build()
+                                        .also { imageAnalysis ->
+                                            imageAnalysis.setAnalyzer(
+                                                cameraExecutor,
+                                                BarcodeAnalyzer(debounceManager) { rawBarcode ->
+                                                    ContextCompat.getMainExecutor(ctx).execute {
+                                                        if (onBarcodeCaptured != null) {
+                                                            onBarcodeCaptured(rawBarcode)
+                                                        } else {
+                                                            cartManager.scanBarcode(rawBarcode) { success, name, errorMsg ->
+                                                                if (success) {
+                                                                    lastAddedProductName = name
+                                                                    showAddedBadge = true
+                                                                    scanTriggerCount++
+                                                                } else {
+                                                                    FeedbackManager.showToast(context, errorMsg ?: "Product not found")
+                                                                }
                                                             }
                                                         }
                                                     }
                                                 }
-                                            }
-                                        )
-                                    }
+                                            )
+                                        }
 
-                                try {
-                                    cameraProvider.unbindAll()
-                                    cameraControl = cameraProvider.bindToLifecycle(
-                                        lifecycleOwner,
-                                        selector,
-                                        preview,
-                                        analyzer
-                                    )
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
-                            }, ContextCompat.getMainExecutor(ctx))
-                            previewView
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
+                                    try {
+                                        cameraProvider.unbindAll()
+                                        cameraControl = cameraProvider.bindToLifecycle(
+                                            lifecycleOwner,
+                                            selector,
+                                            preview,
+                                            analyzer
+                                        )
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }, ContextCompat.getMainExecutor(ctx))
+                                previewView
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
 
                     // Laser Viewfinder Overlay
                     ViewfinderLaserOverlay()
@@ -363,7 +370,7 @@ fun FullScannerScreen(
                     ) {
                         Text(
                             text = "Camera permission needed",
-                            color = Color.White,
+                            color = DokandaarTheme.cardBackground,
                             fontSize = 14.sp
                         )
                     }

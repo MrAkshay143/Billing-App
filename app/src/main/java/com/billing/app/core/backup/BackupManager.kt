@@ -6,11 +6,17 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.room.withTransaction
 import com.billing.app.core.database.AppDatabase
+import com.billing.app.data.local.entity.CategoryEntity
+import com.billing.app.data.local.entity.CustomerEntity
+import com.billing.app.data.local.entity.ExpenseEntity
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
 import com.billing.app.data.local.entity.InvoiceStatus
 import com.billing.app.data.local.entity.ProductEntity
+import com.billing.app.data.local.entity.PurchaseEntity
+import com.billing.app.data.local.entity.PurchaseItemEntity
 import com.billing.app.data.local.entity.ShopEntity
+import com.billing.app.data.local.entity.SupplierEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -26,7 +32,7 @@ import java.util.Locale
 
 object BackupManager {
 
-    private const val BACKUP_VERSION = 2
+    private const val BACKUP_VERSION = 3
 
     private fun calculateSha256(content: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -40,6 +46,13 @@ object BackupManager {
         val invoices = database.invoiceDao().getAllInvoices().first()
         val invoiceItems = database.invoiceDao().getAllInvoiceItems()
         val invoiceCounter = database.invoiceDao().getLastInvoiceNumber() ?: 0L
+
+        // Room v4 entities
+        val customers = database.customerDao().getAllCustomers().first()
+        val categories = database.categoryDao().getAllCategories().first()
+        val suppliers = database.supplierDao().getAllSuppliers().first()
+        val expenses = database.expenseDao().getAllExpenses().first()
+        val purchases = database.purchaseDao().getAllPurchases().first()
 
         val root = JSONObject().apply {
             put("version", BACKUP_VERSION)
@@ -60,7 +73,7 @@ object BackupManager {
                 })
             }
 
-            // Products
+            // Products (including all Room v4 columns)
             val prodArr = JSONArray()
             for (p in products) {
                 prodArr.put(JSONObject().apply {
@@ -71,11 +84,19 @@ object BackupManager {
                     put("stock", p.stock)
                     put("imageUri", p.imageUri ?: "")
                     put("createdAt", p.createdAt)
+                    put("sku", p.sku)
+                    put("category", p.category)
+                    put("unit", p.unit)
+                    put("purchasePricePaise", p.purchasePricePaise)
+                    put("mrpPaise", p.mrpPaise)
+                    put("minStockAlert", p.minStockAlert)
+                    put("gstRate", p.gstRate)
+                    put("description", p.description)
                 })
             }
             put("products", prodArr)
 
-            // Invoices
+            // Invoices (including invoiceType & itemsCount)
             val invArr = JSONArray()
             for (inv in invoices) {
                 invArr.put(JSONObject().apply {
@@ -93,6 +114,8 @@ object BackupManager {
                     put("customerPhone", inv.customerPhone ?: "")
                     put("cashReceivedPaise", inv.cashReceivedPaise)
                     put("changeReturnedPaise", inv.changeReturnedPaise)
+                    put("invoiceType", inv.invoiceType)
+                    put("itemsCount", inv.itemsCount)
                 })
             }
             put("invoices", invArr)
@@ -112,68 +135,153 @@ object BackupManager {
                 })
             }
             put("invoiceItems", itemArr)
+
+            // Customers
+            val custArr = JSONArray()
+            for (c in customers) {
+                custArr.put(JSONObject().apply {
+                    put("id", c.id)
+                    put("name", c.name)
+                    put("phone", c.phone)
+                    put("email", c.email ?: "")
+                    put("address", c.address ?: "")
+                    put("gstin", c.gstin ?: "")
+                    put("openingBalancePaise", c.openingBalancePaise)
+                    put("createdAt", c.createdAt)
+                })
+            }
+            put("customers", custArr)
+
+            // Categories
+            val catArr = JSONArray()
+            for (cat in categories) {
+                catArr.put(JSONObject().apply {
+                    put("id", cat.id)
+                    put("name", cat.name)
+                    put("iconName", cat.iconName ?: "")
+                    put("displayOrder", cat.displayOrder)
+                })
+            }
+            put("categories", catArr)
+
+            // Suppliers
+            val supArr = JSONArray()
+            for (s in suppliers) {
+                supArr.put(JSONObject().apply {
+                    put("id", s.id)
+                    put("name", s.name)
+                    put("contactPerson", s.contactPerson ?: "")
+                    put("phone", s.phone)
+                    put("email", s.email ?: "")
+                    put("address", s.address ?: "")
+                    put("gstin", s.gstin ?: "")
+                    put("openingBalancePaise", s.openingBalancePaise)
+                    put("createdAt", s.createdAt)
+                })
+            }
+            put("suppliers", supArr)
+
+            // Expenses
+            val expArr = JSONArray()
+            for (e in expenses) {
+                expArr.put(JSONObject().apply {
+                    put("id", e.id)
+                    put("title", e.title)
+                    put("category", e.category)
+                    put("amountPaise", e.amountPaise)
+                    put("date", e.date)
+                    put("paymentMethod", e.paymentMethod)
+                    put("description", e.description ?: "")
+                    put("createdAt", e.createdAt)
+                })
+            }
+            put("expenses", expArr)
+
+            // Purchases
+            val purArr = JSONArray()
+            for (p in purchases) {
+                purArr.put(JSONObject().apply {
+                    put("id", p.id)
+                    put("purchaseNumber", p.purchaseNumber)
+                    put("supplierId", p.supplierId ?: "")
+                    put("supplierName", p.supplierName ?: "")
+                    put("timestamp", p.timestamp)
+                    put("totalPaise", p.totalPaise)
+                    put("paymentStatus", p.paymentStatus)
+                })
+            }
+            put("purchases", purArr)
         }
 
-        // Add payload SHA-256 checksum for integrity check
-        val payloadToHash = (root.optJSONObject("shopProfile")?.toString() ?: "") +
-                root.optLong("invoiceCounter", 0L).toString() +
-                root.getJSONArray("products").toString() +
-                root.getJSONArray("invoices").toString() +
-                root.getJSONArray("invoiceItems").toString()
-        root.put("checksum", calculateSha256(payloadToHash))
+        val jsonString = root.toString(2)
+        val checksum = calculateSha256(jsonString)
 
-        root.toString(2)
+        val envelope = JSONObject().apply {
+            put("checksum", checksum)
+            put("data", jsonString)
+        }
+        envelope.toString()
     }
 
-    suspend fun saveBackupToInternalStorage(context: Context, database: AppDatabase): Result<File> = withContext(Dispatchers.IO) {
+    suspend fun saveBackupToInternalStorage(context: Context, database: AppDatabase): Result<File> = saveBackupToFile(context, database)
+
+    suspend fun exportBackupToUri(context: Context, database: AppDatabase, uri: Uri): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val json = createBackupJson(database)
-            val dir = File(context.filesDir, "backups")
-            if (!dir.exists()) dir.mkdirs()
-            val fileName = "dokandaar_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.json"
-            val file = File(dir, fileName)
-            file.writeText(json)
+            val content = createBackupJson(database)
+            context.contentResolver.openOutputStream(uri)?.use { stream ->
+                stream.bufferedWriter(Charsets.UTF_8).use { it.write(content) }
+            } ?: return@withContext Result.failure(Exception("Cannot open destination stream"))
+            Result.success("Exported backup successfully")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun saveBackupToFile(context: Context, database: AppDatabase): Result<File> = withContext(Dispatchers.IO) {
+        try {
+            val backupDir = File(context.filesDir, "backups")
+            if (!backupDir.exists()) {
+                backupDir.mkdirs()
+            }
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val file = File(backupDir, "dokandaar_backup_$timestamp.json")
+            val content = createBackupJson(database)
+            file.writeText(content, Charsets.UTF_8)
             Result.success(file)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun exportBackupToUri(context: Context, database: AppDatabase, uri: Uri): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun exportBackupToStream(database: AppDatabase, outputStream: OutputStream): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val json = createBackupJson(database)
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                outputStream.write(json.toByteArray(Charsets.UTF_8))
-                outputStream.flush()
-            } ?: return@withContext Result.failure(Exception("Cannot open destination file"))
-            Result.success("Backup exported successfully")
+            val content = createBackupJson(database)
+            outputStream.bufferedWriter(Charsets.UTF_8).use {
+                it.write(content)
+            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun restoreBackupFromJson(database: AppDatabase, jsonString: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun restoreBackupFromJson(database: AppDatabase, envelopeJson: String): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val root = JSONObject(jsonString)
-
-            // Validate integrity checksum if present (Version 2+)
-            if (root.has("checksum") && root.has("products") && root.has("invoices") && root.has("invoiceItems")) {
-                val expectedChecksum = root.getString("checksum")
-                val newPayload = (root.optJSONObject("shopProfile")?.toString() ?: "") +
-                        root.optLong("invoiceCounter", 0L).toString() +
-                        root.getJSONArray("products").toString() +
-                        root.getJSONArray("invoices").toString() +
-                        root.getJSONArray("invoiceItems").toString()
-                val legacyPayload = root.getJSONArray("products").toString() +
-                        root.getJSONArray("invoices").toString() +
-                        root.getJSONArray("invoiceItems").toString()
-
-                val matchesNew = expectedChecksum.equals(calculateSha256(newPayload), ignoreCase = true)
-                val matchesLegacy = expectedChecksum.equals(calculateSha256(legacyPayload), ignoreCase = true)
-                if (!matchesNew && !matchesLegacy) {
-                    return@withContext Result.failure(SecurityException("Backup data integrity check failed: corrupt or modified backup file"))
+            val envelope = JSONObject(envelopeJson)
+            val dataJson: String
+            if (envelope.has("checksum") && envelope.has("data")) {
+                val expectedChecksum = envelope.getString("checksum")
+                dataJson = envelope.getString("data")
+                val actualChecksum = calculateSha256(dataJson)
+                if (expectedChecksum != actualChecksum) {
+                    return@withContext Result.failure(SecurityException("Backup file corrupted or checksum mismatch"))
                 }
+            } else {
+                dataJson = envelopeJson
             }
+
+            val root = JSONObject(dataJson)
+            val version = root.optInt("version", 1)
 
             var productCount = 0
             var invoiceCount = 0
@@ -182,7 +290,7 @@ object BackupManager {
             val restoredInvoiceNumbers = mutableSetOf<String>()
 
             database.withTransaction {
-                // 1. Restore Shop Profile (Fixes C3)
+                // 1. Restore Shop Profile
                 if (root.has("shopProfile")) {
                     val sObj = root.getJSONObject("shopProfile")
                     val shop = ShopEntity(
@@ -197,7 +305,7 @@ object BackupManager {
                     database.shopDao().insertOrUpdate(shop)
                 }
 
-                // 2. Restore Products with Upsert/Merge (Fixes C3)
+                // 2. Restore Products with all fields
                 if (root.has("products")) {
                     val pArray = root.getJSONArray("products")
                     productCount = pArray.length()
@@ -210,13 +318,21 @@ object BackupManager {
                             pricePaise = obj.getLong("pricePaise"),
                             stock = obj.getInt("stock"),
                             imageUri = obj.optString("imageUri").ifBlank { null },
-                            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                            createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                            sku = obj.optString("sku", ""),
+                            category = obj.optString("category", "Grocery"),
+                            unit = obj.optString("unit", "Piece"),
+                            purchasePricePaise = obj.optLong("purchasePricePaise", 0L),
+                            mrpPaise = obj.optLong("mrpPaise", 0L),
+                            minStockAlert = obj.optInt("minStockAlert", 5),
+                            gstRate = obj.optInt("gstRate", 0),
+                            description = obj.optString("description", "")
                         )
                         database.productDao().upsertProduct(entity)
                     }
                 }
 
-                // 3. Restore Invoices with Upsert/Merge (Fixes C3)
+                // 3. Restore Invoices
                 if (root.has("invoices")) {
                     val iArray = root.getJSONArray("invoices")
                     invoiceCount = iArray.length()
@@ -247,13 +363,15 @@ object BackupManager {
                             customerName = obj.optString("customerName").ifBlank { null },
                             customerPhone = obj.optString("customerPhone").ifBlank { null },
                             cashReceivedPaise = obj.optLong("cashReceivedPaise", 0L),
-                            changeReturnedPaise = obj.optLong("changeReturnedPaise", 0L)
+                            changeReturnedPaise = obj.optLong("changeReturnedPaise", 0L),
+                            invoiceType = obj.optString("invoiceType", "SALE"),
+                            itemsCount = obj.optInt("itemsCount", 1)
                         )
                         database.invoiceDao().upsertInvoice(inv)
                     }
                 }
 
-                // 4. Restore Invoice Items with clean replacement (Fixes C1)
+                // 4. Restore Invoice Items
                 if (root.has("invoiceItems")) {
                     val itemArray = root.getJSONArray("invoiceItems")
                     itemCount = itemArray.length()
@@ -273,14 +391,92 @@ object BackupManager {
                             )
                         )
                     }
-                    // Clean old items for restored invoices before inserting restored items to prevent duplication
                     for (invNum in restoredInvoiceNumbers) {
                         database.invoiceDao().deleteInvoiceItems(invNum)
                     }
                     database.invoiceDao().insertInvoiceItems(itemsList)
                 }
 
-                // 5. Restore & Sync Invoice Counter (Fixes C2)
+                // 5. Restore Customers
+                if (root.has("customers")) {
+                    val cArray = root.getJSONArray("customers")
+                    val custList = mutableListOf<CustomerEntity>()
+                    for (i in 0 until cArray.length()) {
+                        val obj = cArray.getJSONObject(i)
+                        custList.add(
+                            CustomerEntity(
+                                id = obj.getString("id"),
+                                name = obj.getString("name"),
+                                phone = obj.getString("phone"),
+                                email = obj.optString("email").ifBlank { null },
+                                address = obj.optString("address").ifBlank { null },
+                                gstin = obj.optString("gstin").ifBlank { null },
+                                openingBalancePaise = obj.optLong("openingBalancePaise", 0L),
+                                createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                            )
+                        )
+                    }
+                    database.customerDao().insertAll(custList)
+                }
+
+                // 6. Restore Categories
+                if (root.has("categories")) {
+                    val catArray = root.getJSONArray("categories")
+                    val catList = mutableListOf<CategoryEntity>()
+                    for (i in 0 until catArray.length()) {
+                        val obj = catArray.getJSONObject(i)
+                        catList.add(
+                            CategoryEntity(
+                                id = obj.getString("id"),
+                                name = obj.getString("name"),
+                                iconName = obj.optString("iconName").ifBlank { null },
+                                displayOrder = obj.optInt("displayOrder", 0)
+                            )
+                        )
+                    }
+                    database.categoryDao().insertAll(catList)
+                }
+
+                // 7. Restore Suppliers
+                if (root.has("suppliers")) {
+                    val sArray = root.getJSONArray("suppliers")
+                    for (i in 0 until sArray.length()) {
+                        val obj = sArray.getJSONObject(i)
+                        val sup = SupplierEntity(
+                            id = obj.getString("id"),
+                            name = obj.getString("name"),
+                            contactPerson = obj.optString("contactPerson").ifBlank { null },
+                            phone = obj.getString("phone"),
+                            email = obj.optString("email").ifBlank { null },
+                            address = obj.optString("address").ifBlank { null },
+                            gstin = obj.optString("gstin").ifBlank { null },
+                            openingBalancePaise = obj.optLong("openingBalancePaise", 0L),
+                            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                        )
+                        database.supplierDao().insertSupplier(sup)
+                    }
+                }
+
+                // 8. Restore Expenses
+                if (root.has("expenses")) {
+                    val eArray = root.getJSONArray("expenses")
+                    for (i in 0 until eArray.length()) {
+                        val obj = eArray.getJSONObject(i)
+                        val exp = ExpenseEntity(
+                            id = obj.getString("id"),
+                            title = obj.getString("title"),
+                            category = obj.getString("category"),
+                            amountPaise = obj.getLong("amountPaise"),
+                            date = obj.optLong("date", System.currentTimeMillis()),
+                            paymentMethod = obj.optString("paymentMethod", "CASH"),
+                            description = obj.optString("description").ifBlank { null },
+                            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                        )
+                        database.expenseDao().insertExpense(exp)
+                    }
+                }
+
+                // 9. Restore & Sync Invoice Counter
                 val backupCounter = root.optLong("invoiceCounter", 0L)
                 val currentDbCounter = database.invoiceDao().getLastInvoiceNumber() ?: 0L
                 val maxCounter = maxOf(backupCounter, maxInvoiceSuffix, currentDbCounter)
@@ -291,7 +487,7 @@ object BackupManager {
                 }
             }
 
-            Result.success("Restored successfully ($productCount products, $invoiceCount invoices, $itemCount line items)")
+            Result.success("Restored successfully ($productCount products, $invoiceCount invoices, $itemCount items)")
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,16 +32,20 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.HeadsetMic
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Policy
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Security
@@ -71,6 +76,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.theme.BorderColor
@@ -123,6 +129,7 @@ fun MoreScreen(
     onNavigateToTerms: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val shopProfile by viewModel.shopProfile.collectAsState()
 
     Scaffold(
@@ -140,6 +147,7 @@ fun MoreScreen(
                                 colors = listOf(PrimaryPurple, SecondaryPurple, DarkPurple)
                             )
                         )
+                        .statusBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
                     Row(
@@ -297,7 +305,7 @@ fun MoreScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Store Management",
+                        text = strings.storeManagement,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = DokandaarTheme.textPrimary
@@ -316,7 +324,7 @@ fun MoreScreen(
                         icon = Icons.Default.Category,
                         iconBg = PastelPurpleBg,
                         iconTint = PastelPurpleContent,
-                        title = "Categories",
+                        title = strings.categories,
                         onClick = onNavigateToCategories
                     )
                     MoreTile(
@@ -324,7 +332,7 @@ fun MoreScreen(
                         icon = Icons.Default.People,
                         iconBg = PastelBlueBg,
                         iconTint = PastelBlueContent,
-                        title = "Customers",
+                        title = strings.customers,
                         onClick = onNavigateToCustomers
                     )
                     MoreTile(
@@ -332,7 +340,7 @@ fun MoreScreen(
                         icon = Icons.Default.LocalShipping,
                         iconBg = PastelOrangeBg,
                         iconTint = PastelOrangeContent,
-                        title = "Suppliers",
+                        title = strings.suppliers,
                         onClick = onNavigateToSuppliers
                     )
                     MoreTile(
@@ -340,7 +348,7 @@ fun MoreScreen(
                         icon = Icons.Default.Payments,
                         iconBg = PastelPinkBg,
                         iconTint = PastelPinkContent,
-                        title = "Expenses",
+                        title = strings.expenses,
                         onClick = onNavigateToExpenses
                     )
                 }
@@ -357,15 +365,15 @@ fun MoreScreen(
                         icon = Icons.Default.LocalOffer,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
-                        title = "Discounts",
-                        onClick = {}
+                        title = strings.discounts,
+                        onClick = onNavigateToPaymentSettings
                     )
                     MoreTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Receipt,
                         iconBg = PastelIndigoBg,
                         iconTint = PastelIndigoContent,
-                        title = "Tax / GST",
+                        title = strings.taxGst,
                         onClick = onNavigateToPaymentSettings
                     )
                     MoreTile(
@@ -373,7 +381,7 @@ fun MoreScreen(
                         icon = Icons.Default.CreditCard,
                         iconBg = PastelTealBg,
                         iconTint = PastelTealContent,
-                        title = "Payment Methods",
+                        title = strings.paymentMethods,
                         onClick = onNavigateToPaymentSettings
                     )
                     MoreTile(
@@ -381,7 +389,7 @@ fun MoreScreen(
                         icon = Icons.Default.Settings,
                         iconBg = PastelSlateBg,
                         iconTint = PastelSlateContent,
-                        title = "Settings",
+                        title = strings.settings,
                         onClick = onNavigateToAppearance
                     )
                 }
@@ -398,7 +406,7 @@ fun MoreScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Tools & Utilities",
+                        text = strings.toolsUtilities,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = DokandaarTheme.textPrimary
@@ -416,7 +424,7 @@ fun MoreScreen(
                         icon = Icons.Default.QrCodeScanner,
                         iconBg = PastelPurpleBg,
                         iconTint = PastelPurpleContent,
-                        title = "Barcode / QR Scanner",
+                        title = strings.barcodeScanner,
                         onClick = onNavigateToScanner
                     )
                     MoreTile(
@@ -424,7 +432,7 @@ fun MoreScreen(
                         icon = Icons.Default.FileDownload,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
-                        title = "Import / Export (Excel)",
+                        title = strings.importExport,
                         onClick = onNavigateToImportExport
                     )
                     MoreTile(
@@ -432,7 +440,7 @@ fun MoreScreen(
                         icon = Icons.Default.Backup,
                         iconBg = PastelBlueBg,
                         iconTint = PastelBlueContent,
-                        title = "Data Backup & Restore",
+                        title = strings.backupDataRestore,
                         onClick = onNavigateToBackupRestore
                     )
                     MoreTile(
@@ -440,7 +448,7 @@ fun MoreScreen(
                         icon = Icons.Default.CloudSync,
                         iconBg = PastelOrangeBg,
                         iconTint = PastelOrangeContent,
-                        title = "Sync Data",
+                        title = strings.syncData,
                         onClick = {}
                     )
                 }
@@ -457,7 +465,7 @@ fun MoreScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Business & Support",
+                        text = strings.businessSupport,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = DokandaarTheme.textPrimary
@@ -475,7 +483,7 @@ fun MoreScreen(
                         icon = Icons.AutoMirrored.Filled.HelpOutline,
                         iconBg = PastelBlueBg,
                         iconTint = PastelBlueContent,
-                        title = "Help & Support",
+                        title = strings.helpSupport,
                         onClick = {}
                     )
                     MoreTile(
@@ -483,7 +491,7 @@ fun MoreScreen(
                         icon = Icons.Default.HeadsetMic,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
-                        title = "WhatsApp Support",
+                        title = strings.whatsappSupport,
                         onClick = {
                             try {
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/919999999999"))
@@ -496,7 +504,7 @@ fun MoreScreen(
                         icon = Icons.Default.Star,
                         iconBg = PastelOrangeBg,
                         iconTint = PastelOrangeContent,
-                        title = "Rate the App",
+                        title = strings.rateApp,
                         onClick = {}
                     )
                     MoreTile(
@@ -504,7 +512,7 @@ fun MoreScreen(
                         icon = Icons.Default.Share,
                         iconBg = PastelPurpleBg,
                         iconTint = PastelPurpleContent,
-                        title = "Share App",
+                        title = strings.shareApp,
                         onClick = {
                             val sendIntent: Intent = Intent().apply {
                                 action = Intent.ACTION_SEND
@@ -527,28 +535,56 @@ fun MoreScreen(
             ) {
                 Column {
                     MoreListItem(
+                        icon = Icons.Default.Print,
+                        title = strings.printerSetup,
+                        subtitle = "Thermal & Bluetooth",
+                        onClick = onNavigateToPrinterSetup
+                    )
+                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    MoreListItem(
+                        icon = Icons.Default.Language,
+                        title = strings.language,
+                        subtitle = "English / हिन्दी / বাংলা",
+                        onClick = onNavigateToLanguage
+                    )
+                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    MoreListItem(
+                        icon = Icons.Default.Group,
+                        title = strings.userAccess,
+                        subtitle = "Staff & Roles",
+                        onClick = onNavigateToUserAccess
+                    )
+                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    MoreListItem(
+                        icon = Icons.Default.Palette,
+                        title = strings.appearance,
+                        subtitle = "Dark / Light Mode",
+                        onClick = onNavigateToAppearance
+                    )
+                    HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
+                    MoreListItem(
                         icon = Icons.Default.Notifications,
-                        title = "Notifications",
+                        title = strings.notifications,
                         badge = "3",
                         onClick = {}
                     )
                     HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Info,
-                        title = "About App",
+                        title = strings.aboutApp,
                         subtitle = "v2.0.0",
                         onClick = onNavigateToAbout
                     )
                     HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Policy,
-                        title = "Privacy Policy",
+                        title = strings.privacyPolicy,
                         onClick = onNavigateToPrivacyPolicy
                     )
                     HorizontalDivider(color = BorderColor, thickness = 0.8.dp)
                     MoreListItem(
                         icon = Icons.Default.Security,
-                        title = "Terms & Conditions",
+                        title = strings.termsConditions,
                         onClick = onNavigateToTerms
                     )
                 }
@@ -579,7 +615,7 @@ fun MoreScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Logout",
+                        text = strings.logout,
                         color = ErrorColor,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold

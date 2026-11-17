@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.TopDokandaarHeader
@@ -94,6 +95,7 @@ fun HomeScreen(
     onNavigateToImportExport: () -> Unit
 ) {
     val storeName by viewModel.storeName.collectAsState()
+    val strings = appStrings()
     val totalSales by viewModel.totalSales.collectAsState()
     val totalInvoices by viewModel.totalInvoices.collectAsState()
     val totalProducts by viewModel.totalProducts.collectAsState()
@@ -106,7 +108,7 @@ fun HomeScreen(
         topBar = {
             TopDokandaarHeader(
                 storeName = storeName,
-                subtitle = "Billing & POS",
+                subtitle = strings.appSubtitle,
                 onSearchClick = onNavigateToProducts,
                 onNotificationClick = { /* Handled in settings/more */ },
                 onMenuClick = onNavigateToMore
@@ -161,14 +163,14 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Manage Your Store",
+                                text = strings.manageYourStore,
                                 fontSize = 19.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Billing, Products, Customers & Reports",
+                                text = strings.heroSubtitle,
                                 fontSize = 11.sp,
                                 color = Color.White.copy(alpha = 0.85f)
                             )
@@ -184,7 +186,7 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "New Sale (POS)",
+                                        text = strings.newSalePos,
                                         color = PrimaryPurple,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp
@@ -238,7 +240,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.ShoppingCart,
-                        title = "New Sale",
+                        title = strings.newSalePos,
                         subtitle = "(POS)",
                         bgColor = PastelPurpleBg,
                         contentColor = PastelPurpleContent,
@@ -247,7 +249,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Inventory2,
-                        title = "Products",
+                        title = strings.quickProducts,
                         subtitle = "Manage Items",
                         bgColor = PastelBlueBg,
                         contentColor = PastelBlueContent,
@@ -256,7 +258,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                        title = "Invoices",
+                        title = strings.quickInvoices,
                         subtitle = "Sales & Returns",
                         bgColor = PastelOrangeBg,
                         contentColor = PastelOrangeContent,
@@ -265,7 +267,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Print,
-                        title = "Print",
+                        title = strings.quickPrint,
                         subtitle = "Bills & Reports",
                         bgColor = PastelGreenBg,
                         contentColor = PastelGreenContent,
@@ -281,7 +283,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.People,
-                        title = "Customers",
+                        title = strings.customers,
                         subtitle = "Manage",
                         bgColor = PastelPinkBg,
                         contentColor = PastelPinkContent,
@@ -290,7 +292,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.BarChart,
-                        title = "Reports",
+                        title = strings.navReports,
                         subtitle = "Sales & Stock",
                         bgColor = PastelIndigoBg,
                         contentColor = PastelIndigoContent,
@@ -299,7 +301,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.FileDownload,
-                        title = "Import/Export",
+                        title = strings.importExport,
                         subtitle = "Excel/CSV",
                         bgColor = PastelTealBg,
                         contentColor = PastelTealContent,
@@ -308,7 +310,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Settings,
-                        title = "Settings",
+                        title = strings.settings,
                         subtitle = "Store & App",
                         bgColor = PastelSlateBg,
                         contentColor = PastelSlateContent,
@@ -333,7 +335,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Overview",
+                            text = strings.overview,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = DokandaarTheme.textPrimary
@@ -395,7 +397,7 @@ fun HomeScreen(
                         icon = Icons.Default.ShoppingCart,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
-                        title = "Total Sales",
+                        title = strings.totalSales,
                         value = totalSales.format()
                     )
                     OverviewKpiCard(
@@ -403,7 +405,7 @@ fun HomeScreen(
                         icon = Icons.Default.Description,
                         iconBg = PastelBlueBg,
                         iconTint = PastelBlueContent,
-                        title = "Total Invoices",
+                        title = strings.totalInvoices,
                         value = totalInvoices.toString()
                     )
                 }
@@ -417,7 +419,7 @@ fun HomeScreen(
                         icon = Icons.Default.Inventory2,
                         iconBg = PastelPurpleBg,
                         iconTint = PastelPurpleContent,
-                        title = "Total Products",
+                        title = strings.totalProducts,
                         value = totalProducts.toString()
                     )
                     OverviewKpiCard(
@@ -425,7 +427,7 @@ fun HomeScreen(
                         icon = Icons.Default.People,
                         iconBg = PastelPinkBg,
                         iconTint = PastelPinkContent,
-                        title = "Total Customers",
+                        title = strings.totalCustomers,
                         value = totalCustomers.toString()
                     )
                 }
@@ -473,13 +475,13 @@ fun HomeScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Scan QR / Barcode",
+                                text = strings.scanQrBarcode,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Text(
-                                text = "Scan product barcode or QR code",
+                                text = strings.scanSubtitle,
                                 fontSize = 11.sp,
                                 color = Color.White.copy(alpha = 0.85f)
                             )

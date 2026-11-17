@@ -121,7 +121,7 @@ abstract class AppDatabase : RoomDatabase() {
                 // 6. Initialize invoice counter if existing invoices exist
                 db.execSQL("""
                     INSERT OR IGNORE INTO invoice_counter (id, lastNumber)
-                    VALUES (1, (SELECT COALESCE(COUNT(*), 0) FROM invoices))
+                    VALUES (1, (SELECT COALESCE(MAX(id), COUNT(*)) FROM invoices))
                 """.trimIndent())
             }
         }
@@ -266,6 +266,12 @@ abstract class AppDatabase : RoomDatabase() {
                     "billing_app.db"
                 )
                 .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addCallback(object : RoomDatabase.Callback() {
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
+                        db.execSQL("PRAGMA foreign_keys = ON;")
+                    }
+                })
                 .build()
                 INSTANCE = instance
                 instance

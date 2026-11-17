@@ -69,33 +69,20 @@ fun AppNavHost(
     var scanTargetMode by rememberSaveable { mutableStateOf("cart") } // "cart", "add", "search"
 
     fun navigateToTab(tab: DokandaarTab) {
-        when (tab) {
-            DokandaarTab.HOME -> {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Home.route) { inclusive = false }
-                    launchSingleTop = true
-                }
+        val route = when (tab) {
+            DokandaarTab.HOME -> Screen.Home.route
+            DokandaarTab.PRODUCTS -> Screen.Products.route
+            DokandaarTab.INVOICES -> Screen.Invoices.route
+            DokandaarTab.REPORTS -> Screen.Reports.route
+            DokandaarTab.MORE -> Screen.More.route
+        }
+        navController.navigate(route) {
+            popUpTo(Screen.Home.route) {
+                saveState = true
+                inclusive = false
             }
-            DokandaarTab.PRODUCTS -> {
-                navController.navigate(Screen.Products.route) {
-                    launchSingleTop = true
-                }
-            }
-            DokandaarTab.INVOICES -> {
-                navController.navigate(Screen.Invoices.route) {
-                    launchSingleTop = true
-                }
-            }
-            DokandaarTab.REPORTS -> {
-                navController.navigate(Screen.Reports.route) {
-                    launchSingleTop = true
-                }
-            }
-            DokandaarTab.MORE -> {
-                navController.navigate(Screen.More.route) {
-                    launchSingleTop = true
-                }
-            }
+            launchSingleTop = true
+            restoreState = true
         }
     }
 
@@ -196,6 +183,7 @@ fun AppNavHost(
                 onNavigateToNewSale = { navController.navigate(Screen.Sale.route) },
                 onResumeDraft = { items, draftInvoiceNumber ->
                     cartManager.setResumedDraft(draftInvoiceNumber, items)
+                    checkoutViewModel.setResumedDraft(draftInvoiceNumber)
                     navController.navigate(Screen.Sale.route)
                 }
             )
@@ -390,9 +378,20 @@ fun AppNavHost(
         composable(Screen.FullScanner.route) {
             FullScannerScreen(
                 cartManager = cartManager,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = {
+                    scanTargetMode = "cart"
+                    navController.popBackStack()
+                },
                 onDoneScanning = {
-                    navController.navigate(Screen.Sale.route)
+                    scanTargetMode = "cart"
+                    if (navController.previousBackStackEntry?.destination?.route == Screen.Sale.route) {
+                        navController.popBackStack()
+                    } else {
+                        navController.navigate(Screen.Sale.route) {
+                            popUpTo(Screen.Home.route) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
                 },
                 onBarcodeCaptured = if (scanTargetMode == "add" || scanTargetMode == "search") {
                     { barcode ->

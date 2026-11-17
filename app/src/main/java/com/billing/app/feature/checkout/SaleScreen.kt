@@ -24,6 +24,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.LocalGroceryStore
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
@@ -124,6 +129,12 @@ fun SaleScreen(
     var showDiscountDialog by remember { mutableStateOf(false) }
     var showPaymentDialog by remember { mutableStateOf(false) }
     var showReceiptDialog by remember { mutableStateOf(false) }
+
+    val isGstEnabled = viewModel.isGstEnabled
+    val taxRatePercent = viewModel.taxRatePercent
+    val taxPaise = viewModel.calculateTax(cartManager.subtotal.paise, discountPaise)
+    val grandTotalPaise = (cartManager.subtotal.paise - discountPaise + taxPaise).coerceAtLeast(0L)
+    val grandTotalMoney = Money.fromPaise(grandTotalPaise)
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -277,7 +288,7 @@ fun SaleScreen(
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = cartManager.grandTotal.format(),
+                                    text = grandTotalMoney.format(),
                                     color = Color.White,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.ExtraBold
@@ -485,6 +496,14 @@ fun SaleScreen(
 
                 items(categories) { cat ->
                     val isSelected = selectedCategory.equals(cat.name, ignoreCase = true)
+                    val lower = cat.name.lowercase()
+                    val catIcon = when {
+                        lower.contains("grocery") -> Icons.Default.LocalGroceryStore
+                        lower.contains("oil") || lower.contains("ghee") -> Icons.Default.WaterDrop
+                        lower.contains("snack") || lower.contains("biscuit") -> Icons.Default.Fastfood
+                        lower.contains("beverage") || lower.contains("tea") || lower.contains("coffee") -> Icons.Default.LocalCafe
+                        else -> Icons.Default.Category
+                    }
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) PrimaryPurple else DokandaarTheme.cardBackground,
@@ -494,13 +513,24 @@ fun SaleScreen(
                         ),
                         modifier = Modifier.clickable { viewModel.selectedCategory.value = cat.name }
                     ) {
-                        Text(
-                            text = cat.name,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) Color.White else DokandaarTheme.textPrimary,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = catIcon,
+                                contentDescription = null,
+                                tint = if (isSelected) Color.White else PrimaryPurple,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = cat.name,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else DokandaarTheme.textPrimary
+                            )
+                        }
                     }
                 }
             }
@@ -778,10 +808,10 @@ fun SaleScreen(
                                         modifier = Modifier.size(24.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Close,
+                                            imageVector = Icons.Default.Delete,
                                             contentDescription = "Remove",
                                             tint = DokandaarTheme.textMuted,
-                                            modifier = Modifier.size(14.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
@@ -814,8 +844,9 @@ fun SaleScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("GST (0%)", fontSize = 11.sp, color = DokandaarTheme.textMuted)
-                        Text("₹0.00", fontSize = 11.sp, color = DokandaarTheme.textMuted)
+                        val gstLabel = if (isGstEnabled && taxRatePercent > 0.0) "GST (${taxRatePercent.toInt()}%)" else "GST (0%)"
+                        Text(gstLabel, fontSize = 11.sp, color = DokandaarTheme.textMuted)
+                        Text(Money.fromPaise(taxPaise).format(), fontSize = 11.sp, color = DokandaarTheme.textMuted)
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -832,7 +863,7 @@ fun SaleScreen(
                             color = PrimaryPurple
                         )
                         Text(
-                            text = cartManager.grandTotal.format(),
+                            text = grandTotalMoney.format(),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = PrimaryPurple
@@ -905,8 +936,9 @@ fun SaleScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val amount = discountInput.toDoubleOrNull() ?: 0.0
-                    cartManager.setDiscount((amount * 100).toLong())
+                    val discPaise = Money.fromRupees(discountInput).paise
+                    cartManager.setDiscount(discPaise)
+                    viewModel.setDiscount(discPaise, cartManager.subtotal.paise)
                     showDiscountDialog = false
                 }) {
                     Text("Apply", color = PrimaryPurple, fontWeight = FontWeight.Bold)
@@ -923,12 +955,11 @@ fun SaleScreen(
     // Payment Dialog
     if (showPaymentDialog) {
         var selectedMode by remember { mutableStateOf(PaymentMethodMode.UPI) }
-        var cashGiven by remember { mutableStateOf((cartManager.grandTotal.paise / 100.0).toString()) }
+        var cashGiven by remember { mutableStateOf((grandTotalPaise / 100.0).toString()) }
 
-        val grandTotalPaise = cartManager.grandTotal.paise
-        val cashVal = (cashGiven.toDoubleOrNull() ?: 0.0) * 100
-        val changePaise = maxOf(0L, (cashVal - grandTotalPaise).toLong())
-        val duePaise = maxOf(0L, (grandTotalPaise - cashVal).toLong())
+        val cashPaise = Money.fromRupees(cashGiven).paise
+        val changePaise = maxOf(0L, cashPaise - grandTotalPaise)
+        val duePaise = maxOf(0L, grandTotalPaise - cashPaise)
 
         AlertDialog(
             onDismissRequest = { showPaymentDialog = false },
@@ -1014,8 +1045,12 @@ fun SaleScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val cashPaise = ((cashGiven.toDoubleOrNull() ?: 0.0) * 100).toLong()
-                        viewModel.setCashReceived(cashPaise)
+                        val enteredCashPaise = if (selectedMode == PaymentMethodMode.CASH) {
+                            Money.fromRupees(cashGiven).paise
+                        } else {
+                            grandTotalPaise
+                        }
+                        viewModel.setCashReceived(enteredCashPaise)
                         viewModel.completeSale(cartItems, cartManager.subtotal) {
                             // Handled by saleSuccess state
                         }

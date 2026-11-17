@@ -25,10 +25,10 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE category = :category ORDER BY name ASC")
     fun getProductsByCategory(category: String): Flow<List<ProductEntity>>
 
-    @Query("SELECT * FROM products WHERE name LIKE '%' || :query || '%' OR barcode LIKE '%' || :query || '%' OR sku LIKE '%' || :query || '%' ORDER BY name ASC")
+    @Query("SELECT * FROM products WHERE name LIKE '%' || :query || '%' ESCAPE '\\' OR barcode LIKE '%' || :query || '%' ESCAPE '\\' OR sku LIKE '%' || :query || '%' ESCAPE '\\' ORDER BY name ASC")
     fun searchProducts(query: String): Flow<List<ProductEntity>>
 
-    @Query("SELECT * FROM products WHERE category = :category AND (name LIKE '%' || :query || '%' OR barcode LIKE '%' || :query || '%' OR sku LIKE '%' || :query || '%') ORDER BY name ASC")
+    @Query("SELECT * FROM products WHERE category = :category AND (name LIKE '%' || :query || '%' ESCAPE '\\' OR barcode LIKE '%' || :query || '%' ESCAPE '\\' OR sku LIKE '%' || :query || '%' ESCAPE '\\') ORDER BY name ASC")
     fun searchProductsByCategory(query: String, category: String): Flow<List<ProductEntity>>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -58,13 +58,13 @@ interface ProductDao {
     @Query("SELECT COUNT(*) FROM products")
     fun getTotalCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM products WHERE stock > 0 AND stock <= 5")
+    @Query("SELECT COUNT(*) FROM products WHERE stock > 0 AND stock <= minStockAlert")
     fun getLowStockCount(): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM products WHERE stock = 0")
     fun getOutOfStockCount(): Flow<Int>
 
-    @Query("SELECT * FROM products WHERE stock <= 5 ORDER BY stock ASC")
+    @Query("SELECT * FROM products WHERE stock <= minStockAlert ORDER BY stock ASC")
     suspend fun getLowAndOutOfStockProducts(): List<ProductEntity>
 
     @Query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''")

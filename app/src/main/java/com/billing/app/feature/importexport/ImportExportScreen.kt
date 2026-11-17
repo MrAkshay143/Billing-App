@@ -276,53 +276,83 @@ private suspend fun exportProductsToCsv(context: Context, products: List<Product
     context.startActivity(Intent.createChooser(shareIntent, "Export Products CSV"))
 }
 
+private fun parseCsvLine(line: String): List<String> {
+    val tokens = mutableListOf<String>()
+    val sb = StringBuilder()
+    var inQuotes = false
+    for (ch in line) {
+        when {
+            ch == '\"' -> inQuotes = !inQuotes
+            ch == ',' && !inQuotes -> {
+                tokens.add(sb.toString().trim().removeSurrounding("\""))
+                sb.clear()
+            }
+            else -> sb.append(ch)
+        }
+    }
+    tokens.add(sb.toString().trim().removeSurrounding("\""))
+    return tokens
+}
+
 private suspend fun importProductsFromCsv(
     context: Context,
     uri: Uri,
     productRepository: ProductRepository
 ): Int = withContext(Dispatchers.IO) {
-    var importedCount = 0
     val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext 0
+    val batch = mutableListOf<Product>()
 
     inputStream.bufferedReader().useLines { lines ->
         val lineList = lines.toList()
         if (lineList.size <= 1) return@withContext 0
 
-        // Skip header
+        // Parse header row to locate column indices dynamically
+        val header = parseCsvLine(lineList[0]).map { it.lowercase() }
+        val nameIdx = header.indexOfFirst { it.contains("name") }.takeIf { it >= 0 } ?: 1
+        val barcodeIdx = header.indexOfFirst { it.contains("barcode") }.takeIf { it >= 0 } ?: 2
+        val skuIdx = header.indexOfFirst { it.contains("sku") }.takeIf { it >= 0 } ?: 3
+        val categoryIdx = header.indexOfFirst { it.contains("category") }.takeIf { it >= 0 } ?: 4
+        val priceIdx = header.indexOfFirst { it.contains("price") }.takeIf { it >= 0 } ?: 5
+        val stockIdx = header.indexOfFirst { it.contains("stock") }.takeIf { it >= 0 } ?: 6
+        val unitIdx = header.indexOfFirst { it.contains("unit") }.takeIf { it >= 0 } ?: 7
+
+        // Process data rows
         for (i in 1 until lineList.size) {
             val line = lineList[i].trim()
             if (line.isBlank()) continue
 
-            val parts = line.split(",")
-            if (parts.size >= 4) {
-                val name = parts.getOrNull(1)?.trim() ?: ""
-                val barcode = parts.getOrNull(2)?.trim() ?: ""
-                val sku = parts.getOrNull(3)?.trim() ?: ""
-                val category = parts.getOrNull(4)?.trim() ?: "Grocery"
-                val priceStr = parts.getOrNull(5)?.trim() ?: "0"
-                val stockStr = parts.getOrNull(6)?.trim() ?: "0"
-                val unit = parts.getOrNull(7)?.trim() ?: "pc"
+            val parts = parseCsvLine(line)
+            if (parts.isNotEmpty()) {
+                val name = parts.getOrNull(nameIdx)?.trim() ?: ""
+                val barcode = parts.getOrNull(barcodeIdx)?.trim() ?: ""
+                val sku = parts.getOrNull(skuIdx)?.trim() ?: ""
+                val category = parts.getOrNull(categoryIdx)?.trim().takeUnless { it.isNullOrBlank() } ?: "Grocery"
+                val priceStr = parts.getOrNull(priceIdx)?.trim() ?: "0"
+                val stockStr = parts.getOrNull(stockIdx)?.trim() ?: "0"
+                val unit = parts.getOrNull(unitIdx)?.trim().takeUnless { it.isNullOrBlank() } ?: "Piece"
 
                 if (name.isNotBlank() && barcode.isNotBlank()) {
                     val price = Money.fromRupees(priceStr)
-                    val stock = stockStr.toIntOrNull() ?: 0
-                    val product = Product(
-                        id = UUID.randomUUID().toString(),
-                        name = name,
-                        barcode = barcode,
-                        sku = if (sku.isNotBlank()) sku else "SKU-${System.currentTimeMillis().toString().takeLast(6)}",
-                        category = category,
-                        unit = unit,
-                        price = price,
-                        stock = stock
+                    val stock = maxOf(0, stockStr.toIntOrNull() ?: 0)
+                    batch.add(
+                        Product(
+                            id = UUID.randomUUID().toString(),
+                            name = name,
+                            barcode = barcode,
+                            sku = if (sku.isNotBlank()) sku else "SKU-${System.currentTimeMillis().toString().takeLast(6)}",
+                            category = category,
+                            unit = unit,
+                            price = price,
+                            stock = stock
+                        )
                     )
-                    val result = productRepository.addProduct(product)
-                    if (result.isSuccess) {
-                        importedCount++
-                    }
                 }
             }
         }
     }
-    importedCount
+
+    if (batch.isNotEmpty()) {
+        productRepository.addProducts(batch)
+    }
+    batch.size
 }
