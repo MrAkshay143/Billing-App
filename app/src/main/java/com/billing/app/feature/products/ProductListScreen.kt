@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.components.BottomDokandaarNav
+import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.theme.BorderColor
@@ -100,10 +102,7 @@ fun ProductListScreen(
     var adjustStockStr by remember { mutableStateOf("") }
     var showFilterMenu by remember { mutableStateOf(false) }
 
-    val categoriesList = listOf(
-        "All", "Grocery", "Oil & Ghee", "Pulses & Dal", "Spices & Masala",
-        "Snacks & Biscuits", "Beverages", "Household Items", "Dairy Products"
-    )
+    val dbCategories by viewModel.categories.collectAsState()
 
     // Stock Adjustment Dialog
     if (productToAdjustStock != null) {
@@ -362,43 +361,37 @@ fun ProductListScreen(
                 )
             }
 
-            // Category Filter Chips
+            // Category Filter Cards matching Mockup Screenshot 4 / 7
             val categoryCounts = remember(products) {
                 products.groupBy { it.category }.mapValues { it.value.size }
             }
 
-            Row(
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                categoriesList.forEach { cat ->
-                    val isSelected = (selectedCategory.equals(cat, ignoreCase = true)) ||
-                            (cat == "All" && (selectedCategory == "All" || selectedCategory.isBlank()))
+                // "All (count)" card
+                item(key = "all") {
+                    CategoryCard(
+                        title = "All ($allCount)",
+                        isSelected = selectedCategory.isBlank() || selectedCategory.equals("All", ignoreCase = true),
+                        isAllItem = true,
+                        onClick = { viewModel.setCategory("All") }
+                    )
+                }
 
-                    val label = if (cat == "All") "All ($allCount)" else "$cat (${categoryCounts[cat] ?: 0})"
-
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (isSelected) PastelPurpleBg else DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (isSelected) PrimaryPurple else DokandaarTheme.border
-                        ),
-                        modifier = Modifier.clickable {
-                            viewModel.setCategory(cat)
-                        }
-                    ) {
-                        Text(
-                            text = label,
-                            color = if (isSelected) PrimaryPurple else DokandaarTheme.textPrimary,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                        )
-                    }
+                // Dynamic Category cards from database
+                items(dbCategories, key = { it.id }) { cat ->
+                    val count = categoryCounts[cat.name] ?: 0
+                    CategoryCard(
+                        title = "${cat.name} ($count)",
+                        isSelected = selectedCategory.equals(cat.name, ignoreCase = true),
+                        iconName = cat.iconName,
+                        imageUri = cat.imageUri,
+                        onClick = { viewModel.setCategory(cat.name) }
+                    )
                 }
             }
 

@@ -3,7 +3,9 @@ package com.billing.app.feature.products
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.billing.app.core.util.Money
+import com.billing.app.data.local.entity.CategoryEntity
 import com.billing.app.domain.model.Product
+import com.billing.app.domain.repository.CategoryRepository
 import com.billing.app.domain.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,7 +21,8 @@ enum class StockFilter {
 }
 
 class ProductViewModel(
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val categoryRepository: CategoryRepository? = null
 ) : ViewModel() {
 
     val searchQuery = MutableStateFlow("")
@@ -27,6 +30,10 @@ class ProductViewModel(
     val selectedCategory = MutableStateFlow("All")
     val currentPage = MutableStateFlow(1)
     val pageSize = 20
+
+    val categories: StateFlow<List<CategoryEntity>> = categoryRepository?.getAllCategories()
+        ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        ?: MutableStateFlow(emptyList<CategoryEntity>()).asStateFlow()
 
     val products: StateFlow<List<Product>> = productRepository.getProducts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

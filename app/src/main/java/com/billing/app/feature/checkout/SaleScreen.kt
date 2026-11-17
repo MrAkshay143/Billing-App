@@ -81,6 +81,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.cart.CartManager
 import com.billing.app.core.qr.UpiQrGenerator
+import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.BorderColor
@@ -102,7 +103,9 @@ fun SaleScreen(
     cartManager: CartManager,
     onNavigateBack: () -> Unit,
     onNavigateToScanner: () -> Unit,
-    onSaleCompleted: () -> Unit
+    onSaleCompleted: () -> Unit,
+    onNavigateToPrinter: () -> Unit = {},
+    onNavigateToHeldDrafts: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -170,16 +173,55 @@ fun SaleScreen(
                             modifier = Modifier.size(22.dp)
                         )
                     }
-                    IconButton(
-                        onClick = { /* Menu */ },
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More",
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
+                    var showSaleMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(
+                            onClick = { showSaleMenu = true },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSaleMenu,
+                            onDismissRequest = { showSaleMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Clear Cart") },
+                                onClick = {
+                                    cartManager.clearCart()
+                                    showSaleMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Hold Bill / Save Draft") },
+                                onClick = {
+                                    showSaleMenu = false
+                                    viewModel.holdDraft(cartItems, cartManager.subtotal) {
+                                        cartManager.clearCart()
+                                        onNavigateBack()
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("View Held Drafts") },
+                                onClick = {
+                                    showSaleMenu = false
+                                    onNavigateToHeldDrafts()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Printer Settings") },
+                                onClick = {
+                                    showSaleMenu = false
+                                    onNavigateToPrinter()
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -455,83 +497,30 @@ fun SaleScreen(
                 }
             }
 
-            // 3. Category Chips (Horizontal Scroll)
+            // 3. Category Cards (Horizontal Scroll matching Screenshot 2)
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                item {
-                    val isSelected = selectedCategory.equals("All", ignoreCase = true)
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) PrimaryPurple else DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (isSelected) PrimaryPurple else DokandaarTheme.border
-                        ),
-                        modifier = Modifier.clickable { viewModel.selectedCategory.value = "All" }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.GridView,
-                                contentDescription = null,
-                                tint = if (isSelected) Color.White else PrimaryPurple,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "All",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isSelected) Color.White else DokandaarTheme.textPrimary
-                            )
-                        }
-                    }
+                item(key = "all") {
+                    CategoryCard(
+                        title = "All",
+                        isSelected = selectedCategory.isBlank() || selectedCategory.equals("All", ignoreCase = true),
+                        isAllItem = true,
+                        onClick = { viewModel.selectedCategory.value = "All" }
+                    )
                 }
 
-                items(categories) { cat ->
-                    val isSelected = selectedCategory.equals(cat.name, ignoreCase = true)
-                    val lower = cat.name.lowercase()
-                    val catIcon = when {
-                        lower.contains("grocery") -> Icons.Default.LocalGroceryStore
-                        lower.contains("oil") || lower.contains("ghee") -> Icons.Default.WaterDrop
-                        lower.contains("snack") || lower.contains("biscuit") -> Icons.Default.Fastfood
-                        lower.contains("beverage") || lower.contains("tea") || lower.contains("coffee") -> Icons.Default.LocalCafe
-                        else -> Icons.Default.Category
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) PrimaryPurple else DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (isSelected) PrimaryPurple else DokandaarTheme.border
-                        ),
-                        modifier = Modifier.clickable { viewModel.selectedCategory.value = cat.name }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = catIcon,
-                                contentDescription = null,
-                                tint = if (isSelected) Color.White else PrimaryPurple,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = cat.name,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else DokandaarTheme.textPrimary
-                            )
-                        }
-                    }
+                items(categories, key = { it.id }) { cat ->
+                    CategoryCard(
+                        title = cat.name,
+                        isSelected = selectedCategory.equals(cat.name, ignoreCase = true),
+                        iconName = cat.iconName,
+                        imageUri = cat.imageUri,
+                        onClick = { viewModel.selectedCategory.value = cat.name }
+                    )
                 }
             }
 

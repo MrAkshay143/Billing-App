@@ -1,7 +1,12 @@
 package com.billing.app.feature.categories
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,15 +20,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,13 +55,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.ui.components.CategoryPresets
+import com.billing.app.core.ui.components.CategoryVisual
 import com.billing.app.core.ui.components.InputField
+import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
+import com.billing.app.core.ui.theme.ErrorColor
 import com.billing.app.core.ui.theme.PastelPurpleBg
-import com.billing.app.core.ui.theme.PastelPurpleContent
+import com.billing.app.core.ui.theme.PastelRedBg
 import com.billing.app.core.ui.theme.PrimaryPurple
+import com.billing.app.data.local.entity.CategoryEntity
 import com.billing.app.domain.repository.CategoryRepository
 import kotlinx.coroutines.launch
 
@@ -61,37 +79,73 @@ fun CategoriesScreen(
     val categories by categoryRepository.getAllCategories().collectAsState(initial = emptyList())
 
     var showAddDialog by remember { mutableStateOf(false) }
-    var newCategoryName by remember { mutableStateOf("") }
+    var categoryToEdit by remember { mutableStateOf<CategoryEntity?>(null) }
+    var categoryToDelete by remember { mutableStateOf<CategoryEntity?>(null) }
 
+    // Add Category Dialog
     if (showAddDialog) {
+        CategoryEditorDialog(
+            title = "Add Category",
+            initialName = "",
+            initialIconName = "grocery",
+            initialImageUri = null,
+            onDismiss = { showAddDialog = false },
+            onSave = { name, iconName, imageUri ->
+                scope.launch {
+                    categoryRepository.addCategory(
+                        name = name.trim(),
+                        iconName = iconName,
+                        imageUri = imageUri
+                    )
+                    showAddDialog = false
+                }
+            }
+        )
+    }
+
+    // Edit Category Dialog
+    categoryToEdit?.let { cat ->
+        CategoryEditorDialog(
+            title = "Edit Category",
+            initialName = cat.name,
+            initialIconName = cat.iconName ?: "others",
+            initialImageUri = cat.imageUri,
+            onDismiss = { categoryToEdit = null },
+            onSave = { name, iconName, imageUri ->
+                scope.launch {
+                    categoryRepository.updateCategory(
+                        cat.copy(
+                            name = name.trim(),
+                            iconName = iconName,
+                            imageUri = imageUri
+                        )
+                    )
+                    categoryToEdit = null
+                }
+            }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    categoryToDelete?.let { cat ->
         AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Category", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
-            text = {
-                InputField(
-                    label = "Category Name *",
-                    value = newCategoryName,
-                    onValueChange = { newCategoryName = it },
-                    placeholder = "e.g. Frozen Foods, Pooja Items"
-                )
-            },
+            onDismissRequest = { categoryToDelete = null },
+            title = { Text("Delete Category", fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text("Are you sure you want to delete '${cat.name}'? Existing products with this category will remain safe.") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (newCategoryName.isNotBlank()) {
-                            scope.launch {
-                                categoryRepository.addCategory(newCategoryName.trim())
-                                showAddDialog = false
-                                newCategoryName = ""
-                            }
+                        scope.launch {
+                            categoryRepository.deleteCategory(cat.id)
+                            categoryToDelete = null
                         }
                     }
                 ) {
-                    Text("Add", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text("Delete", color = ErrorColor, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) {
+                TextButton(onClick = { categoryToDelete = null }) {
                     Text("Cancel", color = DokandaarTheme.textMuted)
                 }
             }
@@ -135,51 +189,290 @@ fun CategoriesScreen(
         },
         containerColor = DokandaarTheme.background
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(categories, key = { it.id }) { cat ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+        if (categories.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Category,
+                        contentDescription = null,
+                        tint = DokandaarTheme.textMuted,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "No categories yet",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DokandaarTheme.textMuted
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(categories, key = { it.id }) { cat ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
-                        Box(
+                        Row(
                             modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(PastelPurpleBg),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Category,
-                                contentDescription = null,
-                                tint = PastelPurpleContent,
-                                modifier = Modifier.size(20.dp)
+                            // Category Visual (preset badge or uploaded thumbnail)
+                            CategoryVisual(
+                                iconName = cat.iconName,
+                                imageUri = cat.imageUri,
+                                size = 44.dp
                             )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = cat.name,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DokandaarTheme.textPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (!cat.imageUri.isNullOrBlank()) "Custom Image"
+                                    else CategoryPresets.getPreset(cat.iconName).title,
+                                    fontSize = 11.sp,
+                                    color = DokandaarTheme.textMuted
+                                )
+                            }
+
+                            // Edit Button
+                            IconButton(
+                                onClick = { categoryToEdit = cat },
+                                modifier = Modifier.size(34.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit Category",
+                                    tint = PrimaryPurple,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            // Delete Button
+                            IconButton(
+                                onClick = { categoryToDelete = cat },
+                                modifier = Modifier.size(34.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete Category",
+                                    tint = ErrorColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = cat.name,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DokandaarTheme.textPrimary,
-                            modifier = Modifier.weight(1f)
-                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun CategoryEditorDialog(
+    title: String,
+    initialName: String,
+    initialIconName: String?,
+    initialImageUri: String?,
+    onDismiss: () -> Unit,
+    onSave: (name: String, iconName: String?, imageUri: String?) -> Unit
+) {
+    var name by remember { mutableStateOf(initialName) }
+    var selectedIconName by remember { mutableStateOf(initialIconName ?: "grocery") }
+    var selectedImageUri by remember { mutableStateOf(initialImageUri) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedImageUri = uri.toString()
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                InputField(
+                    label = "Category Name *",
+                    value = name,
+                    onValueChange = { name = it },
+                    placeholder = "e.g. Snacks, Spices, Dairy"
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Category Visual (Icon or Custom Image)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DokandaarTheme.textPrimary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Custom Photo Uploader / Preview
+                if (!selectedImageUri.isNullOrBlank()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(PastelPurpleBg, RoundedCornerShape(12.dp))
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ProductThumbnail(
+                            imageUri = selectedImageUri,
+                            size = 46.dp,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Custom Image Selected", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                            Text("Will be shown on category card", fontSize = 10.sp, color = DokandaarTheme.textMuted)
+                        }
+                        IconButton(
+                            onClick = { selectedImageUri = null },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove", tint = ErrorColor, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { imagePickerLauncher.launch("image/*") },
+                        color = DokandaarTheme.background,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = null,
+                                tint = PrimaryPurple,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Upload Custom Photo",
+                                color = PrimaryPurple,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Or Choose Preset Icon",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DokandaarTheme.textMuted
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Horizontal scroll list of 11 preset icons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CategoryPresets.presets.forEach { preset ->
+                        val isSelected = selectedImageUri.isNullOrBlank() && selectedIconName == preset.key
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    selectedIconName = preset.key
+                                    selectedImageUri = null
+                                }
+                                .padding(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isSelected) PastelPurpleBg else preset.badgeBg)
+                                    .border(
+                                        width = if (isSelected) 2.dp else 0.dp,
+                                        color = if (isSelected) PrimaryPurple else Color.Transparent,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = preset.icon,
+                                    contentDescription = preset.title,
+                                    tint = if (isSelected) PrimaryPurple else preset.iconColor,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = preset.title,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) PrimaryPurple else DokandaarTheme.textMuted
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(name.trim(), selectedIconName, selectedImageUri)
+                    }
+                }
+            ) {
+                Text("Save", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = DokandaarTheme.textMuted)
+            }
+        }
+    )
 }

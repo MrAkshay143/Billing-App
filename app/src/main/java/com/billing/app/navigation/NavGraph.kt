@@ -32,6 +32,8 @@ import com.billing.app.feature.invoices.InvoiceViewModel
 import com.billing.app.feature.invoices.InvoicesScreen
 import com.billing.app.feature.more.MoreScreen
 import com.billing.app.feature.more.subscreens.AboutDokandaarScreen
+import com.billing.app.feature.more.subscreens.PrivacyPolicyScreen
+import com.billing.app.feature.more.subscreens.TermsConditionsScreen
 import com.billing.app.feature.more.subscreens.AppearanceScreen
 import com.billing.app.feature.more.subscreens.BackupRestoreScreen
 import com.billing.app.feature.more.subscreens.LanguageScreen
@@ -132,6 +134,13 @@ fun AppNavHost(
                     navController.navigate(Screen.Invoices.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
+                },
+                onNavigateToPrinter = {
+                    navController.navigate(Screen.PrinterSetup.route)
+                },
+                onNavigateToHeldDrafts = {
+                    invoiceViewModel.statusTab.value = com.billing.app.feature.invoices.InvoiceStatusTab.DRAFT
+                    navController.navigate(Screen.Invoices.route)
                 }
             )
         }
@@ -150,6 +159,13 @@ fun AppNavHost(
                     navController.navigate(Screen.Invoices.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
+                },
+                onNavigateToPrinter = {
+                    navController.navigate(Screen.PrinterSetup.route)
+                },
+                onNavigateToHeldDrafts = {
+                    invoiceViewModel.statusTab.value = com.billing.app.feature.invoices.InvoiceStatusTab.DRAFT
+                    navController.navigate(Screen.Invoices.route)
                 }
             )
         }
@@ -329,13 +345,13 @@ fun AppNavHost(
         }
 
         composable(Screen.PrivacyPolicy.route) {
-            AboutDokandaarScreen(
+            PrivacyPolicyScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable(Screen.TermsConditions.route) {
-            AboutDokandaarScreen(
+            TermsConditionsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

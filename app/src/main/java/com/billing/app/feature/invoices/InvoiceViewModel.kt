@@ -29,7 +29,7 @@ enum class InvoiceDateFilter {
 }
 
 enum class InvoiceStatusTab {
-    COMPLETED, DRAFT, DUES, ALL
+    ALL, COMPLETED, DRAFT, DUES, RETURN
 }
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -81,6 +81,7 @@ class InvoiceViewModel(
             val status = when (tab) {
                 InvoiceStatusTab.COMPLETED -> InvoiceStatus.COMPLETED
                 InvoiceStatusTab.DRAFT -> InvoiceStatus.DRAFT
+                InvoiceStatusTab.RETURN -> InvoiceStatus.CANCELLED
                 else -> null
             }
 

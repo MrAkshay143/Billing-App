@@ -45,6 +45,9 @@ class HomeViewModel(
     val totalCustomers: StateFlow<Int> = customerRepository.getCustomerCount()
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
+    val lowStockCount: StateFlow<Int> = productRepository.getLowStockCount()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val totalSales: StateFlow<Money> = _selectedPeriod.flatMapLatest { period ->
         val (start, end) = getTimestampsForPeriod(period)

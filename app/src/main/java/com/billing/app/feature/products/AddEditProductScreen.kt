@@ -91,11 +91,18 @@ fun AddEditProductScreen(
     val unit by viewModel.draftUnit.collectAsState()
 
     var categoryExpanded by remember { mutableStateOf(false) }
-    val categoriesList = listOf(
-        "Grocery", "Oil & Ghee", "Pulses & Dal", "Spices & Masala",
-        "Snacks & Biscuits", "Beverages", "Household Items", "Dairy Products",
-        "Personal Care", "Fruits & Vegetables", "Others"
-    )
+    val dbCategories by viewModel.categories.collectAsState()
+    val categoriesList = remember(dbCategories) {
+        if (dbCategories.isNotEmpty()) {
+            dbCategories.map { it.name }
+        } else {
+            listOf(
+                "Grocery", "Oil & Ghee", "Pulses & Dal", "Spices & Masala",
+                "Snacks & Biscuits", "Beverages", "Household Items", "Dairy Products",
+                "Personal Care", "Fruits & Vegetables", "Others"
+            )
+        }
+    }
 
     LaunchedEffect(existingProduct) {
         if (existingProduct != null) {

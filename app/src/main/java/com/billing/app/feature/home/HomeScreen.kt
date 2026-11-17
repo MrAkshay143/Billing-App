@@ -22,16 +22,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -40,6 +45,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import com.billing.app.core.ui.theme.ErrorColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,6 +81,7 @@ import com.billing.app.core.ui.theme.PastelPinkBg
 import com.billing.app.core.ui.theme.PastelPinkContent
 import com.billing.app.core.ui.theme.PastelPurpleBg
 import com.billing.app.core.ui.theme.PastelPurpleContent
+import com.billing.app.core.ui.theme.PastelRedBg
 import com.billing.app.core.ui.theme.PastelSlateBg
 import com.billing.app.core.ui.theme.PastelSlateContent
 import com.billing.app.core.ui.theme.PastelTealBg
@@ -101,8 +109,107 @@ fun HomeScreen(
     val totalProducts by viewModel.totalProducts.collectAsState()
     val totalCustomers by viewModel.totalCustomers.collectAsState()
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
+    val lowStockCount by viewModel.lowStockCount.collectAsState()
 
     var showPeriodMenu by remember { mutableStateOf(false) }
+    var showNotificationsDialog by remember { mutableStateOf(false) }
+
+    if (showNotificationsDialog) {
+        AlertDialog(
+            onDismissRequest = { showNotificationsDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = PrimaryPurple,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Store Notifications", fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (lowStockCount > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = PastelRedBg,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showNotificationsDialog = false
+                                    onNavigateToProducts()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = ErrorColor, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text("Low Stock Alert", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ErrorColor)
+                                    Text("$lowStockCount products running low on stock", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                                }
+                            }
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = PastelGreenBg,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = PastelGreenContent, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("Sales Status", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PastelGreenContent)
+                                Text("$totalInvoices invoices recorded (${selectedPeriod.label})", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                            }
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = PastelPurpleBg,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Security, contentDescription = null, tint = PrimaryPurple, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("Offline Database Active", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryPurple)
+                                Text("All records secured locally in Room v5 database", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showNotificationsDialog = false
+                        if (lowStockCount > 0) onNavigateToProducts()
+                    }
+                ) {
+                    Text(if (lowStockCount > 0) "Restock Now" else "OK", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNotificationsDialog = false }) {
+                    Text("Close", color = DokandaarTheme.textMuted)
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -110,7 +217,7 @@ fun HomeScreen(
                 storeName = storeName,
                 subtitle = strings.appSubtitle,
                 onSearchClick = onNavigateToProducts,
-                onNotificationClick = { /* Handled in settings/more */ },
+                onNotificationClick = { showNotificationsDialog = true },
                 onMenuClick = onNavigateToMore
             )
         },

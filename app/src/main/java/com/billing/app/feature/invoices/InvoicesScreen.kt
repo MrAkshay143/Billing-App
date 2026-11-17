@@ -60,6 +60,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +76,8 @@ import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
+import com.billing.app.core.ui.theme.ErrorColor
+import kotlinx.coroutines.launch
 import com.billing.app.core.ui.theme.PastelBlueBg
 import com.billing.app.core.ui.theme.PastelBlueContent
 import com.billing.app.core.ui.theme.PastelGreenBg
@@ -110,10 +113,14 @@ fun InvoicesScreen(
     val dateFilter by viewModel.dateFilter.collectAsState()
     val statusTab by viewModel.statusTab.collectAsState()
 
+    val scope = rememberCoroutineScope()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabTitles = listOf("All Invoices", "Sales", "Purchase", "Return")
+    val tabTitles = listOf("All Invoices", "Sales", "Drafts (Hold)", "Credit Dues", "Return")
 
     var selectedInvoiceForDetails by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var invoiceToVoid by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var invoiceToDiscard by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var invoiceToSettle by remember { mutableStateOf<InvoiceEntity?>(null) }
     var showDateFilterMenu by remember { mutableStateOf(false) }
 
     // Summary KPIs
@@ -249,6 +256,7 @@ fun InvoicesScreen(
                                 1 -> viewModel.statusTab.value = InvoiceStatusTab.COMPLETED
                                 2 -> viewModel.statusTab.value = InvoiceStatusTab.DRAFT
                                 3 -> viewModel.statusTab.value = InvoiceStatusTab.DUES
+                                4 -> viewModel.statusTab.value = InvoiceStatusTab.RETURN
                             }
                         },
                         text = {
@@ -482,7 +490,16 @@ fun InvoicesScreen(
                             invoice = invoice,
                             formattedDate = dateFormat.format(Date(invoice.timestamp)),
                             onViewDetails = { selectedInvoiceForDetails = invoice },
-                            onPrint = { viewModel.printInvoice(invoice.invoiceNumber) }
+                            onPrint = { viewModel.printInvoice(invoice.invoiceNumber) },
+                            onResumeDraft = {
+                                scope.launch {
+                                    val items = viewModel.getCartItemsForInvoice(invoice.invoiceNumber)
+                                    onResumeDraft(items, invoice.invoiceNumber)
+                                }
+                            },
+                            onDiscardDraft = { invoiceToDiscard = invoice },
+                            onSettleDue = { invoiceToSettle = invoice },
+                            onVoidInvoice = { invoiceToVoid = invoice }
                         )
                     }
                 }
@@ -529,6 +546,78 @@ fun InvoicesScreen(
             dismissButton = {
                 TextButton(onClick = { selectedInvoiceForDetails = null }) {
                     Text("Close", color = DokandaarTheme.textMuted)
+                }
+            }
+        )
+    }
+
+    // Void / Return Confirmation Dialog
+    invoiceToVoid?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { invoiceToVoid = null },
+            title = { Text("Void & Return Invoice", fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text("Voiding invoice ${inv.invoiceNumber} will mark it as Returned and restore ${inv.itemsCount} items back to inventory stock. Are you sure?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.voidInvoice(inv.invoiceNumber)
+                        invoiceToVoid = null
+                    }
+                ) {
+                    Text("Void & Return", color = ErrorColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { invoiceToVoid = null }) {
+                    Text("Cancel", color = DokandaarTheme.textMuted)
+                }
+            }
+        )
+    }
+
+    // Discard Draft Dialog
+    invoiceToDiscard?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { invoiceToDiscard = null },
+            title = { Text("Discard Draft", fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text("Are you sure you want to discard draft invoice ${inv.invoiceNumber}?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.discardDraft(inv.invoiceNumber)
+                        invoiceToDiscard = null
+                    }
+                ) {
+                    Text("Discard", color = ErrorColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { invoiceToDiscard = null }) {
+                    Text("Cancel", color = DokandaarTheme.textMuted)
+                }
+            }
+        )
+    }
+
+    // Settle Due Dialog
+    invoiceToSettle?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { invoiceToSettle = null },
+            title = { Text("Settle Due Balance", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            text = { Text("Mark remaining balance of ${Money(inv.duePaise).format()} for ${inv.customerName ?: "Customer"} as paid?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.settleDue(inv.invoiceNumber)
+                        invoiceToSettle = null
+                    }
+                ) {
+                    Text("Mark Paid", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { invoiceToSettle = null }) {
+                    Text("Cancel", color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -596,12 +685,24 @@ private fun InvoiceItemCard(
     invoice: InvoiceEntity,
     formattedDate: String,
     onViewDetails: () -> Unit,
-    onPrint: () -> Unit
+    onPrint: () -> Unit,
+    onResumeDraft: () -> Unit = {},
+    onDiscardDraft: () -> Unit = {},
+    onSettleDue: () -> Unit = {},
+    onVoidInvoice: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (invoice.status == InvoiceStatus.DRAFT) {
+                    onResumeDraft()
+                } else {
+                    onViewDetails()
+                }
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
         border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
@@ -687,10 +788,10 @@ private fun InvoiceItemCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Payment Status Badge
+                // Payment Status Badge matching Screenshot 5
                 val (badgeBg, badgeText, badgeColor) = when {
                     invoice.status == InvoiceStatus.DRAFT -> Triple(PastelBlueBg, "Draft", PastelBlueContent)
-                    invoice.status == InvoiceStatus.CANCELLED -> Triple(PastelRedBg, "Cancelled", PastelRedContent)
+                    invoice.status == InvoiceStatus.CANCELLED -> Triple(PastelRedBg, "Returned", PastelRedContent)
                     invoice.duePaise > 0 -> Triple(PastelOrangeBg, "Pending", PastelOrangeContent)
                     else -> Triple(PastelGreenBg, "Paid", PastelGreenContent)
                 }
@@ -747,16 +848,57 @@ private fun InvoiceItemCard(
                                 onPrint()
                             }
                         )
+                        if (invoice.status == InvoiceStatus.DRAFT) {
+                            DropdownMenuItem(
+                                text = { Text("Resume in POS", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onResumeDraft()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Discard Draft", color = ErrorColor) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onDiscardDraft()
+                                }
+                            )
+                        }
+                        if (invoice.duePaise > 0 && invoice.status == InvoiceStatus.COMPLETED) {
+                            DropdownMenuItem(
+                                text = { Text("Settle Due (${Money(invoice.duePaise).format()})", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onSettleDue()
+                                }
+                            )
+                        }
+                        if (invoice.status == InvoiceStatus.COMPLETED) {
+                            DropdownMenuItem(
+                                text = { Text("Void / Return Bill", color = ErrorColor) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onVoidInvoice()
+                                }
+                            )
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                val amountText = if (invoice.status == InvoiceStatus.CANCELLED) {
+                    "-${Money(invoice.grandTotalPaise).format()}"
+                } else {
+                    Money(invoice.grandTotalPaise).format()
+                }
+                val amountColor = if (invoice.status == InvoiceStatus.CANCELLED) PastelRedContent else PrimaryPurple
+
                 Text(
-                    text = Money(invoice.grandTotalPaise).format(),
+                    text = amountText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryPurple
+                    color = amountColor
                 )
             }
         }

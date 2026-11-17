@@ -13,5 +13,6 @@ data class CategoryEntity(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val name: String,
     val iconName: String? = null,
+    val imageUri: String? = null,
     val displayOrder: Int = 0
 )

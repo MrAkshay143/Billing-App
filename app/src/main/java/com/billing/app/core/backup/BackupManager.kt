@@ -159,6 +159,7 @@ object BackupManager {
                     put("id", cat.id)
                     put("name", cat.name)
                     put("iconName", cat.iconName ?: "")
+                    put("imageUri", cat.imageUri ?: "")
                     put("displayOrder", cat.displayOrder)
                 })
             }
@@ -430,6 +431,7 @@ object BackupManager {
                                 id = obj.getString("id"),
                                 name = obj.getString("name"),
                                 iconName = obj.optString("iconName").ifBlank { null },
+                                imageUri = obj.optString("imageUri").ifBlank { null },
                                 displayOrder = obj.optInt("displayOrder", 0)
                             )
                         )
