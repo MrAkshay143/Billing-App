@@ -245,14 +245,16 @@ fun FullScannerScreen(
                     Surface(
                         modifier = Modifier
                             .weight(0.4f)
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(25.dp))
+                            .height(48.dp)
+                            .clip(RoundedCornerShape(24.dp))
                             .clickable { cartManager.clearCart() },
                         color = DokandaarTheme.cardBackground,
                         border = androidx.compose.foundation.BorderStroke(1.dp, ErrorColor)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 6.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -260,14 +262,17 @@ fun FullScannerScreen(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = null,
                                 tint = ErrorColor,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(17.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Clear All",
+                                text = strings.clearCart,
                                 color = ErrorColor,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -276,14 +281,16 @@ fun FullScannerScreen(
                     Surface(
                         modifier = Modifier
                             .weight(0.6f)
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(25.dp))
+                            .height(48.dp)
+                            .clip(RoundedCornerShape(24.dp))
                             .clickable { onDoneScanning() },
                         color = PrimaryPurple,
                         shadowElevation = 2.dp
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -291,14 +298,17 @@ fun FullScannerScreen(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "${strings.done} (${cartItems.sumOf { it.quantity }} ${strings.items})",
                                 color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -675,7 +685,7 @@ fun FullScannerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showHelpDialog = false }) {
-                    Text("Got It", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text("Got It", color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             }
         )

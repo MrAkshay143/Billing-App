@@ -861,7 +861,10 @@ fun CheckoutScreen(
                         text = "Hold Bill as Draft (Park Cart)",
                         color = Color(0xFFD97706),
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }
@@ -908,8 +911,11 @@ fun CheckoutScreen(
                             Text(
                                 text = "Print Receipt",
                                 color = HeaderGradientStart,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -950,8 +956,11 @@ fun CheckoutScreen(
                             Text(
                                 text = "Complete Sale",
                                 color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
@@ -1003,7 +1012,10 @@ private fun PaymentTabPill(
                 text = title,
                 fontSize = 12.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) HeaderGradientStart else DokandaarTheme.textMuted
+                color = if (isSelected) HeaderGradientStart else DokandaarTheme.textMuted,
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
     }
@@ -1026,6 +1038,8 @@ private fun QuickCashChip(
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = DokandaarTheme.textPrimary,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }

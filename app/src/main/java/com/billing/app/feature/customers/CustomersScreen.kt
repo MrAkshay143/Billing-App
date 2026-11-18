@@ -57,6 +57,8 @@ import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -78,6 +80,7 @@ fun CustomersScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val strings = appStrings()
     val customers by customerRepository.getAllCustomers().collectAsState(initial = emptyList())
 
     var searchQuery by remember { mutableStateOf("") }
@@ -187,35 +190,15 @@ fun CustomersScreen(
                 icon = Icons.Default.People,
                 onNavigateBack = onNavigateBack,
                 actions = {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White,
-                        modifier = Modifier.clickable {
+                    DokandaarActionPill(
+                        text = strings.add,
+                        onClick = {
                             formName = ""
                             formPhone = ""
                             formAddress = ""
                             showAddDialog = true
                         }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = PrimaryPurple,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Add",
-                                color = PrimaryPurple,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    )
                 }
             )
         },

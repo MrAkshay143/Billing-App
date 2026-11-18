@@ -56,6 +56,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.PinVerificationDialog
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
@@ -485,21 +486,12 @@ fun UserAccessScreen(
                         )
                     }
 
-                    Surface(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { showAddDialog = true },
-                        color = HeaderGradientStart
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Add Staff", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
+                    DokandaarActionPill(
+                        text = "Add Staff",
+                        backgroundColor = HeaderGradientStart,
+                        contentColor = Color.White,
+                        onClick = { showAddDialog = true }
+                    )
                 }
             }
 

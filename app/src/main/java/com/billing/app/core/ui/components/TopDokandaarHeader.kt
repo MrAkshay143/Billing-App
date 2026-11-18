@@ -69,6 +69,7 @@ fun TopDokandaarHeader(
         ) {
             // Left: Navigation Icon or Logo + Title & Subtitle
             Row(
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (navigationIcon != null) {
@@ -92,19 +93,25 @@ fun TopDokandaarHeader(
                     Spacer(modifier = Modifier.width(12.dp))
                 }
 
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = storeName,
-                        fontSize = 19.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
-                        letterSpacing = 0.2.sp
+                        letterSpacing = 0.2.sp,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                     Text(
                         text = subtitle,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
-                        color = Color.White.copy(alpha = 0.85f)
+                        color = Color.White.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }

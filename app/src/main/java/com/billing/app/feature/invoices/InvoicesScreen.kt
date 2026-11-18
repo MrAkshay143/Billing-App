@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
+import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -157,7 +158,10 @@ fun InvoicesScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Box(
                                 modifier = Modifier
                                     .size(38.dp)
@@ -173,20 +177,28 @@ fun InvoicesScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.width(10.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = strings.invoicesTitle,
                                     color = Color.White,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontSize = 19.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "Kirana Store POS",
                                     color = Color.White.copy(alpha = 0.8f),
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -217,30 +229,10 @@ fun InvoicesScreen(
                             }
 
                             // "+ New Invoice" Button
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = Color.White,
-                                modifier = Modifier.clickable { onNavigateToNewSale() }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                        tint = PrimaryPurple,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = strings.newInvoice,
-                                        color = PrimaryPurple,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
+                            DokandaarActionPill(
+                                text = strings.newInvoice,
+                                onClick = onNavigateToNewSale
+                            )
                         }
                     }
                 }
@@ -578,12 +570,12 @@ fun InvoicesScreen(
                         selectedInvoiceForDetails = null
                     }
                 ) {
-                    Text("Print Receipt", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text("Print Receipt", color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { selectedInvoiceForDetails = null }) {
-                    Text("Close", color = DokandaarTheme.textMuted)
+                    Text("Close", color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
             }
         )
@@ -593,7 +585,7 @@ fun InvoicesScreen(
     invoiceToVoid?.let { inv ->
         AlertDialog(
             onDismissRequest = { invoiceToVoid = null },
-            title = { Text("Void & Return Invoice", fontWeight = FontWeight.Bold, color = ErrorColor) },
+            title = { Text("Void & Return Invoice", fontWeight = FontWeight.Bold, color = ErrorColor, maxLines = 1, softWrap = false) },
             text = { Text("Voiding invoice ${inv.invoiceNumber} will mark it as Returned and restore ${inv.itemsCount} items back to inventory stock. Are you sure?") },
             confirmButton = {
                 TextButton(
@@ -602,12 +594,12 @@ fun InvoicesScreen(
                         invoiceToVoid = null
                     }
                 ) {
-                    Text("Void & Return", color = ErrorColor, fontWeight = FontWeight.Bold)
+                    Text("Void & Return", color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { invoiceToVoid = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text("Cancel", color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
             }
         )
@@ -617,7 +609,7 @@ fun InvoicesScreen(
     invoiceToDiscard?.let { inv ->
         AlertDialog(
             onDismissRequest = { invoiceToDiscard = null },
-            title = { Text("Discard Draft", fontWeight = FontWeight.Bold, color = ErrorColor) },
+            title = { Text("Discard Draft", fontWeight = FontWeight.Bold, color = ErrorColor, maxLines = 1, softWrap = false) },
             text = { Text("Are you sure you want to discard draft invoice ${inv.invoiceNumber}?") },
             confirmButton = {
                 TextButton(
@@ -626,12 +618,12 @@ fun InvoicesScreen(
                         invoiceToDiscard = null
                     }
                 ) {
-                    Text("Discard", color = ErrorColor, fontWeight = FontWeight.Bold)
+                    Text("Discard", color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { invoiceToDiscard = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text("Cancel", color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
             }
         )

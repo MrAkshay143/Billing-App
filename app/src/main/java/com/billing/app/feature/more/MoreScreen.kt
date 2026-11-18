@@ -816,7 +816,10 @@ private fun MoreListItem(
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = DokandaarTheme.textPrimary,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
         if (badge != null) {
             Surface(
@@ -837,7 +840,10 @@ private fun MoreListItem(
             Text(
                 text = subtitle,
                 fontSize = 12.sp,
-                color = DokandaarTheme.textMuted
+                color = DokandaarTheme.textMuted,
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.width(6.dp))
         }

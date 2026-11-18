@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
+import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
@@ -160,12 +161,12 @@ fun ProductListScreen(
                         productToDelete = null
                     }
                 ) {
-                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold)
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { productToDelete = null }) {
-                    Text(strings.cancel, color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
             }
         )
@@ -195,7 +196,10 @@ fun ProductListScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             IconButton(
                                 onClick = onNavigateBack,
                                 modifier = Modifier.size(36.dp)
@@ -207,20 +211,28 @@ fun ProductListScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.width(6.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = strings.productsTitle,
                                     color = Color.White,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = strings.productsSubtitle,
                                     color = Color.White.copy(alpha = 0.8f),
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -279,30 +291,10 @@ fun ProductListScreen(
                             }
 
                             // "+ Add Product" Button
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = Color.White,
-                                modifier = Modifier.clickable { onNavigateToAddProduct() }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                        tint = PrimaryPurple,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "+ Add Product",
-                                        color = PrimaryPurple,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
+                            DokandaarActionPill(
+                                text = strings.quickAddProduct,
+                                onClick = onNavigateToAddProduct
+                            )
                         }
                     }
                 }

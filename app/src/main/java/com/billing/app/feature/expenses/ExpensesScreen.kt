@@ -47,6 +47,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -69,6 +71,7 @@ fun ExpensesScreen(
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val strings = appStrings()
     val expenses by expenseRepository.getAllExpenses().collectAsState(initial = emptyList())
 
     var showAddDialog by remember { mutableStateOf(false) }
@@ -190,30 +193,10 @@ fun ExpensesScreen(
                 icon = Icons.Default.Payments,
                 onNavigateBack = onNavigateBack,
                 actions = {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White,
-                        modifier = Modifier.clickable { showAddDialog = true }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = PrimaryPurple,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Add",
-                                color = PrimaryPurple,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    DokandaarActionPill(
+                        text = strings.add,
+                        onClick = { showAddDialog = true }
+                    )
                 }
             )
         },

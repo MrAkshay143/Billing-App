@@ -125,7 +125,9 @@ private fun QuickActionItem(
                 fontWeight = FontWeight.Bold,
                 color = contentColor,
                 textAlign = TextAlign.Center,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
     }

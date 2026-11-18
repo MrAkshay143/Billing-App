@@ -84,6 +84,8 @@ import com.billing.app.core.cart.CartManager
 import com.billing.app.core.qr.UpiQrGenerator
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.CategoryCard
+import com.billing.app.core.ui.components.DokandaarBottomBarCta
+import com.billing.app.core.ui.components.DokandaarBottomIconButton
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.DarkPurple
@@ -243,116 +245,43 @@ fun SaleScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Hold Button
-                    Surface(
-                        modifier = Modifier
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable {
-                                if (cartItems.isNotEmpty()) {
-                                    viewModel.setCustomer(customerName, customerPhone)
-                                    viewModel.setDiscount(discountPaise, cartManager.subtotal.paise)
-                                    viewModel.holdDraft(cartItems, cartManager.subtotal) {
-                                        cartManager.clearCart()
-                                        onNavigateBack()
-                                    }
+                    DokandaarBottomIconButton(
+                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                        label = strings.holdBill,
+                        onClick = {
+                            if (cartItems.isNotEmpty()) {
+                                viewModel.setCustomer(customerName, customerPhone)
+                                viewModel.setDiscount(discountPaise, cartManager.subtotal.paise)
+                                viewModel.holdDraft(cartItems, cartManager.subtotal) {
+                                    cartManager.clearCart()
+                                    onNavigateBack()
                                 }
-                            },
-                        color = DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 14.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                                contentDescription = strings.holdBill,
-                                tint = DokandaarTheme.textPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(strings.holdBill, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                            }
                         }
-                    }
+                    )
 
                     // Discard Button
-                    Surface(
-                        modifier = Modifier
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable { cartManager.clearCart() },
-                        color = DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = strings.discardBill,
-                                tint = DokandaarTheme.textPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(strings.discardBill, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
-                        }
-                    }
+                    DokandaarBottomIconButton(
+                        icon = Icons.Default.Delete,
+                        label = strings.discardBill,
+                        onClick = { cartManager.clearCart() }
+                    )
 
                     // Proceed to Pay Button
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable {
-                                if (cartItems.isNotEmpty()) {
-                                    viewModel.setCustomer(customerName, customerPhone)
-                                    viewModel.setDiscount(discountPaise, cartManager.subtotal.paise)
-                                    showPaymentDialog = true
-                                }
-                            },
-                        color = if (cartItems.isNotEmpty()) PrimaryPurple else PrimaryPurple.copy(alpha = 0.5f)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.CreditCard,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = strings.proceedToPay,
-                                    color = Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = grandTotalMoney.format(),
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(14.dp)
-                                )
+                    DokandaarBottomBarCta(
+                        modifier = Modifier.weight(1f),
+                        leadingIcon = Icons.Default.CreditCard,
+                        title = strings.proceedToPay,
+                        trailingText = grandTotalMoney.format(),
+                        enabled = cartItems.isNotEmpty(),
+                        onClick = {
+                            if (cartItems.isNotEmpty()) {
+                                viewModel.setCustomer(customerName, customerPhone)
+                                viewModel.setDiscount(discountPaise, cartManager.subtotal.paise)
+                                showPaymentDialog = true
                             }
                         }
-                    }
+                    )
                 }
             }
         },
@@ -395,7 +324,10 @@ fun SaleScreen(
                                 text = customerName,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = DokandaarTheme.textPrimary
+                                color = DokandaarTheme.textPrimary,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(

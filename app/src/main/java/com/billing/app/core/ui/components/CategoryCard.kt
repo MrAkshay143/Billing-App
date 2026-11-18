@@ -90,6 +90,7 @@ fun CategoryCard(
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 color = if (isSelected) PrimaryPurple else DokandaarTheme.textPrimary,
                 maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )

@@ -292,21 +292,24 @@ fun HomeScreen(
                                 modifier = Modifier.clickable { onNavigateToSale() }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
                                         text = strings.newSalePos,
                                         color = PrimaryPurple,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
+                                        fontSize = 12.sp,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                         contentDescription = null,
                                         tint = PrimaryPurple,
-                                        modifier = Modifier.size(14.dp)
+                                        modifier = Modifier.size(13.dp)
                                     )
                                 }
                             }
@@ -350,7 +353,7 @@ fun HomeScreen(
                     QuickNavTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.ShoppingCart,
-                        title = strings.newSalePos,
+                        title = "New Sale",
                         subtitle = "(POS)",
                         bgColor = PastelPurpleBg,
                         contentColor = PastelPurpleContent,
@@ -680,14 +683,18 @@ private fun QuickNavTile(
                 fontWeight = FontWeight.Bold,
                 color = DokandaarTheme.textPrimary,
                 textAlign = TextAlign.Center,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             Text(
                 text = subtitle,
                 fontSize = 9.sp,
                 color = DokandaarTheme.textMuted,
                 textAlign = TextAlign.Center,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
     }

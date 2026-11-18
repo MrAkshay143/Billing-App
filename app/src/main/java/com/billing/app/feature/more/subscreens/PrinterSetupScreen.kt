@@ -451,10 +451,13 @@ fun PrinterSetupScreen(
                     Icon(imageVector = Icons.Default.Settings, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Open Phone Bluetooth Settings",
+                        text = "Open Bluetooth Settings",
                         color = HeaderGradientStart,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }

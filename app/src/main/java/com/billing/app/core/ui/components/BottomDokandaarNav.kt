@@ -108,8 +108,11 @@ fun BottomDokandaarNav(
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = localizedTitle,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             color = if (isSelected) {
                                 if (DokandaarTheme.isDark) Color.White else PrimaryPurple
                             } else {
