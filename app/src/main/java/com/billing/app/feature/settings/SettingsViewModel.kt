@@ -217,12 +217,12 @@ class SettingsViewModel(
             if (result.isSuccess) {
                 _uiState.value = _uiState.value.copy(
                     isPrintingTest = false,
-                    successMessage = "Test receipt printed successfully!"
+                    successMessage = "Test receipt printed successfully"
                 )
             } else {
                 _uiState.value = _uiState.value.copy(
                     isPrintingTest = false,
-                    errorMessage = result.exceptionOrNull()?.message ?: "Print failed: printer offline"
+                    errorMessage = result.exceptionOrNull()?.message ?: "Test print failed. Check printer Bluetooth & paper."
                 )
             }
         }

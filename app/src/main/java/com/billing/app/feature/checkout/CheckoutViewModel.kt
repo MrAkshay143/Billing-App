@@ -219,7 +219,7 @@ class CheckoutViewModel(
     fun completeSale(items: List<CartItem>, subtotal: Money, onSuccess: () -> Unit) {
         if (_isCompletingSale.value) return
         if (items.isEmpty()) {
-            _errorMessage.value = "Cart is empty"
+            _errorMessage.value = "Cart is empty. Scan or pick items first."
             return
         }
 
@@ -236,7 +236,7 @@ class CheckoutViewModel(
                 val custName = customerName.value.trim()
                 val custPhone = customerPhone.value.trim()
                 if (duePaise > 0 && (custName.isBlank() || custName.equals("Walk-in Customer", ignoreCase = true))) {
-                    _errorMessage.value = "Please select or add a Customer for Credit / Due bill"
+                    _errorMessage.value = "Customer name required for Udhaar (Due) bill"
                     _isCompletingSale.value = false
                     return@launch
                 }
@@ -304,11 +304,11 @@ class CheckoutViewModel(
                         }
                     }
                 } else {
-                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to complete sale"
+                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Could not complete sale. Please try again."
                     _isCompletingSale.value = false
                 }
             } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "Failed to complete sale"
+                _errorMessage.value = e.message ?: "Could not complete sale. Please try again."
                 _isCompletingSale.value = false
             }
         }
@@ -349,7 +349,7 @@ class CheckoutViewModel(
                 invoiceRepository.saveDraft(invoice, invoiceItems)
                 onSuccess()
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to hold draft: ${e.message}"
+                _errorMessage.value = "Could not park draft bill. Please try again."
             }
         }
     }

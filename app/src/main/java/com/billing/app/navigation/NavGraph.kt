@@ -1,5 +1,8 @@
 package com.billing.app.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,6 +81,21 @@ fun AppNavHost(
             DokandaarTab.REPORTS -> Screen.Reports.route
             DokandaarTab.MORE -> Screen.More.route
         }
+
+        val currentRoute = navController.currentDestination?.route
+        if (currentRoute == route) return
+
+        if (tab == DokandaarTab.HOME) {
+            val popped = navController.popBackStack(Screen.Home.route, inclusive = false)
+            if (!popped) {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Home.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            return
+        }
+
         navController.navigate(route) {
             popUpTo(Screen.Home.route) {
                 saveState = true
@@ -90,7 +108,11 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route
+        startDestination = Screen.Splash.route,
+        enterTransition = { fadeIn(animationSpec = tween(220)) },
+        exitTransition = { fadeOut(animationSpec = tween(180)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(220)) },
+        popExitTransition = { fadeOut(animationSpec = tween(180)) }
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(
@@ -131,6 +153,7 @@ fun AppNavHost(
                 },
                 onSaleCompleted = {
                     cartManager.clearCart()
+                    checkoutViewModel.clearMessages()
                     navController.navigate(Screen.Invoices.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
@@ -156,6 +179,7 @@ fun AppNavHost(
                 },
                 onSaleCompleted = {
                     cartManager.clearCart()
+                    checkoutViewModel.clearMessages()
                     navController.navigate(Screen.Invoices.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
@@ -196,7 +220,10 @@ fun AppNavHost(
                 onNavigateToHome = { navigateToTab(DokandaarTab.HOME) },
                 onNavigateToSettings = { navigateToTab(DokandaarTab.MORE) },
                 onNavigateToSalesReport = { navController.navigate(Screen.SalesReport.route) },
-                onNavigateToNewSale = { navController.navigate(Screen.Sale.route) },
+                onNavigateToNewSale = {
+                    checkoutViewModel.clearMessages()
+                    navController.navigate(Screen.Sale.route)
+                },
                 onResumeDraft = { items, draftInvoice ->
                     cartManager.setResumedDraft(
                         draftNumber = draftInvoice.invoiceNumber,

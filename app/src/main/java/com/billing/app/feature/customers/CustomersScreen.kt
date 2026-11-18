@@ -15,6 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.mutableIntStateOf
+import com.billing.app.core.pagination.OnBottomReached
+import com.billing.app.core.pagination.LazyLoadingFooter
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +64,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.InputField
@@ -87,16 +94,42 @@ fun CustomersScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
     var customerToEdit by remember { mutableStateOf<CustomerEntity?>(null) }
+    var customerToDelete by remember { mutableStateOf<CustomerEntity?>(null) }
 
     var formName by remember { mutableStateOf("") }
     var formPhone by remember { mutableStateOf("") }
     var formEmail by remember { mutableStateOf("") }
     var formAddress by remember { mutableStateOf("") }
 
+    var visibleItemCount by remember { mutableIntStateOf(20) }
+    var isLoadingMore by remember { mutableStateOf(false) }
+
+    LaunchedEffect(searchQuery) {
+        visibleItemCount = 20
+        isLoadingMore = false
+    }
+
     val filteredCustomers = customers.filter {
         searchQuery.isBlank() ||
         it.name.contains(searchQuery.trim(), ignoreCase = true) ||
         it.phone.contains(searchQuery.trim())
+    }
+
+    val displayedCustomers = remember(filteredCustomers, visibleItemCount) {
+        filteredCustomers.take(visibleItemCount)
+    }
+    val hasMore = visibleItemCount < filteredCustomers.size
+
+    val listState = rememberLazyListState()
+    listState.OnBottomReached(buffer = 5, enabled = hasMore && !isLoadingMore) {
+        if (!isLoadingMore && hasMore) {
+            isLoadingMore = true
+            scope.launch {
+                delay(150)
+                visibleItemCount = minOf(visibleItemCount + 20, filteredCustomers.size)
+                isLoadingMore = false
+            }
+        }
     }
 
     if (showAddDialog || customerToEdit != null) {
@@ -107,7 +140,7 @@ fun CustomersScreen(
             },
             title = {
                 Text(
-                    text = if (customerToEdit == null) "Add Customer" else "Edit Customer",
+                    text = if (customerToEdit == null) strings.addCustomer else strings.editCustomer,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryPurple
                 )
@@ -115,20 +148,20 @@ fun CustomersScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InputField(
-                        label = "Customer Name *",
+                        label = strings.customerName,
                         value = formName,
                         onValueChange = { formName = it },
                         placeholder = "e.g. Ramesh Kumar"
                     )
                     InputField(
-                        label = "Mobile Number *",
+                        label = strings.customerPhone,
                         value = formPhone,
                         onValueChange = { formPhone = it },
                         placeholder = "e.g. 9876543210",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
                     InputField(
-                        label = "Address (Optional)",
+                        label = strings.customerAddress,
                         value = formAddress,
                         onValueChange = { formAddress = it },
                         placeholder = "e.g. Shop 4, Main Market"
@@ -164,10 +197,12 @@ fun CustomersScreen(
                                 formPhone = ""
                                 formAddress = ""
                             }
+                        } else {
+                            FeedbackManager.showToast(context, "Please enter customer name and 10-digit mobile number")
                         }
                     }
                 ) {
-                    Text("Save", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.save, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -177,9 +212,41 @@ fun CustomersScreen(
                         customerToEdit = null
                     }
                 ) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
-            }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (customerToDelete != null) {
+        val cust = customerToDelete!!
+        AlertDialog(
+            onDismissRequest = { customerToDelete = null },
+            title = { Text(strings.deleteCustomerTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text("Remove '${cust.name}'? ${strings.deleteCustomerConfirm}") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            customerRepository.deleteCustomer(cust.id)
+                            customerToDelete = null
+                            FeedbackManager.showToast(context, strings.customerDeletedToast)
+                        }
+                    }
+                ) {
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { customerToDelete = null }) {
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
+                }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -187,7 +254,7 @@ fun CustomersScreen(
         topBar = {
             SubPageHeader(
                 title = "Customers",
-                subtitle = "${customers.size} Registered Customers",
+                subtitle = "${customers.size} Customers • Khata",
                 icon = Icons.Default.People,
                 onNavigateBack = onNavigateBack,
                 actions = {
@@ -245,13 +312,14 @@ fun CustomersScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(filteredCustomers, key = { it.id }) { cust ->
+                    items(displayedCustomers, key = { it.id }) { cust ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
@@ -337,15 +405,22 @@ fun CustomersScreen(
                                 }
                                 IconButton(
                                     onClick = {
-                                        scope.launch {
-                                            customerRepository.deleteCustomer(cust.id)
-                                        }
+                                        customerToDelete = cust
                                     }
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorColor, modifier = Modifier.size(18.dp))
                                 }
                             }
                         }
+                    }
+
+                    item(key = "pagination_footer") {
+                        LazyLoadingFooter(
+                            isLoadingMore = isLoadingMore,
+                            hasMore = hasMore,
+                            totalCount = filteredCustomers.size,
+                            itemLabel = "customers"
+                        )
                     }
                 }
             }

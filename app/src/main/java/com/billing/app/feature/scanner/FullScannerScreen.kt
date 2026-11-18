@@ -27,32 +27,38 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.FlashlightOff
 import androidx.compose.material.icons.filled.FlipCameraAndroid
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -149,7 +155,6 @@ fun FullScannerScreen(
 
     var scanTriggerCount by remember { mutableIntStateOf(0) }
 
-    // Auto-hide success badge after 2 seconds
     LaunchedEffect(scanTriggerCount) {
         if (showAddedBadge) {
             delay(2000L)
@@ -165,7 +170,6 @@ fun FullScannerScreen(
                 icon = Icons.Default.QrCodeScanner,
                 onNavigateBack = onNavigateBack,
                 actions = {
-                    // Flashlight Toggle
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -187,7 +191,6 @@ fun FullScannerScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Flip Camera
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -208,7 +211,6 @@ fun FullScannerScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Help Dialog
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -228,88 +230,88 @@ fun FullScannerScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = DokandaarTheme.cardBackground,
-                shadowElevation = 8.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            if (cartItems.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = DokandaarTheme.cardBackground,
+                    shadowElevation = 8.dp
                 ) {
-                    // Clear All Button
-                    Surface(
+                    Row(
                         modifier = Modifier
-                            .weight(0.4f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .clickable { cartManager.clearCart() },
-                        color = DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, ErrorColor)
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
+                        Surface(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 6.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                                .weight(0.9f)
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .clickable { cartManager.clearCart() },
+                            color = Color.White,
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFEF4444)),
+                            shape = RoundedCornerShape(24.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = null,
-                                tint = ErrorColor,
-                                modifier = Modifier.size(17.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = strings.clearCart,
-                                color = ErrorColor,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteOutline,
+                                    contentDescription = null,
+                                    tint = Color(0xFFEF4444),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Clear All",
+                                    color = Color(0xFFEF4444),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
-                    }
 
-                    // Done Button
-                    Surface(
-                        modifier = Modifier
-                            .weight(0.6f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .clickable { onDoneScanning() },
-                        color = PrimaryPurple,
-                        shadowElevation = 2.dp
-                    ) {
-                        Row(
+                        Surface(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                                .weight(1.3f)
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .clickable { onDoneScanning() },
+                            color = PrimaryPurple,
+                            shape = RoundedCornerShape(24.dp),
+                            shadowElevation = 2.dp
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "${strings.done} (${cartItems.sumOf { it.quantity }} ${strings.items})",
-                                color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 10.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Done (${cartItems.sumOf { it.quantity }} Items)",
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                     }
                 }
@@ -322,11 +324,12 @@ fun FullScannerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 1. Live Camera Viewfinder (Top 42% height)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
                     .height(230.dp)
+                    .clip(RoundedCornerShape(24.dp))
                     .background(Color.Black)
             ) {
                 if (hasCameraPermission) {
@@ -389,8 +392,7 @@ fun FullScannerScreen(
                         )
                     }
 
-                    // Laser Viewfinder Overlay
-                    ViewfinderLaserOverlay()
+                    ViewfinderLaserOverlay(showInstruction = false)
                 } else {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -405,15 +407,14 @@ fun FullScannerScreen(
                 }
             }
 
-            // 2. Status Badges Row (Item Added to Cart + Total Items)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (cartItems.isNotEmpty()) {
+            if (cartItems.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = PastelGreenBg
@@ -433,233 +434,255 @@ fun FullScannerScreen(
                                 text = if (showAddedBadge && lastAddedProductName != null) {
                                     "Added: $lastAddedProductName"
                                 } else {
-                                    strings.itemAddedToCart
+                                    "Item Added to Cart"
                                 },
                                 color = PastelGreenContent,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                maxLines = 1
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
-                } else {
+
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = DokandaarTheme.surfaceVariant
+                        color = PastelPurpleBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD8B4FE))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.QrCodeScanner,
+                                imageVector = Icons.Default.ShoppingCart,
                                 contentDescription = null,
-                                tint = DokandaarTheme.textMuted,
+                                tint = PrimaryPurple,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = strings.pointAtBarcode,
-                                color = DokandaarTheme.textMuted,
+                                text = "Total: ${cartItems.sumOf { it.quantity }} Items",
+                                color = PrimaryPurple,
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
                 }
+            }
 
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = PastelPurpleBg
-                ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
                             contentDescription = null,
                             tint = PrimaryPurple,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Total: ${cartItems.sumOf { it.quantity }} ${strings.items}",
-                            color = PrimaryPurple,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            text = strings.scannedItems,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DokandaarTheme.textPrimary
                         )
                     }
-                }
-            }
 
-            // 3. Scanned Items List Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = null,
-                    tint = PrimaryPurple,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = strings.scannedItems,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary
-                )
-            }
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 1.dp,
+                        color = DokandaarTheme.border
+                    )
 
-            // 4. Scanned Items List
-            if (cartItems.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = null,
-                            tint = DokandaarTheme.textMuted.copy(alpha = 0.5f),
-                            modifier = Modifier.size(54.dp)
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Align barcode within green laser frame above",
-                            color = DokandaarTheme.textMuted,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(cartItems, key = { it.product.id }) { item ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    if (cartItems.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                ProductThumbnail(
-                                    imageUri = item.product.imageUri,
-                                    size = 46.dp,
-                                    shape = RoundedCornerShape(10.dp)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCodeScanner,
+                                    contentDescription = null,
+                                    tint = DokandaarTheme.textMuted.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(54.dp)
                                 )
-
-                                Spacer(modifier = Modifier.width(10.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = item.product.name,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = DokandaarTheme.textPrimary,
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        text = if (item.product.sku.isNotBlank()) "SKU: ${item.product.sku}" else "Barcode: ${item.product.barcode}",
-                                        fontSize = 11.sp,
-                                        color = DokandaarTheme.textMuted,
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        text = item.product.price.format(),
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = PastelGreenContent
-                                    )
-                                }
-
-                                // Stepper: - [qty] +
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = "Align barcode within green laser frame above",
+                                    color = DokandaarTheme.textMuted,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentPadding = PaddingValues(vertical = 4.dp)
+                        ) {
+                            itemsIndexed(cartItems, key = { _, item -> item.product.id }) { index, item ->
                                 Row(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(PastelPurpleBg)
-                                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .clickable { cartManager.decrement(item.product.id) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Remove,
-                                            contentDescription = "Decrease",
-                                            tint = PrimaryPurple,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-
-                                    Text(
-                                        text = "${item.quantity}",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = PrimaryPurple,
-                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    ProductThumbnail(
+                                        imageUri = item.product.imageUri,
+                                        size = 44.dp,
+                                        shape = RoundedCornerShape(10.dp)
                                     )
 
-                                    Box(
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = item.product.name,
+                                            fontSize = 13.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = DokandaarTheme.textPrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = if (item.product.sku.isNotBlank()) "SKU: ${item.product.sku}" else "Barcode: ${item.product.barcode}",
+                                            fontSize = 10.5.sp,
+                                            color = DokandaarTheme.textMuted,
+                                            maxLines = 1
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = PastelGreenBg
+                                        ) {
+                                            Text(
+                                                text = item.product.price.format(),
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = PastelGreenContent,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Row(
                                         modifier = Modifier
-                                            .size(24.dp)
-                                            .clickable {
-                                                val error = cartManager.increment(item.product.id)
-                                                if (error != null) {
-                                                    FeedbackManager.showToast(context, error)
-                                                }
-                                            },
-                                        contentAlignment = Alignment.Center
+                                            .clip(RoundedCornerShape(18.dp))
+                                            .background(PastelPurpleBg)
+                                            .border(1.dp, Color(0xFFE9D5FF), RoundedCornerShape(18.dp))
+                                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(26.dp)
+                                                .clickable { cartManager.decrement(item.product.id) },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Remove,
+                                                contentDescription = "Decrease",
+                                                tint = PrimaryPurple,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
+
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = Color.White,
+                                            modifier = Modifier
+                                                .padding(horizontal = 2.dp)
+                                                .height(26.dp)
+                                                .widthIn(min = 28.dp),
+                                            shadowElevation = 0.5.dp
+                                        ) {
+                                            Box(
+                                                contentAlignment = Alignment.Center,
+                                                modifier = Modifier.padding(horizontal = 6.dp)
+                                            ) {
+                                                Text(
+                                                    text = "${item.quantity}",
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.Black
+                                                )
+                                            }
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .size(26.dp)
+                                                .clickable {
+                                                    val error = cartManager.increment(item.product.id)
+                                                    if (error != null) {
+                                                        FeedbackManager.showToast(context, error)
+                                                    }
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = "Increase",
+                                                tint = PrimaryPurple,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    Text(
+                                        text = item.total.format(),
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DokandaarTheme.textPrimary
+                                    )
+
+                                    Spacer(modifier = Modifier.width(4.dp))
+
+                                    IconButton(
+                                        onClick = { cartManager.removeItem(item.product.id) },
+                                        modifier = Modifier.size(32.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = "Increase",
-                                            tint = PrimaryPurple,
-                                            modifier = Modifier.size(14.dp)
+                                            imageVector = Icons.Default.DeleteOutline,
+                                            contentDescription = "Remove",
+                                            tint = Color(0xFFEF4444),
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.width(10.dp))
-
-                                Text(
-                                    text = item.total.format(),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DokandaarTheme.textPrimary
-                                )
-
-                                Spacer(modifier = Modifier.width(6.dp))
-
-                                IconButton(
-                                    onClick = { cartManager.removeItem(item.product.id) },
-                                    modifier = Modifier.size(30.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Remove",
-                                        tint = ErrorColor,
-                                        modifier = Modifier.size(18.dp)
+                                if (index < cartItems.size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp),
+                                        thickness = 1.dp,
+                                        color = DokandaarTheme.border.copy(alpha = 0.6f)
                                     )
                                 }
                             }
@@ -670,17 +693,16 @@ fun FullScannerScreen(
         }
     }
 
-    // Help Dialog
     if (showHelpDialog) {
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
-            title = { Text("Continuous Scanner Guide", fontWeight = FontWeight.Bold) },
+            title = { Text("How to Scan Barcodes", fontWeight = FontWeight.Bold) },
             text = {
                 Text(
-                    "1. Position any product barcode or QR code in the green laser frame.\n" +
-                    "2. The scanner will automatically detect and add items to your cart.\n" +
-                    "3. Scanning the same product again increases its quantity.\n" +
-                    "4. Tap Done to proceed to POS checkout with your scanned items."
+                    "1. Align barcode within the green frame.\n" +
+                    "2. Items are added to the list instantly.\n" +
+                    "3. Scan again to increase item quantity.\n" +
+                    "4. Tap Done to proceed to billing."
                 )
             },
             confirmButton = {

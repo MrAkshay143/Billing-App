@@ -56,6 +56,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.InputField
@@ -82,6 +83,7 @@ fun SuppliersScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
     var supplierToEdit by remember { mutableStateOf<SupplierEntity?>(null) }
+    var supplierToDelete by remember { mutableStateOf<SupplierEntity?>(null) }
 
     var formName by remember { mutableStateOf("") }
     var formContact by remember { mutableStateOf("") }
@@ -102,7 +104,7 @@ fun SuppliersScreen(
             },
             title = {
                 Text(
-                    text = if (supplierToEdit == null) "Add Supplier" else "Edit Supplier",
+                    text = if (supplierToEdit == null) strings.addSupplier else strings.editSupplier,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryPurple
                 )
@@ -110,26 +112,26 @@ fun SuppliersScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InputField(
-                        label = "Supplier / Agency Name *",
+                        label = strings.supplierAgencyName,
                         value = formName,
                         onValueChange = { formName = it },
                         placeholder = "e.g. Parle Distributors"
                     )
                     InputField(
-                        label = "Contact Person",
+                        label = strings.contactPerson,
                         value = formContact,
                         onValueChange = { formContact = it },
                         placeholder = "e.g. Anil Sharma"
                     )
                     InputField(
-                        label = "Mobile Number *",
+                        label = strings.customerPhone,
                         value = formPhone,
                         onValueChange = { formPhone = it },
                         placeholder = "e.g. 9811223344",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
                     InputField(
-                        label = "Address",
+                        label = strings.customerAddress,
                         value = formAddress,
                         onValueChange = { formAddress = it },
                         placeholder = "e.g. Wholesale Mandi"
@@ -166,10 +168,12 @@ fun SuppliersScreen(
                                 showAddDialog = false
                                 supplierToEdit = null
                             }
+                        } else {
+                            FeedbackManager.showToast(context, "Please enter supplier name and mobile number")
                         }
                     }
                 ) {
-                    Text("Save", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.save, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -179,9 +183,41 @@ fun SuppliersScreen(
                         supplierToEdit = null
                     }
                 ) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
-            }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (supplierToDelete != null) {
+        val sup = supplierToDelete!!
+        AlertDialog(
+            onDismissRequest = { supplierToDelete = null },
+            title = { Text(strings.deleteSupplierTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text("Remove '${sup.name}'? ${strings.deleteSupplierConfirm}") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            supplierRepository.deleteSupplier(sup.id)
+                            supplierToDelete = null
+                            FeedbackManager.showToast(context, strings.supplierDeletedToast)
+                        }
+                    }
+                ) {
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { supplierToDelete = null }) {
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
+                }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -189,7 +225,7 @@ fun SuppliersScreen(
         topBar = {
             SubPageHeader(
                 title = "Suppliers",
-                subtitle = "${suppliers.size} Registered Suppliers",
+                subtitle = "${suppliers.size} Suppliers • Directory",
                 icon = Icons.Default.LocalShipping,
                 onNavigateBack = onNavigateBack,
                 actions = {
@@ -331,9 +367,7 @@ fun SuppliersScreen(
                                 }
                                 IconButton(
                                     onClick = {
-                                        scope.launch {
-                                            supplierRepository.deleteSupplier(sup.id)
-                                        }
+                                        supplierToDelete = sup
                                     }
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorColor, modifier = Modifier.size(18.dp))

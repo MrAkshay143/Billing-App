@@ -104,7 +104,9 @@ fun PaymentSettingsScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Payment & GST Settings",
+                title = "Payment & Taxes",
+                subtitle = "UPI QR, cash & GST settings",
+                icon = Icons.Default.QrCode,
                 onNavigateBack = onNavigateBack
             )
         },

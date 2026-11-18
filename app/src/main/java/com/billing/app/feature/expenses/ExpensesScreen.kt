@@ -47,7 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.SubPageHeader
@@ -70,11 +72,13 @@ fun ExpensesScreen(
     expenseRepository: ExpenseRepository,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val strings = appStrings()
     val expenses by expenseRepository.getAllExpenses().collectAsState(initial = emptyList())
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var expenseToDelete by remember { mutableStateOf<ExpenseEntity?>(null) }
     var title by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Shop Rent") }
     var amountStr by remember { mutableStateOf("") }
@@ -105,17 +109,17 @@ fun ExpensesScreen(
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Expense", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            title = { Text(strings.addExpense, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InputField(
-                        label = "Expense Title *",
+                        label = strings.expenseTitle,
                         value = title,
                         onValueChange = { title = it },
                         placeholder = "e.g. Electricity Bill, Shop Rent, Tea"
                     )
                     InputField(
-                        label = "Category",
+                        label = strings.expenseCategory,
                         value = category,
                         onValueChange = { category = it },
                         placeholder = "e.g. Rent, Utilities, Salary, Miscellaneous"
@@ -171,17 +175,51 @@ fun ExpensesScreen(
                                 title = ""
                                 amountStr = ""
                             }
+                        } else {
+                            FeedbackManager.showToast(context, "Please enter expense title and valid amount")
                         }
                     }
                 ) {
-                    Text("Save", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.save, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddDialog = false }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
-            }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (expenseToDelete != null) {
+        val exp = expenseToDelete!!
+        AlertDialog(
+            onDismissRequest = { expenseToDelete = null },
+            title = { Text(strings.deleteExpenseTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text("Delete '${exp.title}' (${Money(exp.amountPaise).format()})? ${strings.deleteExpenseConfirm}") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            expenseRepository.deleteExpense(exp.id)
+                            expenseToDelete = null
+                            FeedbackManager.showToast(context, strings.expenseDeletedToast)
+                        }
+                    }
+                ) {
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { expenseToDelete = null }) {
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
+                }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -314,9 +352,7 @@ fun ExpensesScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             IconButton(
                                 onClick = {
-                                    scope.launch {
-                                        expenseRepository.deleteExpense(exp.id)
-                                    }
+                                    expenseToDelete = exp
                                 }
                             ) {
                                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorColor, modifier = Modifier.size(18.dp))

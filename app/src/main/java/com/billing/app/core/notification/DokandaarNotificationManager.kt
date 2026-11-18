@@ -76,7 +76,8 @@ object DokandaarNotificationManager {
         val body = "Inventory running low on: $sampleNames. Tap to review and restock."
 
         val notification = NotificationCompat.Builder(context, CHANNEL_LOW_STOCK)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification_small)
+            .setColor(0xFF7629D9.toInt())
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
@@ -109,7 +110,8 @@ object DokandaarNotificationManager {
         val body = "Today: $totalInvoices sales completed | Total Revenue: $totalRevenueFormatted"
 
         val notification = NotificationCompat.Builder(context, CHANNEL_SALES_ALERTS)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification_small)
+            .setColor(0xFF7629D9.toInt())
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

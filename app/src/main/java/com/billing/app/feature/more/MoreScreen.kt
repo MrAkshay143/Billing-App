@@ -140,20 +140,23 @@ fun MoreScreen(
 
     var showHelpDialog by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     // Help & Support Dialog
     if (showHelpDialog) {
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
-            title = { Text("Dokandaar Support & Guide", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = { Text(strings.helpSupport, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Official Kirana Store Support:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    Text("• Email: support@dokandaar.in", fontSize = 12.sp)
-                    Text("• Helpline: +91 99999 99999 (9 AM - 9 PM)", fontSize = 12.sp)
-                    Text("• WhatsApp Support: Dedicated merchant assistance available daily.", fontSize = 12.sp)
+                    Text("Official Kirana Store Support:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
+                    Text("• Email: support@dokandaar.in", fontSize = 12.sp, color = DokandaarTheme.textPrimary)
+                    Text("• Helpline: +91 99999 99999 (9 AM - 9 PM)", fontSize = 12.sp, color = DokandaarTheme.textPrimary)
+                    Text("• WhatsApp Support: Dedicated merchant assistance available daily.", fontSize = 12.sp, color = DokandaarTheme.textPrimary)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Quick Billing Tips:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Quick Billing Tips:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
                     Text("1. Use Scan QR/Barcode from Home or Sale for fastest scanning.", fontSize = 11.sp, color = DokandaarTheme.textMuted)
                     Text("2. Hold Bill allows saving customer drafts while serving others.", fontSize = 11.sp, color = DokandaarTheme.textMuted)
                     Text("3. Create regular JSON/Excel backups under Backup & Restore.", fontSize = 11.sp, color = DokandaarTheme.textMuted)
@@ -169,12 +172,12 @@ fun MoreScreen(
                         showHelpDialog = false
                     }
                 ) {
-                    Text("Open WhatsApp", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.whatsappSupport, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showHelpDialog = false }) {
-                    Text("Close", color = DokandaarTheme.textMuted)
+                    Text(strings.close, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -184,46 +187,74 @@ fun MoreScreen(
     if (showNotificationsDialog) {
         AlertDialog(
             onDismissRequest = { showNotificationsDialog = false },
-            title = { Text("Store Alerts & Notifications", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = { Text(strings.notifications, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = PastelPurpleBg,
+                        color = if (DokandaarTheme.isDark) PrimaryPurple.copy(alpha = 0.15f) else PastelPurpleBg,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
-                            Text("Fast Kirana Billing Ready", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PrimaryPurple)
-                            Text("ML Kit barcode engine & SQLite Room v5 database ready.", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                            Text("Fast Offline Billing Ready", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PrimaryPurple)
+                            Text("Quick camera scanner & instant billing active.", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                         }
                     }
 
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = PastelGreenBg,
+                        color = if (DokandaarTheme.isDark) PastelGreenContent.copy(alpha = 0.15f) else PastelGreenBg,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
-                            Text("Data Backup Protection", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PastelGreenContent)
-                            Text("Encrypted backup with SHA-256 validation enabled.", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                            Text("Data Safety Active", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PastelGreenContent)
+                            Text("All shop records are securely stored & protected.", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                         }
                     }
 
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = PastelOrangeBg,
+                        color = if (DokandaarTheme.isDark) PastelOrangeContent.copy(alpha = 0.15f) else PastelOrangeBg,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
-                            Text("Inventory Alert Monitor", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PastelOrangeContent)
-                            Text("Automatic stock threshold alerts active on product shelf.", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                            Text("Stock Alerts Active", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PastelOrangeContent)
+                            Text("Automatic warnings when inventory runs low.", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showNotificationsDialog = false }) {
-                    Text("OK", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.ok, color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = { Text(strings.logoutConfirmTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text(strings.logoutConfirmPrompt, color = DokandaarTheme.textPrimary) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Logged out successfully")
+                    }
+                ) {
+                    Text(strings.logout, color = ErrorColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -270,13 +301,13 @@ fun MoreScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "More",
+                                    text = strings.navMore,
                                     color = Color.White,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Kirana Store POS",
+                                    text = strings.moreSubtitle,
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 11.sp
                                 )
@@ -547,7 +578,7 @@ fun MoreScreen(
                         iconTint = PastelOrangeContent,
                         title = strings.syncData,
                         onClick = {
-                            com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Data Verified: 100% records synced locally with SQLite v5")
+                            com.billing.app.core.ui.util.FeedbackManager.showToast(context, "All store records are saved and up to date")
                         }
                     )
                 }
@@ -705,7 +736,7 @@ fun MoreScreen(
                     .height(48.dp)
                     .clip(RoundedCornerShape(24.dp))
                     .clickable {
-                        com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Logged out successfully")
+                        showLogoutDialog = true
                     },
                 color = PastelRedBg,
                 border = androidx.compose.foundation.BorderStroke(1.dp, PastelRedContent.copy(alpha = 0.3f))

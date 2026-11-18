@@ -134,11 +134,11 @@ fun DokandaarBottomBarCta(
     contentColor: Color = Color.White
 ) {
     Surface(
-        modifier = modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled, onClick = onClick),
-        color = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f)
+        modifier = modifier.height(48.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f),
+        onClick = onClick,
+        enabled = enabled
     ) {
         Row(
             modifier = Modifier
@@ -211,12 +211,11 @@ fun DokandaarBottomIconButton(
     borderColor: Color = DokandaarTheme.border
 ) {
     Surface(
-        modifier = modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
+        modifier = modifier.height(48.dp),
+        shape = RoundedCornerShape(14.dp),
         color = DokandaarTheme.cardBackground,
-        border = BorderStroke(1.dp, borderColor)
+        border = BorderStroke(1.dp, borderColor),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 10.dp),

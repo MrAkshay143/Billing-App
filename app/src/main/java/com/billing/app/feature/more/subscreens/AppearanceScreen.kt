@@ -88,6 +88,8 @@ fun AppearanceScreen(
         topBar = {
             SubPageHeader(
                 title = "Appearance & Theme",
+                subtitle = "Light, Dark & System default",
+                icon = Icons.Default.Palette,
                 onNavigateBack = onNavigateBack
             )
         },

@@ -174,7 +174,7 @@ fun ReportsScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Kirana Store POS",
+                                    text = "Sales & Analytics",
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 11.sp
                                 )
@@ -637,7 +637,7 @@ fun ReportsScreen(
                     Text("Total Products in Store: ${totalItemsCount + 10}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     Text("Estimated Purchase Spend: ${Money(totalSalesPaise * 70 / 100).format()}", fontSize = 13.sp)
                     Text("Stock Valuation: ${Money(totalSalesPaise * 80 / 100).format()}", fontSize = 13.sp)
-                    Text("Low Stock Items: Checked live from database", fontSize = 12.sp, color = PastelOrangeContent)
+                    Text("Low Stock Items: Live inventory verified", fontSize = 12.sp, color = PastelOrangeContent)
                 }
             },
             confirmButton = {
@@ -661,7 +661,7 @@ fun ReportsScreen(
                     Text("Total Sales: ${Money(totalSalesPaise).format()}", fontSize = 13.sp)
                     Text("Outstanding Customer Dues: ${Money(pendingBillsPaise).format()}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ErrorColor)
                     val avgTicket = if (totalInvoicesCount > 0) totalSalesPaise / totalInvoicesCount else 0L
-                    Text("Average Ticket Size: ${Money(avgTicket).format()}", fontSize = 13.sp)
+                    Text("Average Bill Value: ${Money(avgTicket).format()}", fontSize = 13.sp)
                 }
             },
             confirmButton = {
@@ -749,7 +749,7 @@ fun ReportsScreen(
                     Text("Total Invoices: $totalInvoicesCount", fontSize = 13.sp)
                     Text("Total Items Sold: $totalItemsCount pcs", fontSize = 13.sp)
                     Text("Pending Balances: ${Money(pendingBillsPaise).format()}", fontSize = 13.sp, color = if (pendingBillsPaise > 0) PastelOrangeContent else DokandaarTheme.textMuted)
-                    Text("All data synced with local Room v5 database.", fontSize = 11.sp, color = DokandaarTheme.textMuted)
+                    Text("All sales saved safely on this phone.", fontSize = 11.sp, color = DokandaarTheme.textMuted)
                 }
             },
             confirmButton = {

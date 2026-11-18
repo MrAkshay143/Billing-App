@@ -1,6 +1,7 @@
 package com.billing.app.core.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.AddProductContent
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.InvoicesCardBg
 import com.billing.app.core.ui.theme.InvoicesCardContent
 import com.billing.app.core.ui.theme.PrintCardBg
@@ -99,11 +101,16 @@ private fun QuickActionItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = DokandaarTheme.isDark
+    val containerBg = if (isDark) DokandaarTheme.cardBackground else bgColor
+    val borderModifier = if (isDark) Modifier.border(1.dp, contentColor.copy(alpha = 0.25f), RoundedCornerShape(16.dp)) else Modifier
+
     Box(
         modifier = modifier
             .height(74.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(bgColor)
+            .then(borderModifier)
+            .background(containerBg)
             .clickable { onClick() }
             .padding(vertical = 10.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center

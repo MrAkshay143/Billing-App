@@ -121,6 +121,8 @@ fun PrinterSetupScreen(
         topBar = {
             SubPageHeader(
                 title = "Printer Setup",
+                subtitle = "Bluetooth thermal receipt printer",
+                icon = Icons.Default.Print,
                 onNavigateBack = onNavigateBack
             )
         },
@@ -327,10 +329,10 @@ fun PrinterSetupScreen(
                                                 viewModel.connectToPrinter(device.macAddress, device.name)
                                             }
                                         },
-                                    color = if (isThisConnected) AddProductBg else Color(0xFFF8FAFC),
+                                    color = if (isThisConnected) (if (DokandaarTheme.isDark) HeaderGradientStart.copy(alpha = 0.2f) else AddProductBg) else DokandaarTheme.cardBackground,
                                     border = androidx.compose.foundation.BorderStroke(
                                         width = if (isThisConnected) 1.5.dp else 1.dp,
-                                        color = if (isThisConnected) HeaderGradientStart else BorderColor
+                                        color = if (isThisConnected) HeaderGradientStart else DokandaarTheme.border
                                     )
                                 ) {
                                     Row(
@@ -345,12 +347,12 @@ fun PrinterSetupScreen(
                                                 text = device.name,
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF0F172A)
+                                                color = DokandaarTheme.textPrimary
                                             )
                                             Text(
                                                 text = device.macAddress,
                                                 fontSize = 11.sp,
-                                                color = Color(0xFF64748B)
+                                                color = DokandaarTheme.textMuted
                                             )
                                         }
 

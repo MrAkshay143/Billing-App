@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.InStockBg
 import com.billing.app.core.ui.theme.InStockText
 import com.billing.app.core.ui.theme.LowStockBg
@@ -39,10 +40,12 @@ fun StockStatusBadge(
         else -> Tuple4(OutOfStockBg, OutOfStockText, "Out of Stock", Icons.Default.DoNotDisturbOn)
     }
 
+    val actualBgColor = if (DokandaarTheme.isDark) textColor.copy(alpha = 0.18f) else bgColor
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
+            .background(actualBgColor)
             .padding(horizontal = 7.dp, vertical = 3.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

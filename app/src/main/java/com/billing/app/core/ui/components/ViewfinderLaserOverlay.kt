@@ -32,7 +32,8 @@ fun ViewfinderLaserOverlay(
     boxHeight: Dp = 130.dp,
     cornerLength: Dp = 28.dp,
     strokeWidth: Dp = 3.5.dp,
-    laserColor: Color = ScannerLaserGreen
+    laserColor: Color = ScannerLaserGreen,
+    showInstruction: Boolean = false
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "LaserTransition")
     val laserProgress by infiniteTransition.animateFloat(
@@ -55,24 +56,18 @@ fun ViewfinderLaserOverlay(
             val w = size.width
             val h = size.height
 
-            // 4 Corner Brackets
-            // Top-Left
             drawLine(laserColor, Offset(0f, 0f), Offset(length, 0f), stroke, StrokeCap.Round)
             drawLine(laserColor, Offset(0f, 0f), Offset(0f, length), stroke, StrokeCap.Round)
 
-            // Top-Right
             drawLine(laserColor, Offset(w, 0f), Offset(w - length, 0f), stroke, StrokeCap.Round)
             drawLine(laserColor, Offset(w, 0f), Offset(w, length), stroke, StrokeCap.Round)
 
-            // Bottom-Left
             drawLine(laserColor, Offset(0f, h), Offset(length, h), stroke, StrokeCap.Round)
             drawLine(laserColor, Offset(0f, h), Offset(0f, h - length), stroke, StrokeCap.Round)
 
-            // Bottom-Right
             drawLine(laserColor, Offset(w, h), Offset(w - length, h), stroke, StrokeCap.Round)
             drawLine(laserColor, Offset(w, h), Offset(w, h - length), stroke, StrokeCap.Round)
 
-            // Animated Sweeping Horizontal Laser Line with Gradient Fade
             val currentLaserY = h * laserProgress
             drawLine(
                 brush = Brush.horizontalGradient(
@@ -91,15 +86,16 @@ fun ViewfinderLaserOverlay(
             )
         }
 
-        // Instructional Text below target
-        Text(
-            text = "Align barcode or QR code within the frame",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.White.copy(alpha = 0.9f),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 8.dp)
-        )
+        if (showInstruction) {
+            Text(
+                text = "Align barcode or QR code within the frame",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.9f),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp)
+            )
+        }
     }
 }

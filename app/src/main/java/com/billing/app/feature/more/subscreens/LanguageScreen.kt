@@ -81,6 +81,8 @@ fun LanguageScreen(
         topBar = {
             SubPageHeader(
                 title = "App Language",
+                subtitle = "English, हिन्दी, বাংলা & more",
+                icon = Icons.Default.Language,
                 onNavigateBack = onNavigateBack
             )
         },

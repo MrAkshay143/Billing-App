@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.util.UUID
 
 enum class StockFilter {
@@ -30,6 +31,39 @@ class ProductViewModel(
     val selectedCategory = MutableStateFlow("All")
     val currentPage = MutableStateFlow(1)
     val pageSize = 20
+
+    private val _visibleItemCount = MutableStateFlow(20)
+    val visibleItemCount: StateFlow<Int> = _visibleItemCount.asStateFlow()
+
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            searchQuery.collect {
+                resetPagination()
+            }
+        }
+    }
+
+    fun loadMoreProducts() {
+        if (_isLoadingMore.value) return
+        val current = _visibleItemCount.value
+        val total = filteredProducts.value.size
+        if (current >= total) return
+
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+            delay(150)
+            _visibleItemCount.value = minOf(current + 20, total)
+            _isLoadingMore.value = false
+        }
+    }
+
+    fun resetPagination() {
+        _visibleItemCount.value = 20
+        _isLoadingMore.value = false
+    }
 
     val categories: StateFlow<List<CategoryEntity>> = categoryRepository?.getAllCategories()
         ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -126,11 +160,13 @@ class ProductViewModel(
     fun setFilter(filter: StockFilter) {
         activeFilter.value = filter
         currentPage.value = 1
+        resetPagination()
     }
 
     fun setCategory(category: String) {
         selectedCategory.value = category
         currentPage.value = 1
+        resetPagination()
     }
 
     fun addProduct(
@@ -145,16 +181,16 @@ class ProductViewModel(
     ) {
         if (_isSaving.value) return
         if (name.isBlank()) {
-            _errorMessage.value = "Product name cannot be empty"
+            _errorMessage.value = "Please enter product name"
             return
         }
         if (barcode.isBlank()) {
-            _errorMessage.value = "Barcode cannot be empty"
+            _errorMessage.value = "Please enter or scan barcode"
             return
         }
         val price = Money.fromRupees(priceStr)
         if (price.paise <= 0L) {
-            _errorMessage.value = "Price must be greater than 0"
+            _errorMessage.value = "Selling price must be greater than ₹0"
             return
         }
         val stock = stockStr.toIntOrNull() ?: 0
@@ -164,7 +200,7 @@ class ProductViewModel(
             try {
                 val existing = productRepository.getProductByBarcode(barcode.trim())
                 if (existing != null) {
-                    _errorMessage.value = "A product with this barcode already exists!"
+                    _errorMessage.value = "Barcode already registered to another product"
                     _isSaving.value = false
                     return@launch
                 }
@@ -186,7 +222,7 @@ class ProductViewModel(
                     clearDraft()
                     _saveSuccess.value = true
                 } else {
-                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to save product"
+                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Could not save product. Please try again."
                 }
             } finally {
                 _isSaving.value = false
@@ -206,8 +242,12 @@ class ProductViewModel(
         unit: String = "pc"
     ) {
         if (_isSaving.value) return
-        if (name.isBlank() || barcode.isBlank()) {
-            _errorMessage.value = "Name and Barcode cannot be empty"
+        if (name.isBlank()) {
+            _errorMessage.value = "Please enter product name"
+            return
+        }
+        if (barcode.isBlank()) {
+            _errorMessage.value = "Please enter or scan barcode"
             return
         }
         val price = Money.fromRupees(priceStr)
@@ -219,7 +259,7 @@ class ProductViewModel(
                 val trimmedBarcode = barcode.trim()
                 val existing = productRepository.getProductByBarcode(trimmedBarcode)
                 if (existing != null && existing.id != id) {
-                    _errorMessage.value = "A product with barcode '$trimmedBarcode' already exists (${existing.name})"
+                    _errorMessage.value = "Barcode already used by '${existing.name}'"
                     return@launch
                 }
 
@@ -240,7 +280,7 @@ class ProductViewModel(
                     clearDraft()
                     _saveSuccess.value = true
                 } else {
-                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to update product"
+                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Could not save product. Please try again."
                 }
             } finally {
                 _isSaving.value = false

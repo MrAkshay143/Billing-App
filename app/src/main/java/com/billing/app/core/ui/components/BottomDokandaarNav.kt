@@ -1,5 +1,10 @@
 package com.billing.app.core.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,7 +21,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
@@ -26,10 +36,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -39,12 +51,18 @@ import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.PrimaryPurple
 
-enum class DokandaarTab(val title: String, val icon: ImageVector) {
-    HOME("Home", Icons.Outlined.Home),
-    PRODUCTS("Products", Icons.Outlined.Inventory2),
-    INVOICES("Invoices", Icons.AutoMirrored.Outlined.ReceiptLong),
-    REPORTS("Reports", Icons.Outlined.BarChart),
-    MORE("More", Icons.Outlined.GridView)
+enum class DokandaarTab(
+    val title: String,
+    val unselectedIcon: ImageVector,
+    val selectedIcon: ImageVector
+) {
+    HOME("Home", Icons.Outlined.Home, Icons.Filled.Home),
+    PRODUCTS("Products", Icons.Outlined.Inventory2, Icons.Filled.Inventory2),
+    INVOICES("Invoices", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong),
+    REPORTS("Reports", Icons.Outlined.BarChart, Icons.Filled.BarChart),
+    MORE("More", Icons.Outlined.GridView, Icons.Filled.GridView);
+
+    val icon: ImageVector get() = unselectedIcon
 }
 
 @Composable
@@ -80,44 +98,74 @@ fun BottomDokandaarNav(
                         DokandaarTab.MORE -> strings.navMore
                     }
 
+                    val pillBgColor by animateColorAsState(
+                        targetValue = if (isSelected) PrimaryPurple else Color.Transparent,
+                        animationSpec = tween(durationMillis = 200),
+                        label = "pillBgColor"
+                    )
+
+                    val iconTint by animateColorAsState(
+                        targetValue = if (isSelected) Color.White else DokandaarTheme.textMuted,
+                        animationSpec = tween(durationMillis = 200),
+                        label = "iconTint"
+                    )
+
+                    val labelColor by animateColorAsState(
+                        targetValue = if (isSelected) {
+                            if (DokandaarTheme.isDark) Color.White else PrimaryPurple
+                        } else {
+                            DokandaarTheme.textMuted
+                        },
+                        animationSpec = tween(durationMillis = 200),
+                        label = "labelColor"
+                    )
+
+                    val scale by animateFloatAsState(
+                        targetValue = if (isSelected) 1.0f else 0.95f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "tabScale"
+                    )
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) { onTabSelected(tab) }
-                            .padding(vertical = 2.dp)
+                            .padding(vertical = 4.dp)
+                            .scale(scale)
                     ) {
                         Box(
                             modifier = Modifier
                                 .width(56.dp)
                                 .height(30.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(if (isSelected) PrimaryPurple else Color.Transparent),
+                                .background(pillBgColor),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = tab.icon,
+                                imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
                                 contentDescription = localizedTitle,
-                                tint = if (isSelected) Color.White else DokandaarTheme.textMuted,
+                                tint = iconTint,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = localizedTitle,
-                            fontSize = 10.5.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1,
                             softWrap = false,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            color = if (isSelected) {
-                                if (DokandaarTheme.isDark) Color.White else PrimaryPurple
-                            } else {
-                                DokandaarTheme.textMuted
-                            }
+                            color = labelColor
                         )
                     }
                 }

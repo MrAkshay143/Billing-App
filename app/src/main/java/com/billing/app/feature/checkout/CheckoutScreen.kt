@@ -75,9 +75,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.qr.UpiQrGenerator
+import androidx.compose.material.icons.filled.Payments
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
+import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.components.TopDokandaarHeader
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -98,6 +101,7 @@ fun CheckoutScreen(
     onSaleCompleted: () -> Unit,
     onNavigateToTab: (DokandaarTab) -> Unit
 ) {
+    val strings = appStrings()
     val context = LocalContext.current
     val shopProfile by viewModel.shopProfile.collectAsState()
     val selectedMethod by viewModel.selectedPaymentMethod.collectAsState()
@@ -118,7 +122,7 @@ fun CheckoutScreen(
         if (granted) {
             viewModel.printReceipt(cartItems, subtotalAmount)
         } else {
-            FeedbackManager.showToast(context, "Bluetooth permission required to print")
+            FeedbackManager.showToast(context, "Please allow Bluetooth to connect printer")
         }
     }
 
@@ -155,7 +159,7 @@ fun CheckoutScreen(
 
     LaunchedEffect(printSuccess) {
         if (printSuccess) {
-            snackbarHostState.showSnackbar("Receipt printed successfully")
+            snackbarHostState.showSnackbar(strings.invoicePrintedToast)
         }
     }
 
@@ -170,12 +174,14 @@ fun CheckoutScreen(
     if (showDiscountDialog) {
         AlertDialog(
             onDismissRequest = { showDiscountDialog = false },
-            title = { Text("Add Discount (₹)", fontWeight = FontWeight.Bold) },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = { Text(strings.addDiscount, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary) },
             text = {
                 OutlinedTextField(
                     value = discountInput,
                     onValueChange = { discountInput = it },
-                    placeholder = { Text("Enter discount amount in ₹") },
+                    placeholder = { Text("0.00") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
@@ -188,12 +194,12 @@ fun CheckoutScreen(
                         showDiscountDialog = false
                     }
                 ) {
-                    Text("Apply", color = HeaderGradientStart, fontWeight = FontWeight.Bold)
+                    Text(strings.apply, color = HeaderGradientStart, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDiscountDialog = false }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -201,21 +207,11 @@ fun CheckoutScreen(
 
     Scaffold(
         topBar = {
-            TopDokandaarHeader(
-                storeName = "Checkout",
-                subtitle = "Review, Pay & Print",
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-                },
-                onNotificationClick = { onNavigateToTab(DokandaarTab.INVOICES) },
-                onMenuClick = { onNavigateToTab(DokandaarTab.MORE) }
+            SubPageHeader(
+                title = "Payment",
+                subtitle = "Total: ${grandTotal.format()} • Pay & Print",
+                icon = Icons.Default.Payments,
+                onNavigateBack = onNavigateBack
             )
         },
         bottomBar = {
@@ -576,7 +572,7 @@ fun CheckoutScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Payment Method",
+                            text = strings.paymentMode,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = DokandaarTheme.textPrimary
@@ -591,7 +587,7 @@ fun CheckoutScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         PaymentTabPill(
-                            title = "Cash",
+                            title = strings.cash,
                             icon = Icons.Default.Payments,
                             isSelected = selectedMethod == PaymentMethodMode.CASH,
                             onClick = { viewModel.setPaymentMethod(PaymentMethodMode.CASH) },
@@ -607,7 +603,7 @@ fun CheckoutScreen(
                         )
 
                         PaymentTabPill(
-                            title = "Other",
+                            title = strings.otherCard,
                             icon = Icons.Default.CreditCard,
                             isSelected = selectedMethod == PaymentMethodMode.OTHER,
                             onClick = { viewModel.setPaymentMethod(PaymentMethodMode.OTHER) },
@@ -672,13 +668,13 @@ fun CheckoutScreen(
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                             val clip = ClipData.newPlainText("UPI ID", activeUpiId)
                                             clipboard.setPrimaryClip(clip)
-                                            FeedbackManager.showToast(context, "UPI ID copied: $activeUpiId")
+                                            FeedbackManager.showToast(context, "UPI ID copied to clipboard")
                                         }
                                     ) {
                                         Text(
                                             text = "UPI ID: $activeUpiId",
                                             fontSize = 11.sp,
-                                            color = Color(0xFF475569)
+                                            color = DokandaarTheme.textMuted
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Icon(
@@ -711,7 +707,7 @@ fun CheckoutScreen(
                                     text = "Cash Received (₹)",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF475569)
+                                    color = DokandaarTheme.textMuted
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 OutlinedTextField(
@@ -839,11 +835,11 @@ fun CheckoutScreen(
                     .border(1.dp, Color(0xFFF59E0B), RoundedCornerShape(14.dp))
                     .debouncedClickable(enabled = !isCompletingSale && !isPrinting) {
                         viewModel.holdSaleAsDraft(cartItems, subtotalAmount) {
-                            FeedbackManager.showToast(context, "Bill held as draft!")
+                            FeedbackManager.showToast(context, strings.billParkedToast)
                             onSaleCompleted()
                         }
                     },
-                color = Color(0xFFFFFBEB)
+                color = if (DokandaarTheme.isDark) Color(0xFFF59E0B).copy(alpha = 0.15f) else Color(0xFFFFFBEB)
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -858,7 +854,7 @@ fun CheckoutScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Hold Bill as Draft (Park Cart)",
+                        text = strings.parkAsDraft,
                         color = Color(0xFFD97706),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
@@ -909,7 +905,7 @@ fun CheckoutScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Print Receipt",
+                                text = strings.reprint,
                                 color = HeaderGradientStart,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
@@ -954,7 +950,7 @@ fun CheckoutScreen(
                             )
                         } else {
                             Text(
-                                text = "Complete Sale",
+                                text = strings.printAndSave,
                                 color = Color.White,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,

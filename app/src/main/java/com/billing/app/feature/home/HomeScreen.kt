@@ -151,7 +151,7 @@ fun HomeScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text("Low Stock Alert", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ErrorColor)
-                                    Text("$lowStockCount products running low on stock", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                                    Text("$lowStockCount items running low on shelf", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                                 }
                             }
                         }
@@ -170,8 +170,8 @@ fun HomeScreen(
                             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = PastelGreenContent, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
-                                Text("Sales Status", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PastelGreenContent)
-                                Text("$totalInvoices invoices recorded (${selectedPeriod.label})", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                                Text("Sales Summary", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PastelGreenContent)
+                                Text("$totalInvoices bills recorded (${selectedPeriod.label})", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                             }
                         }
                     }
@@ -189,8 +189,8 @@ fun HomeScreen(
                             Icon(Icons.Default.Security, contentDescription = null, tint = PrimaryPurple, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
-                                Text("Offline Database Active", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryPurple)
-                                Text("All records secured locally in Room v5 database", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                                Text("100% Offline Mode", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryPurple)
+                                Text("All store data safely saved on this device", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                             }
                         }
                     }
@@ -203,7 +203,7 @@ fun HomeScreen(
                         if (lowStockCount > 0) onNavigateToProducts()
                     }
                 ) {
-                    Text(if (lowStockCount > 0) "Restock Now" else "OK", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(if (lowStockCount > 0) "View Low Stock" else "OK", color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

@@ -122,6 +122,8 @@ fun StoreProfileScreen(
         topBar = {
             SubPageHeader(
                 title = "Store Profile",
+                subtitle = "Shop details, address & contact",
+                icon = Icons.Default.Storefront,
                 onNavigateBack = onNavigateBack
             )
         },
@@ -392,12 +394,12 @@ fun StoreProfileScreen(
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = HeaderGradientStart,
-                                unfocusedBorderColor = BorderColor
+                                unfocusedBorderColor = DokandaarTheme.border
                             )
                         )
 
                         Spacer(modifier = Modifier.height(14.dp))
-                        Text("Default Tax Rate:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+                        Text("Default Tax Rate:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Row(
@@ -411,7 +413,7 @@ fun StoreProfileScreen(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable { taxRateInput = rate },
-                                    color = if (selected) HeaderGradientStart else AddProductBg
+                                    color = if (selected) HeaderGradientStart else if (DokandaarTheme.isDark) DokandaarTheme.surfaceVariant else AddProductBg
                                 ) {
                                     Box(
                                         modifier = Modifier.padding(vertical = 8.dp),
@@ -419,7 +421,7 @@ fun StoreProfileScreen(
                                     ) {
                                         Text(
                                             text = "$rate%",
-                                            color = if (selected) Color.White else HeaderGradientStart,
+                                            color = if (selected) Color.White else if (DokandaarTheme.isDark) DokandaarTheme.textPrimary else HeaderGradientStart,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp
                                         )

@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -85,6 +86,47 @@ fun UserAccessScreen(
     var showVerifyPinForRemove by rememberSaveable { mutableStateOf(false) }
     var showVerifyPinForChange by rememberSaveable { mutableStateOf(false) }
     var showVerifyPinForDisable by rememberSaveable { mutableStateOf(false) }
+    var staffToDelete by remember { mutableStateOf<com.billing.app.feature.settings.StaffMember?>(null) }
+
+    // Dialog for confirming staff member deletion
+    staffToDelete?.let { staff ->
+        AlertDialog(
+            onDismissRequest = { staffToDelete = null },
+            title = {
+                Text(
+                    text = "Remove Staff Member?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = DokandaarTheme.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "Remove '${staff.name}' from your store staff list?",
+                    fontSize = 14.sp,
+                    color = TextMutedColor
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteStaffMember(staff.id)
+                        FeedbackManager.showToast(context, "Staff member removed")
+                        staffToDelete = null
+                    }
+                ) {
+                    Text("Remove", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { staffToDelete = null }) {
+                    Text("Cancel", color = DokandaarTheme.textMuted)
+                }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 
     // Dialog for verifying current PIN before changing PIN
     if (showVerifyPinForChange) {
@@ -279,11 +321,11 @@ fun UserAccessScreen(
                                     Text(
                                         text = r,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                                        color = if (isSelected) HeaderGradientStart else Color(0xFF1E293B),
+                                        color = if (isSelected) HeaderGradientStart else DokandaarTheme.textPrimary,
                                         fontSize = 13.sp
                                     )
                                 }
-                                Text(text = description, fontSize = 11.sp, color = TextMutedColor)
+                                Text(text = description, fontSize = 11.sp, color = DokandaarTheme.textMuted)
                             }
                         }
                     }
@@ -313,6 +355,8 @@ fun UserAccessScreen(
         topBar = {
             SubPageHeader(
                 title = "User & Access",
+                subtitle = "PIN security & staff accounts",
+                icon = Icons.Default.Lock,
                 onNavigateBack = onNavigateBack
             )
         },
@@ -576,7 +620,7 @@ fun UserAccessScreen(
                                 }
 
                                 IconButton(
-                                    onClick = { viewModel.deleteStaffMember(staff.id) },
+                                    onClick = { staffToDelete = staff },
                                     modifier = Modifier.size(32.dp)
                                 ) {
                                     Icon(

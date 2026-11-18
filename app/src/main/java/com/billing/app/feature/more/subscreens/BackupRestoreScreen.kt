@@ -126,7 +126,7 @@ fun BackupRestoreScreen(
             onDismissRequest = { fileToRestore = null },
             title = { Text("Restore Database?", fontWeight = FontWeight.Bold) },
             text = {
-                Text("Restoring from '${target.name}' will verify data integrity, restore your store profile, and safely merge all products and invoices into your offline database.")
+                Text("Restore data from '${target.name}'? Existing records will be safely updated.")
             },
             confirmButton = {
                 TextButton(
@@ -142,7 +142,7 @@ fun BackupRestoreScreen(
                         }
                     }
                 ) {
-                    Text("Confirm Restore", color = HeaderGradientStart, fontWeight = FontWeight.Bold)
+                    Text("Restore", color = HeaderGradientStart, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -159,7 +159,7 @@ fun BackupRestoreScreen(
         AlertDialog(
             onDismissRequest = { fileToDelete = null },
             title = { Text("Delete Backup?", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to delete '${target.name}'?") },
+            text = { Text("Delete backup file '${target.name}' permanently?") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -184,6 +184,8 @@ fun BackupRestoreScreen(
         topBar = {
             SubPageHeader(
                 title = "Backup & Restore",
+                subtitle = "Export & restore store data",
+                icon = Icons.Default.Restore,
                 onNavigateBack = onNavigateBack
             )
         },

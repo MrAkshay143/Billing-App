@@ -1,21 +1,31 @@
 package com.billing.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
 import com.billing.app.core.localization.LocalAppStrings
 import com.billing.app.core.localization.getAppStrings
+import com.billing.app.core.ui.components.DokandaarToastHost
 import com.billing.app.core.ui.theme.BillingAppTheme
 import com.billing.app.feature.checkout.CheckoutViewModel
 import com.billing.app.feature.home.HomeViewModel
@@ -29,18 +39,11 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            enableEdgeToEdge(
-                statusBarStyle = androidx.activity.SystemBarStyle.dark(
-                    android.graphics.Color.TRANSPARENT
-                ),
-                navigationBarStyle = androidx.activity.SystemBarStyle.light(
-                    android.graphics.Color.TRANSPARENT,
-                    android.graphics.Color.TRANSPARENT
-                )
-            )
-        } catch (e: Exception) {
-            Log.e("MainActivity", "enableEdgeToEdge error", e)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
 
         val app = application as BillingApplication
@@ -127,6 +130,26 @@ class MainActivity : ComponentActivity() {
                 else -> isSystemDark
             }
 
+            DisposableEffect(isDark) {
+                try {
+                    enableEdgeToEdge(
+                        statusBarStyle = if (isDark) {
+                            androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                        } else {
+                            androidx.activity.SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                        },
+                        navigationBarStyle = if (isDark) {
+                            androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                        } else {
+                            androidx.activity.SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                        }
+                    )
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "enableEdgeToEdge error", e)
+                }
+                onDispose {}
+            }
+
             val configuration = LocalConfiguration.current
             val currentLocale = remember(languagePreference) { Locale.forLanguageTag(languagePreference) }
             configuration.setLocale(currentLocale)
@@ -138,21 +161,24 @@ class MainActivity : ComponentActivity() {
             ) {
                 BillingAppTheme(darkTheme = isDark) {
                     val navController = rememberNavController()
-                    AppNavHost(
-                        navController = navController,
-                        homeViewModel = homeViewModel,
-                        checkoutViewModel = checkoutViewModel,
-                        productViewModel = productViewModel,
-                        invoiceViewModel = invoiceViewModel,
-                        reportsViewModel = reportsViewModel,
-                        settingsViewModel = settingsViewModel,
-                        cartManager = app.cartManager,
-                        customerRepository = app.customerRepository,
-                        supplierRepository = app.supplierRepository,
-                        expenseRepository = app.expenseRepository,
-                        categoryRepository = app.categoryRepository,
-                        soundHapticManager = app.soundHapticManager
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AppNavHost(
+                            navController = navController,
+                            homeViewModel = homeViewModel,
+                            checkoutViewModel = checkoutViewModel,
+                            productViewModel = productViewModel,
+                            invoiceViewModel = invoiceViewModel,
+                            reportsViewModel = reportsViewModel,
+                            settingsViewModel = settingsViewModel,
+                            cartManager = app.cartManager,
+                            customerRepository = app.customerRepository,
+                            supplierRepository = app.supplierRepository,
+                            expenseRepository = app.expenseRepository,
+                            categoryRepository = app.categoryRepository,
+                            soundHapticManager = app.soundHapticManager
+                        )
+                        DokandaarToastHost()
+                    }
                 }
             }
         }

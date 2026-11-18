@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.BarChart
@@ -131,6 +132,8 @@ fun SalesReportScreen(
         topBar = {
             SubPageHeader(
                 title = "Sales Report",
+                subtitle = "Daily & monthly sales figures",
+                icon = Icons.Default.BarChart,
                 onNavigateBack = onNavigateBack
             )
         },
@@ -316,12 +319,12 @@ fun SalesReportScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.Payments, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Cash Collected", fontSize = 13.sp, color = Color(0xFF334155))
+                                Text("Cash Collected", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                             }
                             Text(text = Money.fromPaise(report.cashSalesPaise).format(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
 
-                        HorizontalDivider(color = BorderColor.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
+                        HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
 
                         // UPI
                         Row(
@@ -332,13 +335,13 @@ fun SalesReportScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.QrCode, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("UPI Payments", fontSize = 13.sp, color = Color(0xFF334155))
+                                Text("UPI Payments", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                             }
                             Text(text = Money.fromPaise(report.upiSalesPaise).format(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
 
                         if (report.otherSalesPaise > 0L) {
-                            HorizontalDivider(color = BorderColor.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
+                            HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
                             // Other
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -348,7 +351,7 @@ fun SalesReportScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(imageVector = Icons.Default.CreditCard, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Other / Card", fontSize = 13.sp, color = Color(0xFF334155))
+                                    Text("Other / Card", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                                 }
                                 Text(text = Money.fromPaise(report.otherSalesPaise).format(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
@@ -407,7 +410,14 @@ fun SalesReportScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("View Invoices →", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("View Invoices", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }

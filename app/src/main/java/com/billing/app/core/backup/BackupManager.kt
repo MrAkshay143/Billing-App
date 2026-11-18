@@ -489,7 +489,7 @@ object BackupManager {
                 }
             }
 
-            Result.success("Restored successfully ($productCount products, $invoiceCount invoices, $itemCount items)")
+            Result.success("Restored: $productCount products, $invoiceCount bills")
         } catch (e: Exception) {
             Result.failure(e)
         }

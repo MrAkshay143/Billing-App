@@ -133,8 +133,8 @@ fun CategoriesScreen(
     categoryToDelete?.let { cat ->
         AlertDialog(
             onDismissRequest = { categoryToDelete = null },
-            title = { Text("Delete Category", fontWeight = FontWeight.Bold, color = ErrorColor) },
-            text = { Text("Are you sure you want to delete '${cat.name}'? Existing products with this category will remain safe.") },
+            title = { Text(strings.deleteCategoryTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
+            text = { Text("Delete category '${cat.name}'?\n${strings.deleteCategoryConfirm}") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -144,14 +144,16 @@ fun CategoriesScreen(
                         }
                     }
                 ) {
-                    Text("Delete", color = ErrorColor, fontWeight = FontWeight.Bold)
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { categoryToDelete = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
-            }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -449,13 +451,15 @@ private fun CategoryEditorDialog(
                     }
                 }
             ) {
-                Text("Save", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                Text(appStrings().save, color = PrimaryPurple, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = DokandaarTheme.textMuted)
+                Text(appStrings().cancel, color = DokandaarTheme.textMuted)
             }
-        }
+        },
+        containerColor = DokandaarTheme.cardBackground,
+        shape = RoundedCornerShape(16.dp)
     )
 }

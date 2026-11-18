@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.DropdownMenuItem
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.ui.components.BarcodeScannerDialog
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.PrimaryButton
 import com.billing.app.core.ui.components.ProductThumbnail
@@ -75,7 +77,7 @@ fun AddEditProductScreen(
     scannedBarcode: String? = null,
     onBarcodeConsumed: () -> Unit = {},
     onNavigateBack: () -> Unit,
-    onNavigateToScanner: () -> Unit
+    onNavigateToScanner: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val isSaving by viewModel.isSaving.collectAsState()
@@ -89,6 +91,7 @@ fun AddEditProductScreen(
     val imageUri by viewModel.draftImageUri.collectAsState()
     val unit by viewModel.draftUnit.collectAsState()
 
+    var showBarcodeScannerDialog by remember { mutableStateOf(false) }
     var categoryExpanded by remember { mutableStateOf(false) }
     var unitExpanded by remember { mutableStateOf(false) }
     val dbCategories by viewModel.categories.collectAsState()
@@ -134,7 +137,7 @@ fun AddEditProductScreen(
                 }
                 viewModel.draftImageUri.value = newPath
             } else {
-                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Failed to process image")
+                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Could not select image")
             }
         }
     }
@@ -152,7 +155,7 @@ fun AddEditProductScreen(
                 }
                 viewModel.draftImageUri.value = newPath
             } else {
-                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Failed to capture image")
+                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Could not take photo")
             }
         }
     }
@@ -175,6 +178,8 @@ fun AddEditProductScreen(
         topBar = {
             SubPageHeader(
                 title = if (existingProduct == null) "Add Product" else "Edit Product",
+                subtitle = if (existingProduct == null) "Barcode & catalog details" else "Update price & stock",
+                icon = Icons.Default.Inventory2,
                 onNavigateBack = onNavigateBack
             )
         },
@@ -191,6 +196,14 @@ fun AddEditProductScreen(
                         enabled = !isSaving,
                         isLoading = isSaving,
                         onClick = {
+                            if (name.isBlank()) {
+                                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Please enter product name")
+                                return@PrimaryButton
+                            }
+                            if (barcode.isBlank()) {
+                                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Please enter or scan barcode")
+                                return@PrimaryButton
+                            }
                             if (existingProduct == null) {
                                 viewModel.addProduct(
                                     name = name,
@@ -397,7 +410,7 @@ fun AddEditProductScreen(
                 onValueChange = { viewModel.draftBarcode.value = it },
                 placeholder = "Scan or type barcode",
                 trailingIcon = {
-                    IconButton(onClick = onNavigateToScanner) {
+                    IconButton(onClick = { showBarcodeScannerDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.QrCodeScanner,
                             contentDescription = "Scan barcode",
@@ -534,5 +547,17 @@ fun AddEditProductScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    if (showBarcodeScannerDialog) {
+        BarcodeScannerDialog(
+            onBarcodeScanned = { scanned ->
+                viewModel.setScannedBarcode(scanned)
+                showBarcodeScannerDialog = false
+            },
+            onDismiss = {
+                showBarcodeScannerDialog = false
+            }
+        )
     }
 }

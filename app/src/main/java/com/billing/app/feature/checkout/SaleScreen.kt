@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.LocalGroceryStore
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -83,6 +85,7 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.cart.CartManager
 import com.billing.app.core.qr.UpiQrGenerator
 import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.DokandaarBottomBarCta
 import com.billing.app.core.ui.components.DokandaarBottomIconButton
@@ -140,9 +143,15 @@ fun SaleScreen(
 
     val isGstEnabled = viewModel.isGstEnabled
     val taxRatePercent = viewModel.taxRatePercent
-    val taxPaise = viewModel.calculateTax(cartManager.subtotal.paise, discountPaise)
-    val grandTotalPaise = (cartManager.subtotal.paise - discountPaise + taxPaise).coerceAtLeast(0L)
-    val grandTotalMoney = Money.fromPaise(grandTotalPaise)
+    val subtotalPaise = remember(cartItems) { cartItems.fold(0L) { acc, item -> acc + item.total.paise } }
+    val subtotalMoney = remember(subtotalPaise) { Money.fromPaise(subtotalPaise) }
+    val taxPaise = remember(subtotalPaise, discountPaise, isGstEnabled, taxRatePercent) {
+        viewModel.calculateTax(subtotalPaise, discountPaise)
+    }
+    val grandTotalPaise = remember(subtotalPaise, discountPaise, taxPaise) {
+        (subtotalPaise - discountPaise + taxPaise).coerceAtLeast(0L)
+    }
+    val grandTotalMoney = remember(grandTotalPaise) { Money.fromPaise(grandTotalPaise) }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -162,8 +171,8 @@ fun SaleScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Sale",
-                subtitle = "Kirana Store POS",
+                title = strings.newSalePos,
+                subtitle = "${cartItems.size} items • ${grandTotalMoney.format()}",
                 icon = Icons.Default.ShoppingCart,
                 onNavigateBack = onNavigateBack,
                 actions = {
@@ -453,15 +462,27 @@ fun SaleScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(products, key = { it.id }) { product ->
+                        val isOutOfStock = product.stock <= 0
                         Card(
                             modifier = Modifier
                                 .width(125.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .clickable { cartManager.addProduct(product, 1) },
+                                .clickable {
+                                    val (success, errorMsg) = cartManager.addProduct(product, 1)
+                                    if (!success) {
+                                        FeedbackManager.showToast(context, errorMsg ?: "${product.name} is out of stock")
+                                    }
+                                },
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isOutOfStock) DokandaarTheme.cardBackground.copy(alpha = 0.65f) else DokandaarTheme.cardBackground
+                            ),
+                            border = if (isOutOfStock) {
+                                androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.45f))
+                            } else {
+                                androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
+                            },
+                            elevation = CardDefaults.cardElevation(defaultElevation = if (isOutOfStock) 0.dp else 1.dp)
                         ) {
                             Column(
                                 modifier = Modifier
@@ -469,17 +490,33 @@ fun SaleScreen(
                                     .padding(8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                ProductThumbnail(
-                                    imageUri = product.imageUri,
-                                    size = 56.dp,
-                                    shape = RoundedCornerShape(10.dp)
-                                )
+                                Box(contentAlignment = Alignment.TopEnd) {
+                                    ProductThumbnail(
+                                        imageUri = product.imageUri,
+                                        size = 56.dp,
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
+                                    if (isOutOfStock) {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(Color(0xFFEF4444), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                        ) {
+                                            Text(
+                                                text = "OUT",
+                                                color = Color.White,
+                                                fontSize = 8.sp,
+                                                fontWeight = FontWeight.ExtraBold
+                                            )
+                                        }
+                                    }
+                                }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = product.name,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = DokandaarTheme.textPrimary,
+                                    color = if (isOutOfStock) DokandaarTheme.textMuted else DokandaarTheme.textPrimary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -493,19 +530,19 @@ fun SaleScreen(
                                         text = product.price.format(),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = PrimaryPurple
+                                        color = if (isOutOfStock) DokandaarTheme.textMuted else PrimaryPurple
                                     )
                                     Box(
                                         modifier = Modifier
                                             .size(22.dp)
                                             .clip(CircleShape)
-                                            .background(PrimaryPurple),
+                                            .background(if (isOutOfStock) Color.LightGray.copy(alpha = 0.4f) else PrimaryPurple),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Add,
                                             contentDescription = "Add",
-                                            tint = Color.White,
+                                            tint = if (isOutOfStock) Color.Gray else Color.White,
                                             modifier = Modifier.size(14.dp)
                                         )
                                     }
@@ -813,19 +850,21 @@ fun SaleScreen(
 
         AlertDialog(
             onDismissRequest = { showAddCustomerDialog = false },
-            title = { Text("Add Customer", fontWeight = FontWeight.Bold) },
+            title = { Text("New Customer", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = newCustName,
                         onValueChange = { newCustName = it },
                         label = { Text("Customer Name *") },
+                        placeholder = { Text("e.g. Ramesh Bhai") },
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = newCustPhone,
                         onValueChange = { newCustPhone = it },
                         label = { Text("Mobile Number") },
+                        placeholder = { Text("10-digit number") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         singleLine = true
                     )
@@ -839,7 +878,7 @@ fun SaleScreen(
                         showAddCustomerDialog = false
                     }
                 }) {
-                    Text("Save Customer", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text("Save", color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -857,7 +896,7 @@ fun SaleScreen(
 
         AlertDialog(
             onDismissRequest = { showDiscountDialog = false },
-            title = { Text("Apply Bill Discount", fontWeight = FontWeight.Bold) },
+            title = { Text("Add Discount", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
@@ -872,7 +911,7 @@ fun SaleScreen(
                             color = if (!isPercent) PrimaryPurple else PastelPurpleBg
                         ) {
                             Text(
-                                text = "Flat (₹)",
+                                text = "Flat ₹",
                                 color = if (!isPercent) Color.White else PrimaryPurple,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
@@ -888,7 +927,7 @@ fun SaleScreen(
                             color = if (isPercent) PrimaryPurple else PastelPurpleBg
                         ) {
                             Text(
-                                text = "Percentage (%)",
+                                text = "% Off",
                                 color = if (isPercent) Color.White else PrimaryPurple,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
@@ -901,7 +940,7 @@ fun SaleScreen(
                     OutlinedTextField(
                         value = discountInput,
                         onValueChange = { discountInput = it },
-                        label = { Text(if (isPercent) "Discount Percentage (%)" else "Discount Amount (₹)") },
+                        label = { Text(if (isPercent) "Discount (%)" else "Discount Amount (₹)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -948,7 +987,7 @@ fun SaleScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Complete Payment", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text("Payment", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                     Text(Money(grandTotalPaise).format(), fontWeight = FontWeight.ExtraBold, color = PrimaryPurple, fontSize = 18.sp)
                 }
             },
@@ -962,7 +1001,7 @@ fun SaleScreen(
                         listOf(
                             Pair("UPI", PaymentMethodMode.UPI),
                             Pair("Cash", PaymentMethodMode.CASH),
-                            Pair("Credit / Due", PaymentMethodMode.OTHER)
+                            Pair("Udhaar", PaymentMethodMode.OTHER)
                         ).forEach { (label, mode) ->
                             val isSel = selectedMode == mode
                             Surface(
@@ -1021,7 +1060,7 @@ fun SaleScreen(
                         OutlinedTextField(
                             value = cashGiven,
                             onValueChange = { cashGiven = it },
-                            label = { Text("Amount Paid Now (₹) - Rest is Due") },
+                            label = { Text("Amount Paid Now (₹)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
@@ -1034,12 +1073,23 @@ fun SaleScreen(
                             Text(Money(duePaise).format(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = ErrorColor)
                         }
                         if (customerName.isBlank() || customerName == "Walk-in Customer") {
-                            Text(
-                                text = "⚠️ Notice: Due/Khata bill requires an actual Customer name.",
-                                color = ErrorColor,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = ErrorColor,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = "Customer name required for Udhaar bill",
+                                    color = ErrorColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     } else if (selectedMode == PaymentMethodMode.UPI) {
                         Text(
@@ -1065,7 +1115,7 @@ fun SaleScreen(
                         }
                     }
                 ) {
-                    Text("Confirm & Print Bill", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text("Finish & Print", color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1081,23 +1131,24 @@ fun SaleScreen(
         AlertDialog(
             onDismissRequest = {
                 showReceiptDialog = false
+                viewModel.clearMessages()
                 onSaleCompleted()
             },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, tint = PastelGreenContent)
+                    Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = PastelGreenContent)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Sale Completed!", fontWeight = FontWeight.Bold)
+                    Text("Bill Completed!", fontWeight = FontWeight.Bold)
                 }
             },
             text = {
                 Column {
-                    Text("The invoice has been saved and stock updated.")
+                    Text("Bill saved & inventory deducted.")
                     Spacer(modifier = Modifier.height(6.dp))
                     if (isPrinting) {
-                        Text("Printing thermal receipt...", color = PrimaryPurple)
+                        Text("Printing thermal bill...", color = PrimaryPurple)
                     } else if (printSuccess) {
-                        Text("Receipt printed successfully!", color = PastelGreenContent)
+                        Text("Bill printed successfully!", color = PastelGreenContent)
                     }
                 }
             },
@@ -1106,6 +1157,7 @@ fun SaleScreen(
                     onClick = {
                         viewModel.printLastReceipt {
                             showReceiptDialog = false
+                            viewModel.clearMessages()
                             onSaleCompleted()
                         }
                     }
@@ -1113,16 +1165,17 @@ fun SaleScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(imageVector = Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Print Receipt", fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                        Text("Reprint Bill", fontWeight = FontWeight.Bold, color = PrimaryPurple)
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showReceiptDialog = false
+                    viewModel.clearMessages()
                     onSaleCompleted()
                 }) {
-                    Text("Done")
+                    Text("New Sale")
                 }
             }
         )

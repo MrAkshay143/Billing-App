@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.billing.app.core.pagination.OnBottomReached
+import com.billing.app.core.pagination.LazyLoadingFooter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -57,6 +60,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,14 +73,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.DokandaarDateFilterPill
+import com.billing.app.core.ui.components.DokandaarInvoiceCard
 import com.billing.app.core.ui.components.DokandaarKpiFourRow
 import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.DokandaarStatCard
@@ -116,10 +123,31 @@ fun InvoicesScreen(
     onNavigateToNewSale: () -> Unit = { onNavigateToTab(DokandaarTab.HOME) }
 ) {
     val invoices by viewModel.filteredInvoices.collectAsState()
+    val visibleCount by viewModel.visibleItemCount.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val displayedInvoices = remember(invoices, visibleCount) {
+        invoices.take(visibleCount)
+    }
+    val hasMore = visibleCount < invoices.size
+
+    val listState = rememberLazyListState()
+    listState.OnBottomReached(buffer = 5, enabled = hasMore && !isLoadingMore) {
+        viewModel.loadMoreInvoices()
+    }
     val searchQuery by viewModel.searchQuery.collectAsState()
     val dateFilter by viewModel.dateFilter.collectAsState()
     val statusTab by viewModel.statusTab.collectAsState()
     val strings = appStrings()
+
+    val context = LocalContext.current
+    val printMessage by viewModel.printMessage.collectAsState()
+
+    LaunchedEffect(printMessage) {
+        printMessage?.let { msg ->
+            FeedbackManager.showToast(context, msg)
+            viewModel.clearPrintMessage()
+        }
+    }
 
     val scope = rememberCoroutineScope()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -192,7 +220,7 @@ fun InvoicesScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = "Kirana Store POS",
+                                    text = if (invoices.isNotEmpty()) "${invoices.size} Bills Recorded" else strings.invoicesSubtitle,
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 11.sp,
                                     maxLines = 1,
@@ -436,14 +464,15 @@ fun InvoicesScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(invoices, key = { it.invoiceNumber }) { invoice ->
-                        InvoiceItemCard(
+                    items(displayedInvoices, key = { it.invoiceNumber }) { invoice ->
+                        DokandaarInvoiceCard(
                             invoice = invoice,
                             formattedDate = dateFormat.format(Date(invoice.timestamp)),
                             onViewDetails = { selectedInvoiceForDetails = invoice },
@@ -459,6 +488,15 @@ fun InvoicesScreen(
                             onVoidInvoice = { invoiceToVoid = invoice }
                         )
                     }
+
+                    item(key = "pagination_footer") {
+                        LazyLoadingFooter(
+                            isLoadingMore = isLoadingMore,
+                            hasMore = hasMore,
+                            totalCount = invoices.size,
+                            itemLabel = "invoices"
+                        )
+                    }
                 }
             }
         }
@@ -468,26 +506,32 @@ fun InvoicesScreen(
     selectedInvoiceForDetails?.let { inv ->
         AlertDialog(
             onDismissRequest = { selectedInvoiceForDetails = null },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
             title = {
                 Text(
-                    text = "Invoice ${inv.invoiceNumber}",
+                    text = "${strings.invoiceHash}${inv.invoiceNumber}",
                     fontWeight = FontWeight.Bold,
                     color = PrimaryPurple
                 )
             },
             text = {
                 Column {
-                    Text("Customer: ${inv.customerName ?: "Walk-in Customer"}", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "${strings.billedTo}: ${inv.customerName ?: strings.walkInCustomer}",
+                        fontWeight = FontWeight.SemiBold,
+                        color = DokandaarTheme.textPrimary
+                    )
                     if (!inv.customerPhone.isNullOrBlank()) {
                         Text("Phone: ${inv.customerPhone}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
                     }
                     Text("Date: ${dateFormat.format(Date(inv.timestamp))}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
-                    Text("Items: ${inv.itemsCount}", fontSize = 13.sp)
+                    Text("${strings.items}: ${inv.itemsCount}", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text("Subtotal: ${Money(inv.subtotalPaise).format()}", fontSize = 13.sp)
-                    Text("Discount: -${Money(inv.discountPaise).format()}", fontSize = 13.sp, color = PastelGreenContent)
-                    Text("Grand Total: ${Money(inv.grandTotalPaise).format()}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
-                    Text("Payment: ${inv.paymentMethod} (${inv.status.name})", fontSize = 13.sp)
+                    Text("${strings.subtotal}: ${Money(inv.subtotalPaise).format()}", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
+                    Text("${strings.discounts}: -${Money(inv.discountPaise).format()}", fontSize = 13.sp, color = PastelGreenContent)
+                    Text("${strings.grandTotal}: ${Money(inv.grandTotalPaise).format()}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                    Text("${strings.paymentMode}: ${inv.paymentMethod} (${inv.status.name})", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                 }
             },
             confirmButton = {
@@ -497,12 +541,12 @@ fun InvoicesScreen(
                         selectedInvoiceForDetails = null
                     }
                 ) {
-                    Text("Print Receipt", color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                    Text(strings.reprint, color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { selectedInvoiceForDetails = null }) {
-                    Text("Close", color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
+                    Text(strings.close, color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
             }
         )
@@ -512,8 +556,15 @@ fun InvoicesScreen(
     invoiceToVoid?.let { inv ->
         AlertDialog(
             onDismissRequest = { invoiceToVoid = null },
-            title = { Text("Void & Return Invoice", fontWeight = FontWeight.Bold, color = ErrorColor, maxLines = 1, softWrap = false) },
-            text = { Text("Voiding invoice ${inv.invoiceNumber} will mark it as Returned and restore ${inv.itemsCount} items back to inventory stock. Are you sure?") },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = { Text(strings.voidInvoiceTitle, fontWeight = FontWeight.Bold, color = ErrorColor, maxLines = 1, softWrap = false) },
+            text = {
+                Text(
+                    strings.voidInvoicePrompt,
+                    color = DokandaarTheme.textPrimary
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -521,12 +572,12 @@ fun InvoicesScreen(
                         invoiceToVoid = null
                     }
                 ) {
-                    Text("Void & Return", color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { invoiceToVoid = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
             }
         )
@@ -536,8 +587,15 @@ fun InvoicesScreen(
     invoiceToDiscard?.let { inv ->
         AlertDialog(
             onDismissRequest = { invoiceToDiscard = null },
-            title = { Text("Discard Draft", fontWeight = FontWeight.Bold, color = ErrorColor, maxLines = 1, softWrap = false) },
-            text = { Text("Are you sure you want to discard draft invoice ${inv.invoiceNumber}?") },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = { Text(strings.discardBill, fontWeight = FontWeight.Bold, color = ErrorColor, maxLines = 1, softWrap = false) },
+            text = {
+                Text(
+                    "Draft #${inv.invoiceNumber}",
+                    color = DokandaarTheme.textPrimary
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -545,12 +603,12 @@ fun InvoicesScreen(
                         invoiceToDiscard = null
                     }
                 ) {
-                    Text("Discard", color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                    Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { invoiceToDiscard = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
             }
         )
@@ -560,8 +618,15 @@ fun InvoicesScreen(
     invoiceToSettle?.let { inv ->
         AlertDialog(
             onDismissRequest = { invoiceToSettle = null },
-            title = { Text("Settle Due Balance", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
-            text = { Text("Mark remaining balance of ${Money(inv.duePaise).format()} for ${inv.customerName ?: "Customer"} as paid?") },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = { Text(strings.settleDueTitle, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            text = {
+                Text(
+                    "${strings.settleDuePrompt} (${Money(inv.duePaise).format()})",
+                    color = DokandaarTheme.textPrimary
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -569,12 +634,12 @@ fun InvoicesScreen(
                         invoiceToSettle = null
                     }
                 ) {
-                    Text("Mark Paid", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.confirm, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { invoiceToSettle = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -583,275 +648,4 @@ fun InvoicesScreen(
 
 
 
-@Composable
-private fun InvoiceItemCard(
-    invoice: InvoiceEntity,
-    formattedDate: String,
-    onViewDetails: () -> Unit,
-    onPrint: () -> Unit,
-    onResumeDraft: () -> Unit = {},
-    onDiscardDraft: () -> Unit = {},
-    onSettleDue: () -> Unit = {},
-    onVoidInvoice: () -> Unit = {}
-) {
-    var menuExpanded by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
-                if (invoice.status == InvoiceStatus.DRAFT) {
-                    onResumeDraft()
-                } else {
-                    onViewDetails()
-                }
-            },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Purple Document Icon matching Screenshot 5
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(PastelPurpleBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                    contentDescription = null,
-                    tint = PrimaryPurple,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Column 1: Invoice details (Invoice No, Customer Name, Phone) matching Screenshot 5
-            Column(
-                modifier = Modifier.weight(1.05f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = invoice.invoiceNumber,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = invoice.customerName?.ifBlank { "Walk-in Customer" } ?: "Walk-in Customer",
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = DokandaarTheme.textPrimary,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                if (!invoice.customerPhone.isNullOrBlank() && (invoice.customerName != "Walk-in Customer" || invoice.customerPhone.isNotBlank())) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = null,
-                            tint = DokandaarTheme.textMuted,
-                            modifier = Modifier.size(10.dp)
-                        )
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text(
-                            text = invoice.customerPhone,
-                            fontSize = 10.5.sp,
-                            color = DokandaarTheme.textMuted,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(6.dp))
-
-            // Column 2: Date, Items & Badge matching Screenshot 5
-            Column(
-                modifier = Modifier.weight(1.15f),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = DokandaarTheme.textMuted,
-                        modifier = Modifier.size(11.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = formattedDate,
-                        fontSize = 9.5.sp,
-                        color = DokandaarTheme.textMuted,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = null,
-                        tint = DokandaarTheme.textMuted,
-                        modifier = Modifier.size(11.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = "${invoice.itemsCount} Items",
-                        fontSize = 10.sp,
-                        color = DokandaarTheme.textMuted,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(3.dp))
-
-                // Payment Status Badge matching Screenshot 5
-                val (badgeBg, badgeText, badgeColor, badgeIcon) = when {
-                    invoice.status == InvoiceStatus.DRAFT -> listOf(PastelBlueBg, "Draft", PastelBlueContent, Icons.Default.Edit)
-                    invoice.status == InvoiceStatus.CANCELLED -> listOf(PastelRedBg, "Returned", PastelRedContent, Icons.Default.Undo)
-                    invoice.duePaise > 0 -> listOf(PastelOrangeBg, "Pending", PastelOrangeContent, Icons.Default.Schedule)
-                    else -> listOf(PastelGreenBg, "Paid", PastelGreenContent, Icons.Default.CheckCircle)
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = badgeBg as Color
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = badgeIcon as ImageVector,
-                            contentDescription = null,
-                            tint = badgeColor as Color,
-                            modifier = Modifier.size(10.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = badgeText as String,
-                            color = badgeColor,
-                            fontSize = 9.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            // Column 3: Amount & 3-dots matching Screenshot 5
-            val isCancelled = invoice.status == InvoiceStatus.CANCELLED
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (isCancelled) "-${Money(invoice.grandTotalPaise).format()}" else Money(invoice.grandTotalPaise).format(),
-                    fontSize = 13.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isCancelled) ErrorColor else PrimaryPurple,
-                    maxLines = 1,
-                    softWrap = false
-                )
-
-                Spacer(modifier = Modifier.width(2.dp))
-
-                Box {
-                    IconButton(
-                        onClick = { menuExpanded = true },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Options",
-                            tint = DokandaarTheme.textMuted,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                    DropdownMenuItem(
-                        text = { Text("View Details") },
-                        onClick = {
-                            menuExpanded = false
-                            onViewDetails()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Print Receipt") },
-                        onClick = {
-                            menuExpanded = false
-                            onPrint()
-                        }
-                    )
-                    if (invoice.status == InvoiceStatus.DRAFT) {
-                        DropdownMenuItem(
-                            text = { Text("Resume in POS", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
-                            onClick = {
-                                menuExpanded = false
-                                onResumeDraft()
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Discard Draft", color = ErrorColor) },
-                            onClick = {
-                                menuExpanded = false
-                                onDiscardDraft()
-                            }
-                        )
-                    }
-                    if (invoice.duePaise > 0 && invoice.status == InvoiceStatus.COMPLETED) {
-                        DropdownMenuItem(
-                            text = { Text("Settle Due (${Money(invoice.duePaise).format()})", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
-                            onClick = {
-                                menuExpanded = false
-                                onSettleDue()
-                            }
-                        )
-                    }
-                    if (invoice.status == InvoiceStatus.COMPLETED) {
-                        DropdownMenuItem(
-                            text = { Text("Void / Return Bill", color = ErrorColor) },
-                            onClick = {
-                                menuExpanded = false
-                                onVoidInvoice()
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-}

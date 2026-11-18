@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.billing.app.core.pagination.OnBottomReached
+import com.billing.app.core.pagination.LazyLoadingFooter
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -113,7 +116,12 @@ fun ProductListScreen(
         val prod = productToAdjustStock!!
         AlertDialog(
             onDismissRequest = { productToAdjustStock = null },
-            title = { Text("Adjust Stock: ${prod.name}", fontWeight = FontWeight.Bold) },
+            title = {
+                Column {
+                    Text(strings.quickStockAdjust, fontWeight = FontWeight.Bold)
+                    Text(prod.name, fontSize = 12.sp, color = DokandaarTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            },
             text = {
                 Column {
                     Text("Current stock: ${prod.stock} ${prod.unit}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
@@ -122,6 +130,7 @@ fun ProductListScreen(
                         value = adjustStockStr,
                         onValueChange = { adjustStockStr = it },
                         label = { Text("New Stock Quantity") },
+                        placeholder = { Text("Enter quantity") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -137,14 +146,16 @@ fun ProductListScreen(
                         productToAdjustStock = null
                     }
                 ) {
-                    Text("Update", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.save, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { productToAdjustStock = null }) {
                     Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
-            }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -153,8 +164,8 @@ fun ProductListScreen(
         val product = productToDelete!!
         AlertDialog(
             onDismissRequest = { productToDelete = null },
-            title = { Text("Delete Product", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to delete '${product.name}'?") },
+            title = { Text(strings.deleteProductTitle, fontWeight = FontWeight.Bold) },
+            text = { Text("Remove '${product.name}'? ${strings.deleteProductConfirm}") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -169,7 +180,9 @@ fun ProductListScreen(
                 TextButton(onClick = { productToDelete = null }) {
                     Text(strings.cancel, color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
                 }
-            }
+            },
+            containerColor = DokandaarTheme.cardBackground,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -223,7 +236,7 @@ fun ProductListScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = strings.productsSubtitle,
+                                    text = if (products.isNotEmpty()) "${products.size} Products in Catalog" else strings.productsSubtitle,
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 11.sp,
                                     maxLines = 1,
@@ -374,12 +387,17 @@ fun ProductListScreen(
 
             // Pagination setup
             val pageSize = 10
-            val currentPageVal by viewModel.currentPage.collectAsState()
-            val totalPages = maxOf(1, kotlin.math.ceil(filteredProducts.size.toDouble() / pageSize).toInt())
-            val page = currentPageVal.coerceIn(1, totalPages)
-            val startIndex = if (filteredProducts.isEmpty()) 0 else (page - 1) * pageSize
-            val endIndex = minOf(startIndex + pageSize, filteredProducts.size)
-            val pageProducts = if (filteredProducts.isEmpty()) emptyList() else filteredProducts.subList(startIndex, endIndex)
+            val visibleCount by viewModel.visibleItemCount.collectAsState()
+            val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+            val displayedProducts = remember(filteredProducts, visibleCount) {
+                filteredProducts.take(visibleCount)
+            }
+            val hasMore = visibleCount < filteredProducts.size
+
+            val listState = rememberLazyListState()
+            listState.OnBottomReached(buffer = 5, enabled = hasMore && !isLoadingMore) {
+                viewModel.loadMoreProducts()
+            }
 
             // Products List
             if (filteredProducts.isEmpty()) {
@@ -407,13 +425,14 @@ fun ProductListScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(pageProducts, key = { it.id }) { product ->
+                    items(displayedProducts, key = { it.id }) { product ->
                         ProductItemCard(
                             product = product,
                             onEdit = { onNavigateToEditProduct(product.id) },
@@ -424,96 +443,14 @@ fun ProductListScreen(
                             onDelete = { productToDelete = product }
                         )
                     }
-                }
-            }
 
-            // Bottom Pagination / Results Indicator matching Screenshot 4
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = DokandaarTheme.cardBackground,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (filteredProducts.isEmpty()) "0 products" else "Showing ${startIndex + 1} - $endIndex of ${filteredProducts.size} products",
-                        fontSize = 11.sp,
-                        color = DokandaarTheme.textMuted
-                    )
-
-                    if (filteredProducts.isNotEmpty()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Previous Button "<"
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = DokandaarTheme.surfaceVariant,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clickable(enabled = page > 1) { viewModel.currentPage.value = page - 1 }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Previous Page",
-                                        tint = if (page > 1) DokandaarTheme.textPrimary else DokandaarTheme.textMuted.copy(alpha = 0.4f),
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-
-                            // Page numbers (up to 5)
-                            val startP = maxOf(1, minOf(page - 2, totalPages - 4))
-                            val endP = minOf(totalPages, maxOf(startP + 4, 1))
-
-                            for (p in startP..endP) {
-                                val isCurrent = p == page
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (isCurrent) PrimaryPurple else DokandaarTheme.surfaceVariant,
-                                    border = if (isCurrent) null else androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-                                    modifier = Modifier
-                                        .size(28.dp)
-                                        .clickable { viewModel.currentPage.value = p }
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            text = "$p",
-                                            color = if (isCurrent) Color.White else DokandaarTheme.textPrimary,
-                                            fontSize = 12.sp,
-                                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Next Button ">"
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = DokandaarTheme.surfaceVariant,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clickable(enabled = page < totalPages) { viewModel.currentPage.value = page + 1 }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                        contentDescription = "Next Page",
-                                        tint = if (page < totalPages) DokandaarTheme.textPrimary else DokandaarTheme.textMuted.copy(alpha = 0.4f),
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-                        }
+                    item(key = "pagination_footer") {
+                        LazyLoadingFooter(
+                            isLoadingMore = isLoadingMore,
+                            hasMore = hasMore,
+                            totalCount = filteredProducts.size,
+                            itemLabel = "products"
+                        )
                     }
                 }
             }

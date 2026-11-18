@@ -59,6 +59,8 @@ fun AboutDokandaarScreen(
         topBar = {
             SubPageHeader(
                 title = "About Dokandaar",
+                subtitle = "Version 1.0.0 • Offline Kirana POS",
+                icon = Icons.Default.Info,
                 onNavigateBack = onNavigateBack
             )
         },

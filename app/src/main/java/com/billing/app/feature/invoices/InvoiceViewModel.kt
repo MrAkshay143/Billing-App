@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.util.Calendar
 
 enum class InvoiceDateFilter {
@@ -50,6 +51,39 @@ class InvoiceViewModel(
     val searchQuery = MutableStateFlow("")
     val dateFilter = MutableStateFlow(InvoiceDateFilter.ALL)
     val statusTab = MutableStateFlow(InvoiceStatusTab.COMPLETED)
+
+    private val _visibleItemCount = MutableStateFlow(20)
+    val visibleItemCount: StateFlow<Int> = _visibleItemCount.asStateFlow()
+
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            combine(searchQuery, dateFilter, statusTab) { _, _, _ -> }.collect {
+                resetPagination()
+            }
+        }
+    }
+
+    fun loadMoreInvoices() {
+        if (_isLoadingMore.value) return
+        val current = _visibleItemCount.value
+        val total = filteredInvoices.value.size
+        if (current >= total) return
+
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+            delay(150)
+            _visibleItemCount.value = minOf(current + 20, total)
+            _isLoadingMore.value = false
+        }
+    }
+
+    fun resetPagination() {
+        _visibleItemCount.value = 20
+        _isLoadingMore.value = false
+    }
 
     private val _isPrinting = MutableStateFlow(false)
     val isPrinting: StateFlow<Boolean> = _isPrinting.asStateFlow()
@@ -192,13 +226,13 @@ class InvoiceViewModel(
         viewModelScope.launch {
             val result = invoiceRepository.voidInvoice(invoiceNumber)
             if (result.isSuccess) {
-                _printMessage.value = "Invoice $invoiceNumber voided. Stock returned to inventory."
+                _printMessage.value = "Bill #$invoiceNumber cancelled. Items returned to stock."
                 if (_selectedInvoice.value?.first?.invoiceNumber == invoiceNumber) {
                     _selectedInvoice.value = null
                 }
                 onSuccess()
             } else {
-                _printMessage.value = result.exceptionOrNull()?.message ?: "Failed to void invoice"
+                _printMessage.value = result.exceptionOrNull()?.message ?: "Could not cancel bill. Please try again."
             }
         }
     }
@@ -207,7 +241,7 @@ class InvoiceViewModel(
         viewModelScope.launch {
             val result = invoiceRepository.settleInvoiceDue(invoiceNumber)
             if (result.isSuccess) {
-                _printMessage.value = "Due balance settled for invoice $invoiceNumber"
+                _printMessage.value = "Due balance cleared for Bill #$invoiceNumber"
                 _selectedInvoice.value?.let { pair ->
                     if (pair.first.invoiceNumber == invoiceNumber) {
                         _selectedInvoice.value = Pair(pair.first.copy(duePaise = 0L), pair.second)
@@ -215,7 +249,7 @@ class InvoiceViewModel(
                 }
                 onSuccess()
             } else {
-                _printMessage.value = result.exceptionOrNull()?.message ?: "Failed to settle due"
+                _printMessage.value = result.exceptionOrNull()?.message ?: "Could not clear balance. Please try again."
             }
         }
     }
@@ -251,7 +285,7 @@ class InvoiceViewModel(
             try {
                 val invoice = invoiceRepository.getInvoiceByNumber(invoiceNumber)
                 if (invoice == null) {
-                    _printMessage.value = "Invoice not found"
+                    _printMessage.value = "Bill not found"
                     _isPrinting.value = false
                     return@launch
                 }
@@ -260,12 +294,12 @@ class InvoiceViewModel(
 
                 val result = printerRepository.printInvoice(invoice, items, shop)
                 if (result.isSuccess) {
-                    _printMessage.value = "Reprinted ${invoice.invoiceNumber} successfully"
+                    _printMessage.value = "Bill #${invoice.invoiceNumber} printed successfully"
                 } else {
-                    _printMessage.value = result.exceptionOrNull()?.message ?: "Reprint failed: printer offline"
+                    _printMessage.value = result.exceptionOrNull()?.message ?: "Printer is offline or out of paper"
                 }
             } catch (e: Exception) {
-                _printMessage.value = "Print error: ${e.message}"
+                _printMessage.value = "Print failed. Check printer Bluetooth."
             } finally {
                 _isPrinting.value = false
             }

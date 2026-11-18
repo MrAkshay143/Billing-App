@@ -54,12 +54,12 @@ class CartManager(
         if (index >= 0) {
             val existing = current[index]
             if (product.stock > 0 && existing.quantity + quantity > product.stock) {
-                return Pair(false, "Cannot add more. Only ${product.stock} in stock for '${product.name}'")
+                return Pair(false, "Only ${product.stock} left in stock for ${product.name}")
             }
             current[index] = existing.copy(quantity = existing.quantity + quantity)
         } else {
             if (product.stock <= 0) {
-                return Pair(false, "'${product.name}' is currently out of stock!")
+                return Pair(false, "${product.name} is out of stock")
             }
             val initialQty = if (product.stock > 0 && quantity > product.stock) product.stock else quantity
             current.add(CartItem(product = product, quantity = initialQty))
@@ -81,7 +81,7 @@ class CartManager(
                     onResult(false, product.name, errorMsg)
                 }
             } else {
-                onResult(false, null, "Product not found")
+                onResult(false, null, "Barcode not registered. Add product first.")
             }
         }
     }
@@ -93,7 +93,7 @@ class CartManager(
             val existing = current[index]
             val stock = existing.product.stock
             if (stock > 0 && existing.quantity >= stock) {
-                return "Max stock reached for '${existing.product.name}' ($stock units)"
+                return "Max stock reached ($stock units)"
             }
             current[index] = existing.copy(quantity = existing.quantity + 1)
             _cartItems.value = current
