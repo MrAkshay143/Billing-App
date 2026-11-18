@@ -3,924 +3,816 @@ package com.billing.app.core.localization
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 
-data class AppStrings(
+open class AppStrings {
     // tabs
-    val navHome: String,
-    val navProducts: String,
-    val navInvoices: String,
-    val navReports: String,
-    val navMore: String,
+    open val navHome: String = "Home"
+    open val navProducts: String = "Products"
+    open val navInvoices: String = "Invoices"
+    open val navReports: String = "Reports"
+    open val navMore: String = "More"
 
     // topHeader
-    val appSubtitle: String,
+    open val appSubtitle: String = "Billing & POS"
 
     // home
-    val quickAddProduct: String,
-    val quickProducts: String,
-    val quickInvoices: String,
-    val quickPrint: String,
-    val cartTitle: String,
-    val cartEmpty: String,
-    val cartEmptySub: String,
-    val clearCart: String,
-    val checkout: String,
+    open val quickAddProduct: String = "Add Product"
+    open val quickProducts: String = "Products"
+    open val quickInvoices: String = "Invoices"
+    open val quickPrint: String = "Print"
+    open val cartTitle: String = "Cart"
+    open val cartEmpty: String = "Cart is empty"
+    open val cartEmptySub: String = "Scan products above or use Add Product"
+    open val clearCart: String = "Clear"
+    open val checkout: String = "Checkout"
 
     // products
-    val productsTitle: String,
-    val productsSubtitle: String,
-    val searchProducts: String,
-    val filterAll: String,
-    val filterLowStock: String,
-    val filterOutOfStock: String,
+    open val productsTitle: String = "Products"
+    open val productsSubtitle: String = "Manage your store products"
+    open val searchProducts: String = "Search by name, barcode or QR..."
+    open val filterAll: String = "All"
+    open val filterLowStock: String = "Low Stock"
+    open val filterOutOfStock: String = "Out of Stock"
 
     // invoices
-    val invoicesTitle: String,
-    val invoicesSubtitle: String,
-    val tabCompleted: String,
-    val tabDrafts: String,
-    val tabAll: String,
-    val searchInvoices: String,
+    open val invoicesTitle: String = "Invoices"
+    open val invoicesSubtitle: String = "View, search and manage sales"
+    open val tabCompleted: String = "Completed"
+    open val tabDrafts: String = "Drafts"
+    open val tabAll: String = "All Invoices"
+    open val searchInvoices: String = "Search by invoice no. or date..."
 
     // more
-    val moreTitle: String,
-    val moreSubtitle: String,
-    val groupBusiness: String,
-    val groupDataReports: String,
-    val groupApp: String,
-    val storeProfile: String,
-    val userAccess: String,
-    val printerSetup: String,
-    val paymentSettings: String,
-    val salesReport: String,
-    val backupRestore: String,
-    val appearance: String,
-    val language: String,
-    val about: String,
+    open val moreTitle: String = "More"
+    open val moreSubtitle: String = "Settings, backup, reports and more"
+    open val groupBusiness: String = "Business"
+    open val groupDataReports: String = "Data & Reports"
+    open val groupApp: String = "App"
+    open val storeProfile: String = "Store Profile"
+    open val userAccess: String = "User & Access"
+    open val printerSetup: String = "Printer Setup"
+    open val paymentSettings: String = "Payment Settings"
+    open val salesReport: String = "Sales Report"
+    open val backupRestore: String = "Backup & Restore"
+    open val appearance: String = "Appearance"
+    open val language: String = "Language"
+    open val about: String = "About Dokandaar"
 
     // overview / stats
-    val overview: String,
-    val totalSales: String,
-    val totalInvoices: String,
-    val pendingBill: String,
-    val totalProducts: String,
-    val totalCustomers: String,
-    val scanQrBarcode: String,
-    val scanSubtitle: String,
-    val manageYourStore: String,
-    val heroSubtitle: String,
-    val newSalePos: String,
+    open val overview: String = "Overview"
+    open val totalSales: String = "Total Sales"
+    open val totalInvoices: String = "Total Invoices"
+    open val pendingBill: String = "Pending Bill"
+    open val totalProducts: String = "Total Products"
+    open val totalCustomers: String = "Total Customers"
+    open val scanQrBarcode: String = "Scan QR / Barcode"
+    open val scanSubtitle: String = "Scan product barcode or QR code"
+    open val manageYourStore: String = "Manage Your Store"
+    open val heroSubtitle: String = "Billing, Products, Customers & Reports"
+    open val newSalePos: String = "New Sale (POS)"
 
     // more screen sections & tiles
-    val storeManagement: String,
-    val toolsUtilities: String,
-    val businessSupport: String,
-    val categories: String,
-    val customers: String,
-    val suppliers: String,
-    val expenses: String,
-    val discounts: String,
-    val taxGst: String,
-    val paymentMethods: String,
-    val settings: String,
-    val barcodeScanner: String,
-    val importExport: String,
-    val backupDataRestore: String,
-    val syncData: String,
-    val helpSupport: String,
-    val whatsappSupport: String,
-    val rateApp: String,
-    val shareApp: String,
-    val notifications: String,
-    val aboutApp: String,
-    val privacyPolicy: String,
-    val termsConditions: String,
-    val logout: String,
+    open val storeManagement: String = "Store Management"
+    open val toolsUtilities: String = "Tools & Utilities"
+    open val businessSupport: String = "Business & Support"
+    open val categories: String = "Categories"
+    open val customers: String = "Customers"
+    open val suppliers: String = "Suppliers"
+    open val expenses: String = "Expenses"
+    open val discounts: String = "Discounts"
+    open val taxGst: String = "Tax / GST"
+    open val paymentMethods: String = "Payment Methods"
+    open val settings: String = "Settings"
+    open val barcodeScanner: String = "Barcode / QR Scanner"
+    open val importExport: String = "Import / Export (Excel)"
+    open val backupDataRestore: String = "Data Backup & Restore"
+    open val syncData: String = "Sync Data"
+    open val helpSupport: String = "Help & Support"
+    open val whatsappSupport: String = "WhatsApp Support"
+    open val rateApp: String = "Rate the App"
+    open val shareApp: String = "Share App"
+    open val notifications: String = "Notifications"
+    open val aboutApp: String = "About App"
+    open val privacyPolicy: String = "Privacy Policy"
+    open val termsConditions: String = "Terms & Conditions"
+    open val logout: String = "Logout"
 
     // sale / pos
-    val walkInCustomer: String,
-    val addCustomer: String,
-    val holdBill: String,
-    val discardBill: String,
-    val proceedToPay: String,
-    val addDiscount: String,
-    val grandTotal: String,
-    val subtotal: String,
-    val inStock: String,
-    val items: String,
+    open val walkInCustomer: String = "Walk-in Customer"
+    open val addCustomer: String = "Add Customer"
+    open val holdBill: String = "Hold"
+    open val discardBill: String = "Discard"
+    open val proceedToPay: String = "Proceed to Pay"
+    open val addDiscount: String = "Add Discount"
+    open val grandTotal: String = "Grand Total"
+    open val subtotal: String = "Subtotal"
+    open val inStock: String = "In Stock"
+    open val items: String = "Items"
 
     // scanner
-    val scanAddItems: String,
-    val scanSubtitleFull: String,
-    val scannedItems: String,
-    val itemAddedToCart: String,
-    val pointAtBarcode: String,
-    val done: String,
-    val add: String,
+    open val scanAddItems: String = "Scan & Add Items"
+    open val scanSubtitleFull: String = "Auto scan and add multiple items"
+    open val scannedItems: String = "Scanned Items"
+    open val itemAddedToCart: String = "Item Added to Cart"
+    open val pointAtBarcode: String = "Point camera at barcode"
+    open val done: String = "Done"
+    open val add: String = "Add"
 
     // invoices extra
-    val newInvoice: String,
-    val allInvoices: String,
-    val sales: String,
-    val purchase: String,
-    val returns: String,
-    val paid: String,
-    val pending: String,
+    open val newInvoice: String = "New Invoice"
+    open val allInvoices: String = "All Invoices"
+    open val sales: String = "Sales"
+    open val purchase: String = "Purchase"
+    open val returns: String = "Return"
+    open val paid: String = "Paid"
+    open val pending: String = "Pending"
 
     // reports extra
-    val salesTrend: String,
-    val topSellingItems: String,
-    val salesByCategory: String,
-    val quickReports: String,
+    open val salesTrend: String = "Sales Trend"
+    open val topSellingItems: String = "Top Selling Items"
+    open val salesByCategory: String = "Sales by Category"
+    open val quickReports: String = "Quick Reports"
 
     // common
-    val save: String,
-    val cancel: String,
-    val delete: String,
-    val edit: String,
-    val total: String,
+    open val save: String = "Save"
+    open val cancel: String = "Cancel"
+    open val delete: String = "Delete"
+    open val edit: String = "Edit"
+    open val total: String = "Total"
 
     // common actions
-    val confirm: String = "Confirm",
-    val close: String = "Close",
-    val ok: String = "OK",
-    val apply: String = "Apply",
-    val clearAll: String = "Clear All",
-    val reprint: String = "Reprint Bill",
-    val copy: String = "Copy",
-    val grantPermission: String = "Grant Permission",
-    val openSettings: String = "Open Settings",
-    val noRecordsFound: String = "No records found",
+    open val confirm: String = "Confirm"
+    open val close: String = "Close"
+    open val ok: String = "OK"
+    open val apply: String = "Apply"
+    open val clearAll: String = "Clear All"
+    open val reprint: String = "Reprint Bill"
+    open val copy: String = "Copy"
+    open val grantPermission: String = "Grant Permission"
+    open val openSettings: String = "Open Settings"
+    open val noRecordsFound: String = "No records found"
 
     // payment & checkout
-    val customerKhata: String = "Udhaar (Khata)",
-    val cash: String = "Cash",
-    val upiOnline: String = "UPI / Online",
-    val otherCard: String = "Other / Card",
-    val paymentMode: String = "Payment Mode",
-    val receivedAmount: String = "Received Amount",
-    val changeToReturn: String = "Change to Return",
-    val exactAmount: String = "Exact",
-    val parkAsDraft: String = "Park as Draft",
-    val printAndSave: String = "Print & Complete",
-    val billSummary: String = "Bill Summary",
-    val customerDetailsOptional: String = "Customer Details (Optional)",
-    val billCompleted: String = "Bill Completed!",
-    val billSavedInventoryDeducted: String = "Bill saved & inventory deducted.",
-    val cartEmptyError: String = "Cart is empty. Scan or pick items first.",
-    val udhaarCustomerRequired: String = "Customer name required for Udhaar (Due) bill",
-    val billParkedToast: String = "Bill parked to drafts",
-    val saleCompletedSuccess: String = "Sale completed successfully",
+    open val customerKhata: String = "Udhaar (Khata)"
+    open val cash: String = "Cash"
+    open val upiOnline: String = "UPI / Online"
+    open val otherCard: String = "Other / Card"
+    open val paymentMode: String = "Payment Mode"
+    open val receivedAmount: String = "Received Amount"
+    open val changeToReturn: String = "Change to Return"
+    open val exactAmount: String = "Exact"
+    open val parkAsDraft: String = "Park as Draft"
+    open val printAndSave: String = "Print & Complete"
+    open val billSummary: String = "Bill Summary"
+    open val customerDetailsOptional: String = "Customer Details (Optional)"
+    open val billCompleted: String = "Bill Completed!"
+    open val billSavedInventoryDeducted: String = "Bill saved & inventory deducted."
+    open val cartEmptyError: String = "Cart is empty. Scan or pick items first."
+    open val udhaarCustomerRequired: String = "Customer name required for Udhaar (Due) bill"
+    open val billParkedToast: String = "Bill parked to drafts"
+    open val saleCompletedSuccess: String = "Sale completed successfully"
 
     // products & stock
-    val addNewProductTitle: String = "Add Product",
-    val editProductTitle: String = "Edit Product",
-    val productCatalogSubtitle: String = "Barcode & catalog details",
-    val updatePriceStockSubtitle: String = "Update price & stock",
-    val productNameLabel: String = "Product Name *",
-    val barcodeLabel: String = "Barcode / SKU *",
-    val categoryLabel: String = "Category",
-    val sellingPriceLabel: String = "Selling Price (₹) *",
-    val purchasePriceLabel: String = "Purchase Price / Cost (₹)",
-    val stockQuantityLabel: String = "Opening Stock Quantity *",
-    val unitLabel: String = "Unit of Measurement",
-    val quickStockAdjust: String = "Update Stock",
-    val currentStock: String = "Current Stock",
-    val addStock: String = "Add (+)",
-    val reduceStock: String = "Reduce (-)",
-    val deleteProductTitle: String = "Delete Product?",
-    val deleteProductConfirm: String = "Remove this product from your catalog?",
-    val errorProductNameRequired: String = "Please enter product name",
-    val errorBarcodeRequired: String = "Please enter or scan barcode",
-    val errorPriceGreaterThanZero: String = "Selling price must be greater than ₹0",
-    val errorBarcodeExists: String = "Barcode already registered to another product",
-    val productSavedToast: String = "Product saved successfully",
-    val stockUpdatedToast: String = "Stock quantity updated",
-    val productDeletedToast: String = "Product deleted",
-    val itemOutOfStockToast: String = "is out of stock",
+    open val addNewProductTitle: String = "Add Product"
+    open val editProductTitle: String = "Edit Product"
+    open val productCatalogSubtitle: String = "Barcode & catalog details"
+    open val updatePriceStockSubtitle: String = "Update price & stock"
+    open val productNameLabel: String = "Product Name *"
+    open val barcodeLabel: String = "Barcode / SKU *"
+    open val categoryLabel: String = "Category"
+    open val sellingPriceLabel: String = "Selling Price (₹) *"
+    open val purchasePriceLabel: String = "Purchase Price / Cost (₹)"
+    open val stockQuantityLabel: String = "Opening Stock Quantity *"
+    open val unitLabel: String = "Unit of Measurement"
+    open val quickStockAdjust: String = "Update Stock"
+    open val currentStock: String = "Current Stock"
+    open val addStock: String = "Add (+)"
+    open val reduceStock: String = "Reduce (-)"
+    open val deleteProductTitle: String = "Delete Product?"
+    open val deleteProductConfirm: String = "Remove this product from your catalog?"
+    open val errorProductNameRequired: String = "Please enter product name"
+    open val errorBarcodeRequired: String = "Please enter or scan barcode"
+    open val errorPriceGreaterThanZero: String = "Selling price must be greater than ₹0"
+    open val errorBarcodeExists: String = "Barcode already registered to another product"
+    open val productSavedToast: String = "Product saved successfully"
+    open val stockUpdatedToast: String = "Stock quantity updated"
+    open val productDeletedToast: String = "Product deleted"
+    open val itemOutOfStockToast: String = "is out of stock"
 
     // invoices
-    val statusTabPaid: String = "Paid",
-    val statusTabPending: String = "Pending (Due)",
-    val statusTabDrafts: String = "Drafts",
-    val statusTabReturned: String = "Returned / Void",
-    val invoiceHash: String = "Invoice #",
-    val billedTo: String = "Billed To",
-    val itemsCount: String = "items",
-    val badgePaid: String = "PAID",
-    val badgePending: String = "DUE",
-    val badgeDraft: String = "DRAFT",
-    val badgeReturned: String = "VOID",
-    val voidInvoiceTitle: String = "Cancel & Return Bill?",
-    val voidInvoicePrompt: String = "Cancel this bill and return items back to stock?",
-    val settleDueTitle: String = "Clear Due Balance?",
-    val settleDuePrompt: String = "Confirm payment and mark this bill as fully paid?",
-    val invoicePrintedToast: String = "Bill printed successfully",
+    open val statusTabPaid: String = "Paid"
+    open val statusTabPending: String = "Pending (Due)"
+    open val statusTabDrafts: String = "Drafts"
+    open val statusTabReturned: String = "Returned / Void"
+    open val invoiceHash: String = "Invoice #"
+    open val billedTo: String = "Billed To"
+    open val itemsCount: String = "items"
+    open val badgePaid: String = "PAID"
+    open val badgePending: String = "DUE"
+    open val badgeDraft: String = "DRAFT"
+    open val badgeReturned: String = "VOID"
+    open val voidInvoiceTitle: String = "Cancel & Return Bill?"
+    open val voidInvoicePrompt: String = "Cancel this bill and return items back to stock?"
+    open val settleDueTitle: String = "Clear Due Balance?"
+    open val settleDuePrompt: String = "Confirm payment and mark this bill as fully paid?"
+    open val invoicePrintedToast: String = "Bill printed successfully"
 
     // periods & reports
-    val periodToday: String = "Today",
-    val periodThisWeek: String = "This Week",
-    val periodThisMonth: String = "This Month",
-    val periodThisYear: String = "This Year",
-    val salesOverview: String = "Sales Overview",
-    val netSales: String = "Net Sales",
-    val grossSales: String = "Gross Sales",
-    val totalProfit: String = "Total Profit",
-    val customerKhataReport: String = "Khata / Due Report",
-    val dailyBusinessSummary: String = "Daily Business Summary",
+    open val periodToday: String = "Today"
+    open val periodThisWeek: String = "This Week"
+    open val periodThisMonth: String = "This Month"
+    open val periodThisYear: String = "This Year"
+    open val salesOverview: String = "Sales Overview"
+    open val netSales: String = "Net Sales"
+    open val grossSales: String = "Gross Sales"
+    open val totalProfit: String = "Total Profit"
+    open val customerKhataReport: String = "Khata / Due Report"
+    open val dailyBusinessSummary: String = "Daily Business Summary"
 
     // customers
-    val customersTitle: String = "Customers",
-    val editCustomer: String = "Edit Customer",
-    val customerName: String = "Customer Name *",
-    val customerPhone: String = "Mobile Number *",
-    val customerAddress: String = "Customer Address",
-    val totalDueKhata: String = "Total Due Balance",
-    val customerSavedToast: String = "Customer details saved",
-    val customerDeletedToast: String = "Customer removed",
-    val deleteCustomerTitle: String = "Remove Customer?",
-    val deleteCustomerConfirm: String = "Remove this customer and khata record?",
+    open val customersTitle: String = "Customers"
+    open val editCustomer: String = "Edit Customer"
+    open val customerName: String = "Customer Name *"
+    open val customerPhone: String = "Mobile Number *"
+    open val customerAddress: String = "Customer Address"
+    open val totalDueKhata: String = "Total Due Balance"
+    open val customerSavedToast: String = "Customer details saved"
+    open val customerDeletedToast: String = "Customer removed"
+    open val deleteCustomerTitle: String = "Remove Customer?"
+    open val deleteCustomerConfirm: String = "Remove this customer and khata record?"
 
     // suppliers
-    val suppliersTitle: String = "Suppliers",
-    val addSupplier: String = "Add Supplier",
-    val editSupplier: String = "Edit Supplier",
-    val supplierAgencyName: String = "Agency / Supplier Name *",
-    val contactPerson: String = "Contact Person",
-    val supplierSavedToast: String = "Supplier details saved",
-    val supplierDeletedToast: String = "Supplier removed",
-    val deleteSupplierTitle: String = "Remove Supplier?",
-    val deleteSupplierConfirm: String = "Remove this supplier from your directory?",
+    open val suppliersTitle: String = "Suppliers"
+    open val addSupplier: String = "Add Supplier"
+    open val editSupplier: String = "Edit Supplier"
+    open val supplierAgencyName: String = "Agency / Supplier Name *"
+    open val contactPerson: String = "Contact Person"
+    open val supplierSavedToast: String = "Supplier details saved"
+    open val supplierDeletedToast: String = "Supplier removed"
+    open val deleteSupplierTitle: String = "Remove Supplier?"
+    open val deleteSupplierConfirm: String = "Remove this supplier from your directory?"
 
     // expenses
-    val expensesTitle: String = "Daily Expenses",
-    val addExpense: String = "Add Expense",
-    val expenseTitle: String = "Expense Reason / Title *",
-    val expenseAmount: String = "Amount (₹) *",
-    val expenseCategory: String = "Expense Category",
-    val totalExpenses: String = "Total Expenses",
-    val expenseSavedToast: String = "Expense recorded",
-    val expenseDeletedToast: String = "Expense deleted",
-    val deleteExpenseTitle: String = "Delete Expense?",
-    val deleteExpenseConfirm: String = "Delete this expense record?",
+    open val expensesTitle: String = "Daily Expenses"
+    open val addExpense: String = "Add Expense"
+    open val expenseTitle: String = "Expense Reason / Title *"
+    open val expenseAmount: String = "Amount (₹) *"
+    open val expenseCategory: String = "Expense Category"
+    open val totalExpenses: String = "Total Expenses"
+    open val expenseSavedToast: String = "Expense recorded"
+    open val expenseDeletedToast: String = "Expense deleted"
+    open val deleteExpenseTitle: String = "Delete Expense?"
+    open val deleteExpenseConfirm: String = "Delete this expense record?"
 
     // categories
-    val categoriesTitle: String = "Categories",
-    val addCategory: String = "Add Category",
-    val categoryName: String = "Category Name *",
-    val categorySavedToast: String = "Category saved",
-    val categoryDeletedToast: String = "Category deleted",
-    val deleteCategoryTitle: String = "Delete Category?",
-    val deleteCategoryConfirm: String = "Delete this category? Existing products will not be deleted.",
+    open val categoriesTitle: String = "Categories"
+    open val addCategory: String = "Add Category"
+    open val categoryName: String = "Category Name *"
+    open val categorySavedToast: String = "Category saved"
+    open val categoryDeletedToast: String = "Category deleted"
+    open val deleteCategoryTitle: String = "Delete Category?"
+    open val deleteCategoryConfirm: String = "Delete this category? Existing products will not be deleted."
 
     // settings & subpages
-    val storeInformation: String = "Store Information",
-    val storeName: String = "Store Name *",
-    val storePhone: String = "Contact Mobile *",
-    val storeAddress: String = "Full Store Address",
-    val storeGstin: String = "Store GSTIN (Optional)",
-    val receiptFooter: String = "Bill Footer Note",
-    val profileUpdatedToast: String = "Store profile saved successfully",
-    val thermalPrinterSetup: String = "Thermal Printer Setup",
-    val testPrint: String = "Print Test Receipt",
-    val testPrintSuccess: String = "Test receipt printed successfully",
-    val testPrintFailed: String = "Test print failed. Check printer Bluetooth & paper.",
-    val securityPin: String = "PIN Security & Staff",
-    val enterOwnerPin: String = "Verify Owner PIN",
-    val enterSecurityPinPrompt: String = "Enter PIN to proceed",
-    val incorrectPinError: String = "Incorrect PIN. Please try again.",
-    val backupDatabase: String = "Backup Database",
-    val restoreDatabase: String = "Restore Database",
-    val restoreConfirmPrompt: String = "Restore store data? Existing records will be safely updated.",
-    val backupSuccessToast: String = "Exported backup successfully",
-    val restoreSuccessToast: String = "Database restored successfully",
-    val logoutConfirmTitle: String = "Exit Store Session?",
-    val logoutConfirmPrompt: String = "Are you sure you want to log out?",
-    val howToScanBarcodes: String = "How to Scan Barcodes",
-    val scanBarcode: String = "Scan Barcode",
-    val pointCameraAtBarcode: String = "Point camera at product barcode",
-    val cameraPermissionNeeded: String = "Camera permission needed to scan barcodes",
-    val barcodeCapturedAuto: String = "Barcode will be captured automatically"
-)
+    open val storeInformation: String = "Store Information"
+    open val storeName: String = "Store Name *"
+    open val storePhone: String = "Contact Mobile *"
+    open val storeAddress: String = "Full Store Address"
+    open val storeGstin: String = "Store GSTIN (Optional)"
+    open val receiptFooter: String = "Bill Footer Note"
+    open val profileUpdatedToast: String = "Store profile saved successfully"
+    open val thermalPrinterSetup: String = "Thermal Printer Setup"
+    open val testPrint: String = "Print Test Receipt"
+    open val testPrintSuccess: String = "Test receipt printed successfully"
+    open val testPrintFailed: String = "Test print failed. Check printer Bluetooth & paper."
+    open val securityPin: String = "PIN Security & Staff"
+    open val enterOwnerPin: String = "Verify Owner PIN"
+    open val enterSecurityPinPrompt: String = "Enter PIN to proceed"
+    open val incorrectPinError: String = "Incorrect PIN. Please try again."
+    open val backupDatabase: String = "Backup Database"
+    open val restoreDatabase: String = "Restore Database"
+    open val restoreConfirmPrompt: String = "Restore store data? Existing records will be safely updated."
+    open val backupSuccessToast: String = "Exported backup successfully"
+    open val restoreSuccessToast: String = "Database restored successfully"
+    open val logoutConfirmTitle: String = "Exit Store Session?"
+    open val logoutConfirmPrompt: String = "Are you sure you want to log out?"
+    open val howToScanBarcodes: String = "How to Scan Barcodes"
+    open val scanBarcode: String = "Scan Barcode"
+    open val pointCameraAtBarcode: String = "Point camera at product barcode"
+    open val cameraPermissionNeeded: String = "Camera permission needed to scan barcodes"
+    open val barcodeCapturedAuto: String = "Barcode will be captured automatically"
+}
 
-val EnStrings = AppStrings(
-    navHome = "Home",
-    navProducts = "Products",
-    navInvoices = "Invoices",
-    navReports = "Reports",
-    navMore = "More",
-    appSubtitle = "Billing & POS",
-    quickAddProduct = "Add Product",
-    quickProducts = "Products",
-    quickInvoices = "Invoices",
-    quickPrint = "Print",
-    cartTitle = "Cart",
-    cartEmpty = "Cart is empty",
-    cartEmptySub = "Scan products above or use Add Product",
-    clearCart = "Clear",
-    checkout = "Checkout",
-    productsTitle = "Products",
-    productsSubtitle = "Manage your store products",
-    searchProducts = "Search by name, barcode or QR...",
-    filterAll = "All",
-    filterLowStock = "Low Stock",
-    filterOutOfStock = "Out of Stock",
-    invoicesTitle = "Invoices",
-    invoicesSubtitle = "View, search and manage sales",
-    tabCompleted = "Completed",
-    tabDrafts = "Drafts",
-    tabAll = "All Invoices",
-    searchInvoices = "Search by invoice no. or date...",
-    moreTitle = "More",
-    moreSubtitle = "Settings, backup, reports and more",
-    groupBusiness = "Business",
-    groupDataReports = "Data & Reports",
-    groupApp = "App",
-    storeProfile = "Store Profile",
-    userAccess = "User & Access",
-    printerSetup = "Printer Setup",
-    paymentSettings = "Payment Settings",
-    salesReport = "Sales Report",
-    backupRestore = "Backup & Restore",
-    appearance = "Appearance",
-    language = "Language",
-    about = "About Dokandaar",
-    overview = "Overview",
-    totalSales = "Total Sales",
-    totalInvoices = "Total Invoices",
-    pendingBill = "Pending Bill",
-    totalProducts = "Total Products",
-    totalCustomers = "Total Customers",
-    scanQrBarcode = "Scan QR / Barcode",
-    scanSubtitle = "Scan product barcode or QR code",
-    manageYourStore = "Manage Your Store",
-    heroSubtitle = "Billing, Products, Customers & Reports",
-    newSalePos = "New Sale (POS)",
-    storeManagement = "Store Management",
-    toolsUtilities = "Tools & Utilities",
-    businessSupport = "Business & Support",
-    categories = "Categories",
-    customers = "Customers",
-    suppliers = "Suppliers",
-    expenses = "Expenses",
-    discounts = "Discounts",
-    taxGst = "Tax / GST",
-    paymentMethods = "Payment Methods",
-    settings = "Settings",
-    barcodeScanner = "Barcode / QR Scanner",
-    importExport = "Import / Export (Excel)",
-    backupDataRestore = "Data Backup & Restore",
-    syncData = "Sync Data",
-    helpSupport = "Help & Support",
-    whatsappSupport = "WhatsApp Support",
-    rateApp = "Rate the App",
-    shareApp = "Share App",
-    notifications = "Notifications",
-    aboutApp = "About App",
-    privacyPolicy = "Privacy Policy",
-    termsConditions = "Terms & Conditions",
-    logout = "Logout",
-    walkInCustomer = "Walk-in Customer",
-    addCustomer = "Add Customer",
-    holdBill = "Hold",
-    discardBill = "Discard",
-    proceedToPay = "Proceed to Pay",
-    addDiscount = "Add Discount",
-    grandTotal = "Grand Total",
-    subtotal = "Subtotal",
-    inStock = "In Stock",
-    items = "Items",
-    scanAddItems = "Scan & Add Items",
-    scanSubtitleFull = "Auto scan and add multiple items",
-    scannedItems = "Scanned Items",
-    itemAddedToCart = "Item Added to Cart",
-    pointAtBarcode = "Point camera at barcode",
-    done = "Done",
-    add = "Add",
-    newInvoice = "New Invoice",
-    allInvoices = "All Invoices",
-    sales = "Sales",
-    purchase = "Purchase",
-    returns = "Return",
-    paid = "Paid",
-    pending = "Pending",
-    salesTrend = "Sales Trend",
-    topSellingItems = "Top Selling Items",
-    salesByCategory = "Sales by Category",
-    quickReports = "Quick Reports",
-    save = "Save",
-    cancel = "Cancel",
-    delete = "Delete",
-    edit = "Edit",
-    total = "Total"
-)
+class BengaliStrings : AppStrings() {
+    override val navHome = "হোম"
+    override val navProducts = "পণ্যসমূহ"
+    override val navInvoices = "ইনভয়েস"
+    override val navReports = "রিপোর্ট"
+    override val navMore = "আরও"
+    override val appSubtitle = "বিলিং ও পিওএস"
+    override val quickAddProduct = "পণ্য যোগ"
+    override val quickProducts = "পণ্যসমূহ"
+    override val quickInvoices = "ইনভয়েস"
+    override val quickPrint = "প্রিন্টার"
+    override val cartTitle = "কার্ট"
+    override val cartEmpty = "কার্ট খালি আছে"
+    override val cartEmptySub = "পণ্য যোগ করতে বারকোড স্ক্যান করুন বা নির্বাচন করুন"
+    override val clearCart = "সব মুছুন"
+    override val checkout = "বিলিং করুন"
+    override val productsTitle = "পণ্যসমূহ"
+    override val productsSubtitle = "দোকানের পণ্য তালিকা পরিচালনা করুন"
+    override val searchProducts = "নাম, বারকোড বা কিউআর কোড দিয়ে খুঁজুন..."
+    override val filterAll = "সব"
+    override val filterLowStock = "কম স্টক"
+    override val filterOutOfStock = "স্টক শেষ"
+    override val invoicesTitle = "ইনভয়েস"
+    override val invoicesSubtitle = "বিক্রয় তালিকা ও ইনভয়েস পরিচালনা করুন"
+    override val tabCompleted = "সম্পন্ন"
+    override val tabDrafts = "খসড়া"
+    override val tabAll = "সব ইনভয়েস"
+    override val searchInvoices = "ইনভয়েস নম্বর বা তারিখ দিয়ে খুঁজুন..."
+    override val moreTitle = "আরও"
+    override val moreSubtitle = "সেটিংস, ব্যাকআপ, রিপোর্ট এবং অন্যান্য"
+    override val groupBusiness = "ব্যবসা"
+    override val groupDataReports = "তথ্য ও রিপোর্ট"
+    override val groupApp = "অ্যাপ্লিকেশন"
+    override val storeProfile = "দোকানের বিবরণ"
+    override val userAccess = "ইউজার ও পারমিশন"
+    override val printerSetup = "প্রিন্টার সেটআপ"
+    override val paymentSettings = "পেমেন্ট সেটিংস"
+    override val salesReport = "বিক্রয় রিপোর্ট"
+    override val backupRestore = "ব্যাকআপ ও রিস্টোর"
+    override val appearance = "থিম ও ডিসপ্লে"
+    override val language = "ভাষা পরিবর্তন"
+    override val about = "অ্যাপ সম্পর্কে"
+    override val overview = "সারসংক্ষেপ"
+    override val totalSales = "মোট বিক্রয়"
+    override val totalInvoices = "মোট ইনভয়েস"
+    override val pendingBill = "বকেয়া বিল"
+    override val totalProducts = "মোট পণ্য"
+    override val totalCustomers = "মোট কাস্টমার"
+    override val scanQrBarcode = "স্ক্যান কিউআর / বারকোড"
+    override val scanSubtitle = "পণ্য বারকোড বা কিউআর কোড স্ক্যান করুন"
+    override val manageYourStore = "আপনার দোকান পরিচালনা করুন"
+    override val heroSubtitle = "বিলিং, পণ্য, কাস্টমার ও রিপোর্ট"
+    override val newSalePos = "নতুন বিক্রয় (পিওএস)"
+    override val storeManagement = "দোকান পরিচালনা"
+    override val toolsUtilities = "টুলস ও ইউটিলিটি"
+    override val businessSupport = "ব্যবসা ও সহায়তা"
+    override val categories = "ক্যাটাগরি"
+    override val customers = "কাস্টমার"
+    override val suppliers = "সাপ্লায়ার"
+    override val expenses = "খরচ"
+    override val discounts = "ডিসকাউন্ট"
+    override val taxGst = "ট্যাক্স / জিএসটি"
+    override val paymentMethods = "পেমেন্ট মাধ্যম"
+    override val settings = "সেটিংস"
+    override val barcodeScanner = "বারকোড / কিউআর স্ক্যানার"
+    override val importExport = "আমদানি / রপ্তানি (এক্সেল)"
+    override val backupDataRestore = "ডেটা ব্যাকআপ ও রিস্টোর"
+    override val syncData = "ডেটা সিঙ্ক"
+    override val helpSupport = "সাহায্য ও সাপোর্ট"
+    override val whatsappSupport = "হোয়াটসঅ্যাপ সাপোর্ট"
+    override val rateApp = "অ্যাপ রেটিং দিন"
+    override val shareApp = "শেয়ার করুন"
+    override val notifications = "বিজ্ঞপ্তি"
+    override val aboutApp = "অ্যাপ সম্পর্কে"
+    override val privacyPolicy = "গোপনীয়তা নীতি"
+    override val termsConditions = "শর্তাবলী"
+    override val logout = "লগআউট"
+    override val walkInCustomer = "খুচরা খরিদ্দার"
+    override val addCustomer = "খরিদ্দার যোগ"
+    override val holdBill = "স্থগিত"
+    override val discardBill = "বাতিল"
+    override val proceedToPay = "পরিশোধ করুন"
+    override val addDiscount = "ছাড় যোগ"
+    override val grandTotal = "সর্বমোট"
+    override val subtotal = "উপমোট"
+    override val inStock = "স্টকে আছে"
+    override val items = "পণ্য"
+    override val scanAddItems = "স্ক্যান করে পণ্য যোগ"
+    override val scanSubtitleFull = "অটো স্ক্যান করে একসাথে একাধিক পণ্য যোগ"
+    override val scannedItems = "স্ক্যান করা পণ্য"
+    override val itemAddedToCart = "কার্টে যোগ করা হয়েছে"
+    override val pointAtBarcode = "ক্যামেরা বারকোডের দিকে তাক করুন"
+    override val done = "সম্পন্ন"
+    override val add = "যোগ"
+    override val newInvoice = "নতুন ইনভয়েস"
+    override val allInvoices = "সব ইনভয়েস"
+    override val sales = "বিক্রয়"
+    override val purchase = "ক্রয়"
+    override val returns = "ফেরত"
+    override val paid = "পরিশোধিত"
+    override val pending = "বকেয়া"
+    override val salesTrend = "বিক্রয় গ্রাফ"
+    override val topSellingItems = "শীর্ষ বিক্রিত পণ্য"
+    override val salesByCategory = "ক্যাটাগরি অনুযায়ী বিক্রয়"
+    override val quickReports = "দ্রুত রিপোর্ট"
+    override val save = "সংরক্ষণ"
+    override val cancel = "বাতিল"
+    override val delete = "মুছুন"
+    override val edit = "সংশোধন"
+    override val total = "মোট"
+    override val confirm = "নিশ্চিত করুন"
+    override val close = "বন্ধ করুন"
+    override val ok = "ঠিক আছে"
+    override val apply = "প্রয়োগ করুন"
+    override val clearAll = "সব মুছুন"
+    override val reprint = "রসিদ প্রিন্ট"
+    override val copy = "কপি করুন"
+    override val grantPermission = "অনুমতি দিন"
+    override val openSettings = "সেটিংস খুলুন"
+    override val noRecordsFound = "কোনো তথ্য পাওয়া যায়নি"
+    override val customerKhata = "বকেয়া (খাতা)"
+    override val cash = "নগদ"
+    override val upiOnline = "ইউপিআই / অনলাইন"
+    override val otherCard = "অন্যান্য / কার্ড"
+    override val paymentMode = "পেমেন্ট মাধ্যম"
+    override val receivedAmount = "প্রাপ্ত টাকা"
+    override val changeToReturn = "ফেরত টাকা"
+    override val exactAmount = "সঠিক টাকা"
+    override val parkAsDraft = "ড্রাফট রাখুন"
+    override val printAndSave = "প্রিন্ট ও সম্পন্ন"
+    override val billSummary = "বিলের বিবরণ"
+    override val customerDetailsOptional = "খরিদ্দারের তথ্য (ঐচ্ছিক)"
+    override val billCompleted = "বিল সম্পন্ন হয়েছে!"
+    override val billSavedInventoryDeducted = "বিল সংরক্ষিত ও স্টক সমন্বয় হয়েছে।"
+    override val cartEmptyError = "কার্ট খালি। প্রথমে পণ্য যোগ করুন।"
+    override val udhaarCustomerRequired = "বকেয়া/খাতার জন্য খরিদ্দারের নাম আবশ্যক"
+    override val billParkedToast = "বিল ড্রাফটে রাখা হয়েছে"
+    override val saleCompletedSuccess = "বিক্রয় সফলভাবে সম্পন্ন হয়েছে"
+    override val addNewProductTitle = "পণ্য যোগ করুন"
+    override val editProductTitle = "পণ্য সংশোধন করুন"
+    override val productCatalogSubtitle = "বারকোড ও ক্যাটালগ বিবরণ"
+    override val updatePriceStockSubtitle = "মূল্য ও স্টক আপডেট"
+    override val productNameLabel = "পণ্যের নাম *"
+    override val barcodeLabel = "বারকোড / এসকেইউ *"
+    override val categoryLabel = "বিভাগ (ক্যাটাগরি)"
+    override val sellingPriceLabel = "বিক্রয় মূল্য (₹) *"
+    override val purchasePriceLabel = "ক্রয় মূল্য / খরচ (₹)"
+    override val stockQuantityLabel = "স্টক পরিমাণ *"
+    override val unitLabel = "পরিমাপের একক"
+    override val quickStockAdjust = "স্টক আপডেট"
+    override val currentStock = "বর্তমান স্টক"
+    override val addStock = "বৃদ্ধি (+)"
+    override val reduceStock = "কমান (-)"
+    override val deleteProductTitle = "পণ্য মুছে ফেলবেন?"
+    override val deleteProductConfirm = "ক্যাটালগ থেকে এই পণ্যটি মুছে ফেলতে চান?"
+    override val errorProductNameRequired = "অনুগ্রহ করে পণ্যের নাম লিখুন"
+    override val errorBarcodeRequired = "অনুগ্রহ করে বারকোড স্ক্যান বা লিখুন"
+    override val errorPriceGreaterThanZero = "বিক্রয় মূল্য ₹০-এর বেশি হতে হবে"
+    override val errorBarcodeExists = "এই বারকোডটি অন্য পণ্যে নিবন্ধিত আছে"
+    override val productSavedToast = "পণ্য সংরক্ষিত হয়েছে"
+    override val stockUpdatedToast = "স্টক আপডেট হয়েছে"
+    override val productDeletedToast = "পণ্য মুছে ফেলা হয়েছে"
+    override val itemOutOfStockToast = "স্টক শেষ হয়ে গেছে"
+    override val statusTabPaid = "পরিশোধিত"
+    override val statusTabPending = "বকেয়া (খাতা)"
+    override val statusTabDrafts = "খসড়া"
+    override val statusTabReturned = "বাতিল / ফেরত"
+    override val invoiceHash = "ইনভয়েস #"
+    override val billedTo = "খরিদ্দার"
+    override val itemsCount = "পণ্য"
+    override val badgePaid = "PAID"
+    override val badgePending = "DUE"
+    override val badgeDraft = "DRAFT"
+    override val badgeReturned = "VOID"
+    override val voidInvoiceTitle = "বিল বাতিল করবেন?"
+    override val voidInvoicePrompt = "এই বিলটি বাতিল করে পণ্য স্টকে ফেরত নেবেন?"
+    override val settleDueTitle = "বকেয়া পরিশোধ করবেন?"
+    override val settleDuePrompt = "বকেয়া টাকা প্রাপ্তি নিশ্চিত করে পরিশোধ চিহ্নিত করবেন?"
+    override val invoicePrintedToast = "বিল প্রিন্ট সম্পন্ন হয়েছে"
+    override val periodToday = "আজ"
+    override val periodThisWeek = "এই সপ্তাহ"
+    override val periodThisMonth = "এই মাস"
+    override val periodThisYear = "এই বছর"
+    override val salesOverview = "বিক্রয় চিত্র"
+    override val netSales = "মোট বিক্রয়"
+    override val grossSales = "সর্বমোট বিক্রয়"
+    override val totalProfit = "মোট লাভ"
+    override val customerKhataReport = "বকেয়া খাতা রিপোর্ট"
+    override val dailyBusinessSummary = "দৈনিক ব্যবসার সারাংশ"
+    override val customersTitle = "খরিদ্দার ও খাতা"
+    override val editCustomer = "খরিদ্দার সংশোধন"
+    override val customerName = "খরিদ্দারের নাম *"
+    override val customerPhone = "মোবাইল নম্বর *"
+    override val customerAddress = "ঠিকানা"
+    override val totalDueKhata = "মোট বাকি টাকা"
+    override val customerSavedToast = "খরিদ্দারের তথ্য সংরক্ষিত"
+    override val customerDeletedToast = "খরিদ্দার সরানো হয়েছে"
+    override val deleteCustomerTitle = "খরিদ্দার মুছে ফেলবেন?"
+    override val deleteCustomerConfirm = "এই খরিদ্দার ও খাতার রেকর্ড মুছে ফেলতে চান?"
+    override val suppliersTitle = "মহাজন ও সাপ্লায়ার"
+    override val addSupplier = "সাপ্লায়ার যোগ করুন"
+    override val editSupplier = "সাপ্লায়ার সংশোধন"
+    override val supplierAgencyName = "এজেন্সি বা সাপ্লায়ার নাম *"
+    override val contactPerson = "যোগাযোগের ব্যক্তি"
+    override val supplierSavedToast = "সাপ্লায়ার সংরক্ষিত হয়েছে"
+    override val supplierDeletedToast = "সাপ্লায়ার সরানো হয়েছে"
+    override val deleteSupplierTitle = "সাপ্লায়ার মুছে ফেলবেন?"
+    override val deleteSupplierConfirm = "ডিরেক্টরি থেকে এই সাপ্লায়ার সরাতে চান?"
+    override val expensesTitle = "দৈনিক খরচ"
+    override val addExpense = "খরচ যোগ করুন"
+    override val expenseTitle = "খরচের কারণ / শিরোনাম *"
+    override val expenseAmount = "টাকার পরিমাণ (₹) *"
+    override val expenseCategory = "খরচের ধরন"
+    override val totalExpenses = "মোট খরচ"
+    override val expenseSavedToast = "খরচ সংরক্ষিত হয়েছে"
+    override val expenseDeletedToast = "খরচ মুছে ফেলা হয়েছে"
+    override val deleteExpenseTitle = "খরচের হিসাব মুছবেন?"
+    override val deleteExpenseConfirm = "এই খরচের হিসাবটি মুছে ফেলতে চান?"
+    override val categoriesTitle = "পণ্য বিভাগ (ক্যাটাগরি)"
+    override val addCategory = "ক্যাটাগরি যোগ করুন"
+    override val categoryName = "ক্যাটাগরির নাম *"
+    override val categorySavedToast = "ক্যাটাগরি সংরক্ষিত হয়েছে"
+    override val categoryDeletedToast = "ক্যাটাগরি মুছে ফেলা হয়েছে"
+    override val deleteCategoryTitle = "ক্যাটাগরি মুছে ফেলবেন?"
+    override val deleteCategoryConfirm = "এই ক্যাটাগরি মুছে ফেলবেন? বিদ্যমান পণ্যগুলো ডিলিট হবে না।"
+    override val storeInformation = "দোকানের তথ্য"
+    override val storeName = "দোকানের নাম *"
+    override val storePhone = "মোবাইল নম্বর *"
+    override val storeAddress = "দোকানের ঠিকানা"
+    override val storeGstin = "দোকানের জিএসটিআইএন (ঐচ্ছিক)"
+    override val receiptFooter = "রসিদের নীচের বার্তা"
+    override val profileUpdatedToast = "দোকানের তথ্য সংরক্ষিত হয়েছে"
+    override val thermalPrinterSetup = "থার্মাল প্রিন্টার সেটআপ"
+    override val testPrint = "টেস্ট রসিদ প্রিন্ট"
+    override val testPrintSuccess = "টেস্ট রসিদ সফলভাবে প্রিন্ট হয়েছে"
+    override val testPrintFailed = "টেস্ট প্রিন্ট ব্যর্থ হয়েছে। প্রিন্টার চেক করুন।"
+    override val securityPin = "পিন ও স্টাফ সিকিউরিটি"
+    override val enterOwnerPin = "মালিকের পিন যাচাই করুন"
+    override val enterSecurityPinPrompt = "এগিয়ে যেতে পিন লিখুন"
+    override val incorrectPinError = "ভুল পিন। পুনরায় চেষ্টা করুন।"
+    override val backupDatabase = "ডেটা ব্যাকআপ"
+    override val restoreDatabase = "ডেটা রিস্টোর"
+    override val restoreConfirmPrompt = "ব্যাকআপ থেকে ডেটা রিস্টোর করবেন? তথ্য নিরাপদে আপডেট হবে।"
+    override val backupSuccessToast = "ব্যাকআপ সফলভাবে সংরক্ষিত"
+    override val restoreSuccessToast = "ডেটাবেস রিস্টোর সম্পন্ন"
+    override val logoutConfirmTitle = "দোকান সেশন বন্ধ করবেন?"
+    override val logoutConfirmPrompt = "আপনি কি নিশ্চিতভাবে লগআউট করতে চান?"
+    override val howToScanBarcodes = "বারকোড স্ক্যান করার নিয়ম"
+    override val scanBarcode = "বারকোড স্ক্যান করুন"
+    override val pointCameraAtBarcode = "পণ্যের বারকোডের দিকে ক্যামেরা ধরুন"
+    override val cameraPermissionNeeded = "বারকোড স্ক্যান করতে ক্যামেরা অনুমতি প্রয়োজন"
+    override val barcodeCapturedAuto = "বারকোড স্বয়ংক্রিয়ভাবে শনাক্ত হবে"
+}
 
-val BnStrings = AppStrings(
-    navHome = "হোম",
-    navProducts = "পণ্যসমূহ",
-    navInvoices = "ইনভয়েস",
-    navReports = "রিপোর্ট",
-    navMore = "আরও",
-    appSubtitle = "বিলিং ও পিওএস",
-    quickAddProduct = "পণ্য যোগ",
-    quickProducts = "পণ্যসমূহ",
-    quickInvoices = "ইনভয়েস",
-    quickPrint = "প্রিন্টার",
-    cartTitle = "কার্ট",
-    cartEmpty = "কার্ট খালি আছে",
-    cartEmptySub = "পণ্য যোগ করতে বারকোড স্ক্যান করুন বা নির্বাচন করুন",
-    clearCart = "সব মুছুন",
-    checkout = "বিলিং করুন",
-    productsTitle = "পণ্যসমূহ",
-    productsSubtitle = "দোকানের পণ্য তালিকা পরিচালনা করুন",
-    searchProducts = "নাম, বারকোড বা কিউআর কোড দিয়ে খুঁজুন...",
-    filterAll = "সব",
-    filterLowStock = "কম স্টক",
-    filterOutOfStock = "স্টক শেষ",
-    invoicesTitle = "ইনভয়েস",
-    invoicesSubtitle = "বিক্রয় তালিকা ও ইনভয়েস পরিচালনা করুন",
-    tabCompleted = "সম্পন্ন",
-    tabDrafts = "খসড়া",
-    tabAll = "সব ইনভয়েস",
-    searchInvoices = "ইনভয়েস নম্বর বা তারিখ দিয়ে খুঁজুন...",
-    moreTitle = "আরও",
-    moreSubtitle = "সেটিংস, ব্যাকআপ, রিপোর্ট এবং অন্যান্য",
-    groupBusiness = "ব্যবসা",
-    groupDataReports = "তথ্য ও রিপোর্ট",
-    groupApp = "অ্যাপ্লিকেশন",
-    storeProfile = "দোকানের বিবরণ",
-    userAccess = "ইউজার ও পারমিশন",
-    printerSetup = "প্রিন্টার সেটআপ",
-    paymentSettings = "পেমেন্ট সেটিংস",
-    salesReport = "বিক্রয় রিপোর্ট",
-    backupRestore = "ব্যাকআপ ও রিস্টোর",
-    appearance = "থিম ও ডিসপ্লে",
-    language = "ভাষা পরিবর্তন",
-    about = "অ্যাপ সম্পর্কে",
-    overview = "সারসংক্ষেপ",
-    totalSales = "মোট বিক্রয়",
-    totalInvoices = "মোট ইনভয়েস",
-    pendingBill = "বকেয়া বিল",
-    totalProducts = "মোট পণ্য",
-    totalCustomers = "মোট কাস্টমার",
-    scanQrBarcode = "স্ক্যান কিউআর / বারকোড",
-    scanSubtitle = "পণ্য বারকোড বা কিউআর কোড স্ক্যান করুন",
-    manageYourStore = "আপনার দোকান পরিচালনা করুন",
-    heroSubtitle = "বিলিং, পণ্য, কাস্টমার ও রিপোর্ট",
-    newSalePos = "নতুন বিক্রয় (পিওএস)",
-    storeManagement = "দোকান পরিচালনা",
-    toolsUtilities = "টুলস ও ইউটিলিটি",
-    businessSupport = "ব্যবসা ও সহায়তা",
-    categories = "ক্যাটাগরি",
-    customers = "কাস্টমার",
-    suppliers = "সাপ্লায়ার",
-    expenses = "খরচ",
-    discounts = "ডিসকাউন্ট",
-    taxGst = "ট্যাক্স / জিএসটি",
-    paymentMethods = "পেমেন্ট মাধ্যম",
-    settings = "সেটিংস",
-    barcodeScanner = "বারকোড / কিউআর স্ক্যানার",
-    importExport = "ইমপোর্ট / এক্সপোর্ট (এক্সেল)",
-    backupDataRestore = "ডাটা ব্যাকআপ ও রিস্টোর",
-    syncData = "ডাটা সিঙ্ক",
-    helpSupport = "সাহায্য ও সহায়তা",
-    whatsappSupport = "হোয়াটসঅ্যাপ সাপোর্ট",
-    rateApp = "অ্যাপ রেটিং দিন",
-    shareApp = "অ্যাপ শেয়ার করুন",
-    notifications = "বিজ্ঞপ্তি",
-    aboutApp = "অ্যাপ সম্পর্কে",
-    privacyPolicy = "গোপনীয়তা নীতি",
-    termsConditions = "শর্তাবলী",
-    logout = "লগআউট",
-    walkInCustomer = "সাধারণ কাস্টমার",
-    addCustomer = "কাস্টমার যোগ",
-    holdBill = "হোল্ড",
-    discardBill = "বাতিল",
-    proceedToPay = "পেমেন্ট করুন",
-    addDiscount = "ছাড় যোগ",
-    grandTotal = "মোট প্রদেয়",
-    subtotal = "উপমোট",
-    inStock = "স্টকে আছে",
-    items = "পণ্য",
-    scanAddItems = "স্ক্যান করে পণ্য যোগ",
-    scanSubtitleFull = "অটো স্ক্যান করে একসাথে একাধিক পণ্য যোগ",
-    scannedItems = "স্ক্যান করা পণ্য",
-    itemAddedToCart = "কার্টে যোগ করা হয়েছে",
-    pointAtBarcode = "ক্যামেরা বারকোডের দিকে তাক করুন",
-    done = "সম্পন্ন",
-    add = "যোগ",
-    newInvoice = "নতুন ইনভয়েস",
-    allInvoices = "সব ইনভয়েস",
-    sales = "বিক্রয়",
-    purchase = "ক্রয়",
-    returns = "ফেরত",
-    paid = "পরিশোধিত",
-    pending = "বকেয়া",
-    salesTrend = "বিক্রয় গ্রাফ",
-    topSellingItems = "শীর্ষ বিক্রিত পণ্য",
-    salesByCategory = "ক্যাটাগরি অনুযায়ী বিক্রয়",
-    quickReports = "দ্রুত রিপোর্ট",
-    save = "সংরক্ষণ",
-    cancel = "বাতিল",
-    delete = "মুছুন",
-    edit = "সম্পাদনা",
-    total = "মোট",
-    confirm = "নিশ্চিত করুন",
-    close = "বন্ধ করুন",
-    ok = "ঠিক আছে",
-    apply = "প্রয়োগ করুন",
-    clearAll = "সব মুছুন",
-    reprint = "পুনরায় প্রিন্ট",
-    copy = "কপি করুন",
-    grantPermission = "অনুমতি দিন",
-    openSettings = "সেটিংস খুলুন",
-    noRecordsFound = "কোনো তথ্য পাওয়া যায়নি",
-    customerKhata = "বকেয়া (খাতা)",
-    cash = "নগদ",
-    upiOnline = "ইউপিআই / অনলাইন",
-    otherCard = "অন্যান্য / কার্ড",
-    paymentMode = "পেমেন্ট মাধ্যম",
-    receivedAmount = "প্রাপ্ত টাকা",
-    changeToReturn = "ফেরত টাকা",
-    exactAmount = "সঠিক টাকা",
-    parkAsDraft = "ড্রাফট রাখুন",
-    printAndSave = "প্রিন্ট ও সম্পন্ন",
-    billSummary = "বিলের বিবরণ",
-    customerDetailsOptional = "খরিদ্দারের তথ্য (ঐচ্ছিক)",
-    billCompleted = "বিল সম্পন্ন হয়েছে!",
-    billSavedInventoryDeducted = "বিল সংরক্ষিত ও স্টক সমন্বয় হয়েছে।",
-    cartEmptyError = "কার্ট খালি। প্রথমে পণ্য যোগ করুন।",
-    udhaarCustomerRequired = "বকেয়া/খাতার জন্য খরিদ্দারের নাম আবশ্যক",
-    billParkedToast = "বিল ড্রাফটে রাখা হয়েছে",
-    saleCompletedSuccess = "বিক্রয় সফলভাবে সম্পন্ন হয়েছে",
-    addNewProductTitle = "পণ্য যোগ করুন",
-    editProductTitle = "পণ্য সংশোধন করুন",
-    productCatalogSubtitle = "বারকোড ও ক্যাটালগ বিবরণ",
-    updatePriceStockSubtitle = "মূল্য ও স্টক আপডেট",
-    productNameLabel = "পণ্যের নাম *",
-    barcodeLabel = "বারকোড / এসকেইউ *",
-    categoryLabel = "বিভাগ (ক্যাটাগরি)",
-    sellingPriceLabel = "বিক্রয় মূল্য (₹) *",
-    purchasePriceLabel = "ক্রয় মূল্য / খরচ (₹)",
-    stockQuantityLabel = "স্টক পরিমাণ *",
-    unitLabel = "পরিমাপের একক",
-    quickStockAdjust = "স্টক আপডেট",
-    currentStock = "বর্তমান স্টক",
-    addStock = "বৃদ্ধি (+)",
-    reduceStock = "কমান (-)",
-    deleteProductTitle = "পণ্য মুছে ফেলবেন?",
-    deleteProductConfirm = "ক্যাটালগ থেকে এই পণ্যটি মুছে ফেলতে চান?",
-    errorProductNameRequired = "অনুগ্রহ করে পণ্যের নাম লিখুন",
-    errorBarcodeRequired = "অনুগ্রহ করে বারকোড স্ক্যান বা লিখুন",
-    errorPriceGreaterThanZero = "বিক্রয় মূল্য ₹০-এর বেশি হতে হবে",
-    errorBarcodeExists = "এই বারকোডটি অন্য পণ্যে নিবন্ধিত আছে",
-    productSavedToast = "পণ্য সংরক্ষিত হয়েছে",
-    stockUpdatedToast = "স্টক আপডেট হয়েছে",
-    productDeletedToast = "পণ্য মুছে ফেলা হয়েছে",
-    itemOutOfStockToast = "স্টক শেষ হয়ে গেছে",
-    statusTabPaid = "পরিশোধিত",
-    statusTabPending = "বকেয়া (খাতা)",
-    statusTabDrafts = "খসড়া",
-    statusTabReturned = "বাতিল / ফেরত",
-    invoiceHash = "ইনভয়েস #",
-    billedTo = "খরিদ্দার",
-    itemsCount = "পণ্য",
-    badgePaid = "PAID",
-    badgePending = "DUE",
-    badgeDraft = "DRAFT",
-    badgeReturned = "VOID",
-    voidInvoiceTitle = "বিল বাতিল করবেন?",
-    voidInvoicePrompt = "এই বিলটি বাতিল করে পণ্য স্টকে ফেরত নেবেন?",
-    settleDueTitle = "বকেয়া পরিশোধ করবেন?",
-    settleDuePrompt = "বকেয়া টাকা প্রাপ্তি নিশ্চিত করে পরিশোধ চিহ্নিত করবেন?",
-    invoicePrintedToast = "বিল প্রিন্ট সম্পন্ন হয়েছে",
-    periodToday = "আজ",
-    periodThisWeek = "এই সপ্তাহ",
-    periodThisMonth = "এই মাস",
-    periodThisYear = "এই বছর",
-    salesOverview = "বিক্রয় চিত্র",
-    netSales = "প্রকৃত বিক্রি",
-    grossSales = "মোট বিক্রি",
-    totalProfit = "মোট লাভ",
-    customerKhataReport = "বকেয়া খাতা রিপোর্ট",
-    dailyBusinessSummary = "দৈনিক ব্যবসার সারাংশ",
-    customersTitle = "খরিদ্দার ও খাতা",
-    editCustomer = "খরিদ্দার সংশোধন",
-    customerName = "খরিদ্দারের নাম *",
-    customerPhone = "মোবাইল নম্বর *",
-    customerAddress = "ঠিকানা",
-    totalDueKhata = "মোট বাকি টাকা",
-    customerSavedToast = "খরিদ্দারের তথ্য সংরক্ষিত",
-    customerDeletedToast = "খরিদ্দার সরানো হয়েছে",
-    deleteCustomerTitle = "খরিদ্দার মুছে ফেলবেন?",
-    deleteCustomerConfirm = "এই খরিদ্দার ও খাতার রেকর্ড মুছে ফেলতে চান?",
-    suppliersTitle = "মহাজন ও সাপ্লায়ার",
-    addSupplier = "সাপ্লায়ার যোগ করুন",
-    editSupplier = "সাপ্লায়ার সংশোধন",
-    supplierAgencyName = "এজেন্সি বা সাপ্লায়ার নাম *",
-    contactPerson = "যোগাযোগের ব্যক্তি",
-    supplierSavedToast = "সাপ্লায়ার সংরক্ষিত হয়েছে",
-    supplierDeletedToast = "সাপ্লায়ার সরানো হয়েছে",
-    deleteSupplierTitle = "সাপ্লায়ার মুছে ফেলবেন?",
-    deleteSupplierConfirm = "ডিরেক্টরি থেকে এই সাপ্লায়ার সরাতে চান?",
-    expensesTitle = "দৈনন্দিন খরচ",
-    addExpense = "খরচ যোগ করুন",
-    expenseTitle = "খরচের বিবরণ *",
-    expenseAmount = "টাকা (₹) *",
-    expenseCategory = "খরচের ধরণ",
-    totalExpenses = "মোট খরচ",
-    expenseSavedToast = "খরচ যোগ করা হয়েছে",
-    expenseDeletedToast = "খরচ মুছে ফেলা হয়েছে",
-    deleteExpenseTitle = "খরচ মুছবেন?",
-    deleteExpenseConfirm = "এই খরচের রেকর্ডটি মুছে ফেলতে চান?",
-    categoriesTitle = "ক্যাটাগরি",
-    addCategory = "ক্যাটাগরি যোগ করুন",
-    categoryName = "ক্যাটাগরির নাম *",
-    categorySavedToast = "ক্যাটাগরি সংরক্ষিত",
-    categoryDeletedToast = "ক্যাটাগরি মুছে ফেলা হয়েছে",
-    deleteCategoryTitle = "ক্যাটাগরি মুছবেন?",
-    deleteCategoryConfirm = "এই ক্যাটাগরি মুছে ফেলতে চান? পণ্য ডিলিট হবে না।",
-    storeInformation = "দোকানের বিবরণ",
-    storeName = "দোকানের নাম *",
-    storePhone = "মোবাইল নম্বর *",
-    storeAddress = "দোকানের ঠিকানা",
-    storeGstin = "দোকানের জিএসটিআইএন (ঐচ্ছিক)",
-    receiptFooter = "রসিদের নীচের বার্তা",
-    profileUpdatedToast = "দোকানের তথ্য সংরক্ষিত হয়েছে",
-    thermalPrinterSetup = "থার্মাল প্রিন্টার সেটআপ",
-    testPrint = "টেস্ট রসিদ প্রিন্ট",
-    testPrintSuccess = "টেস্ট রসিদ সফলভাবে প্রিন্ট হয়েছে",
-    testPrintFailed = "টেস্ট প্রিন্ট ব্যর্থ হয়েছে। প্রিন্টার চেক করুন।",
-    securityPin = "পিন ও স্টাফ সিকিউরিটি",
-    enterOwnerPin = "মালিকের পিন যাচাই করুন",
-    enterSecurityPinPrompt = "এগিয়ে যেতে পিন লিখুন",
-    incorrectPinError = "ভুল পিন। পুনরায় চেষ্টা করুন।",
-    backupDatabase = "ডেটা ব্যাকআপ",
-    restoreDatabase = "ডেটা রিস্টোর",
-    restoreConfirmPrompt = "ব্যাকআপ থেকে ডেটা রিস্টোর করবেন? তথ্য নিরাপদে আপডেট হবে।",
-    backupSuccessToast = "ব্যাকআপ সফলভাবে সংরক্ষিত",
-    restoreSuccessToast = "ডেটাবেস রিস্টোর সম্পন্ন",
-    logoutConfirmTitle = "দোকান সেশন বন্ধ করবেন?",
-    logoutConfirmPrompt = "আপনি কি নিশ্চিতভাবে লগআউট করতে চান?",
-    howToScanBarcodes = "বারকোড স্ক্যান করার নিয়ম",
-    scanBarcode = "বারকোড স্ক্যান করুন",
-    pointCameraAtBarcode = "পণ্যের বারকোডের দিকে ক্যামেরা ধরুন",
-    cameraPermissionNeeded = "বারকোড স্ক্যান করতে ক্যামেরা অনুমতি প্রয়োজন",
-    barcodeCapturedAuto = "বারকোড স্বয়ংক্রিয়ভাবে শনাক্ত হবে"
-)
+class HindiStrings : AppStrings() {
+    override val navHome = "होम"
+    override val navProducts = "उत्पाद"
+    override val navInvoices = "इनवॉइस"
+    override val navReports = "रिपोर्ट"
+    override val navMore = "अधिक"
+    override val appSubtitle = "बिलिंग और पीओएस"
+    override val quickAddProduct = "उत्पाद जोड़ें"
+    override val quickProducts = "उत्पाद"
+    override val quickInvoices = "इनवॉइस"
+    override val quickPrint = "प्रिंटर"
+    override val cartTitle = "कार्ट"
+    override val cartEmpty = "कार्ट खाली है"
+    override val cartEmptySub = "उत्पाद जोड़ने के लिए बारकोड स्कैन करें या चुनें"
+    override val clearCart = "सब हटाएं"
+    override val checkout = "बिलिंग करें"
+    override val productsTitle = "उत्पाद सूची"
+    override val productsSubtitle = "दुकान के उत्पादों का प्रबंधन करें"
+    override val searchProducts = "नाम, बारकोड या क्यूआर कोड से खोजें..."
+    override val filterAll = "सभी"
+    override val filterLowStock = "कम स्टॉक"
+    override val filterOutOfStock = "स्टॉक खत्म"
+    override val invoicesTitle = "इनवॉइस"
+    override val invoicesSubtitle = "बिक्री और इनवॉइस प्रबंधित करें"
+    override val tabCompleted = "पूर्ण"
+    override val tabDrafts = "कच्चा बिल"
+    override val tabAll = "सभी इनवॉइस"
+    override val searchInvoices = "इनवॉइस नंबर या तारीख से खोजें..."
+    override val moreTitle = "अधिक"
+    override val moreSubtitle = "सेटिंग्स, बैकअप, रिपोर्ट और अन्य"
+    override val groupBusiness = "व्यापार"
+    override val groupDataReports = "डेटा और रिपोर्ट"
+    override val groupApp = "ऐप"
+    override val storeProfile = "दुकान का विवरण"
+    override val userAccess = "उपयोगकर्ता और अनुमति"
+    override val printerSetup = "प्रिंटर सेटअप"
+    override val paymentSettings = "भुगतान सेटिंग्स"
+    override val salesReport = "बिक्री रिपोर्ट"
+    override val backupRestore = "बैकअप और रीस्टोर"
+    override val appearance = "थीम और डिस्प्ले"
+    override val language = "भाषा बदलें"
+    override val about = "ऐप के बारे में"
+    override val overview = "अवलोकन"
+    override val totalSales = "कुल बिक्री"
+    override val totalInvoices = "कुल इनवॉइस"
+    override val pendingBill = "बकाया बिल"
+    override val totalProducts = "कुल उत्पाद"
+    override val totalCustomers = "कुल ग्राहक"
+    override val scanQrBarcode = "क्यूआर / बारकोड स्कैन करें"
+    override val scanSubtitle = "उत्पाद बारकोड या क्यूआर कोड स्कैन करें"
+    override val manageYourStore = "अपनी दुकान प्रबंधित करें"
+    override val heroSubtitle = "बिलिंग, उत्पाद, ग्राहक और रिपोर्ट"
+    override val newSalePos = "नई बिक्री (पीओएस)"
+    override val storeManagement = "दुकान प्रबंधन"
+    override val toolsUtilities = "टूल्स और उपयोगिता"
+    override val businessSupport = "व्यापार और सहायता"
+    override val categories = "श्रेणियां"
+    override val customers = "ग्राहक"
+    override val suppliers = "आपूर्तिकर्ता"
+    override val expenses = "खर्च"
+    override val discounts = "छूट"
+    override val taxGst = "टैक्स / जीएसटी"
+    override val paymentMethods = "भुगतान के तरीके"
+    override val settings = "सेटिंग्स"
+    override val barcodeScanner = "बारकोड / क्यूआर स्कैनर"
+    override val importExport = "इम्पोर्ट / एक्सपोर्ट (एक्सेल)"
+    override val backupDataRestore = "डेटा बैकअप और रीस्टोर"
+    override val syncData = "डेटा सिंक"
+    override val helpSupport = "मदद और सहायता"
+    override val whatsappSupport = "व्हाट्सएप सहायता"
+    override val rateApp = "ऐप को रेट करें"
+    override val shareApp = "शेयर करें"
+    override val notifications = "सूचनाएं"
+    override val aboutApp = "ऐप के बारे में"
+    override val privacyPolicy = "गोपनीयता नीति"
+    override val termsConditions = "नियम और शर्तें"
+    override val logout = "लॉगआउट"
+    override val walkInCustomer = "दुकान ग्राहक"
+    override val addCustomer = "ग्राहक जोड़ें"
+    override val holdBill = "रोकें"
+    override val discardBill = "रद्द करें"
+    override val proceedToPay = "भुगतान करें"
+    override val addDiscount = "छूट जोड़ें"
+    override val grandTotal = "कुल राशि"
+    override val subtotal = "उप-कुल"
+    override val inStock = "स्टॉक में है"
+    override val items = "सामान"
+    override val scanAddItems = "स्कैन कर सामान जोड़ें"
+    override val scanSubtitleFull = "ऑटो स्कैन से एक साथ कई सामान जोड़ें"
+    override val scannedItems = "स्कैन किए गए सामान"
+    override val itemAddedToCart = "कार्ट में जोड़ा गया"
+    override val pointAtBarcode = "कैमरा बारकोड की ओर करें"
+    override val done = "पूर्ण"
+    override val add = "जोड़ें"
+    override val newInvoice = "नया इनवॉइस"
+    override val allInvoices = "सभी इनवॉइस"
+    override val sales = "बिक्री"
+    override val purchase = "खरीद"
+    override val returns = "वापसी"
+    override val paid = "भुगतान हुआ"
+    override val pending = "बकाया"
+    override val salesTrend = "बिक्री रुझान"
+    override val topSellingItems = "शीर्ष बिकने वाले सामान"
+    override val salesByCategory = "श्रेणी अनुसार बिक्री"
+    override val quickReports = "त्वरित रिपोर्ट"
+    override val save = "सहेजें"
+    override val cancel = "रद्द करें"
+    override val delete = "हटाएं"
+    override val edit = "संपादित करें"
+    override val total = "कुल"
+    override val confirm = "पुष्टि करें"
+    override val close = "बंद करें"
+    override val ok = "ठीक है"
+    override val apply = "लागू करें"
+    override val clearAll = "सब हटाएं"
+    override val reprint = "रसीद प्रिंट"
+    override val copy = "कॉपी करें"
+    override val grantPermission = "अनुमति दें"
+    override val openSettings = "सेटिंग्स खोलें"
+    override val noRecordsFound = "कोई रिकॉर्ड नहीं मिला"
+    override val customerKhata = "उधार (खाता)"
+    override val cash = "नकद"
+    override val upiOnline = "यूपीआई / ऑनलाइन"
+    override val otherCard = "अन्य / कार्ड"
+    override val paymentMode = "भुगतान मोड"
+    override val receivedAmount = "प्राप्त राशि"
+    override val changeToReturn = "वापस राशि"
+    override val exactAmount = "सटीक राशि"
+    override val parkAsDraft = "कच्चा बिल रखें"
+    override val printAndSave = "प्रिंट और पूरा करें"
+    override val billSummary = "बिल सारांश"
+    override val customerDetailsOptional = "ग्राहक विवरण (वैकल्पिक)"
+    override val billCompleted = "बिल पूरा हुआ!"
+    override val billSavedInventoryDeducted = "बिल सहेजा गया और स्टॉक घटाया गया।"
+    override val cartEmptyError = "कार्ट खाली है। पहले सामान जोड़ें।"
+    override val udhaarCustomerRequired = "उधार बिल के लिए ग्राहक का नाम आवश्यक है"
+    override val billParkedToast = "बिल ड्राफ्ट में सहेजा गया"
+    override val saleCompletedSuccess = "बिक्री सफलतापूर्वक पूरी हुई"
+    override val addNewProductTitle = "उत्पाद जोड़ें"
+    override val editProductTitle = "उत्पाद संपादित करें"
+    override val productCatalogSubtitle = "बारकोड और कैटलॉग विवरण"
+    override val updatePriceStockSubtitle = "मूल्य और स्टॉक अपडेट"
+    override val productNameLabel = "उत्पाद का नाम *"
+    override val barcodeLabel = "बारकोड / एसकेयू *"
+    override val categoryLabel = "श्रेणी"
+    override val sellingPriceLabel = "बिक्री मूल्य (₹) *"
+    override val purchasePriceLabel = "खरीद मूल्य / लागत (₹)"
+    override val stockQuantityLabel = "स्टॉक मात्रा *"
+    override val unitLabel = "माप इकाई"
+    override val quickStockAdjust = "स्टॉक अपडेट"
+    override val currentStock = "वर्तमान स्टॉक"
+    override val addStock = "बढ़ाएं (+)"
+    override val reduceStock = "घटाएं (-)"
+    override val deleteProductTitle = "उत्पाद हटाएं?"
+    override val deleteProductConfirm = "क्या इस उत्पाद को कैटलॉग से हटाना चाहते हैं?"
+    override val errorProductNameRequired = "कृपया उत्पाद का नाम दर्ज करें"
+    override val errorBarcodeRequired = "कृपया बारकोड स्कैन करें या दर्ज करें"
+    override val errorPriceGreaterThanZero = "बिक्री मूल्य ₹0 से अधिक होना चाहिए"
+    override val errorBarcodeExists = "यह बारकोड पहले से दूसरे उत्पाद पर दर्ज है"
+    override val productSavedToast = "उत्पाद सहेजा गया"
+    override val stockUpdatedToast = "स्टॉक अपडेट हो गया"
+    override val productDeletedToast = "उत्पाद हटा दिया गया"
+    override val itemOutOfStockToast = "स्टॉक समाप्त हो चुका है"
+    override val statusTabPaid = "भुगतान किया"
+    override val statusTabPending = "बकाया (उधार)"
+    override val statusTabDrafts = "कच्चा बिल"
+    override val statusTabReturned = "रद्द / वापस"
+    override val invoiceHash = "इनवॉइस #"
+    override val billedTo = "ग्राहक"
+    override val itemsCount = "सामान"
+    override val badgePaid = "PAID"
+    override val badgePending = "DUE"
+    override val badgeDraft = "DRAFT"
+    override val badgeReturned = "VOID"
+    override val voidInvoiceTitle = "बिल रद्द करें?"
+    override val voidInvoicePrompt = "क्या यह बिल रद्द कर सामान वापस स्टॉक में जोड़ना चाहते हैं?"
+    override val settleDueTitle = "बकाया चुकता करें?"
+    override val settleDuePrompt = "भुगतान प्राप्त कर इस बिल को चुकता चिह्नित करें?"
+    override val invoicePrintedToast = "रसीद सफलतापूर्वक प्रिंट हो गई"
+    override val periodToday = "आज"
+    override val periodThisWeek = "इस सप्ताह"
+    override val periodThisMonth = "इस महीने"
+    override val periodThisYear = "इस वर्ष"
+    override val salesOverview = "बिक्री सारांश"
+    override val netSales = "शुद्ध बिक्री"
+    override val grossSales = "कुल बिक्री"
+    override val totalProfit = "कुल लाभ"
+    override val customerKhataReport = "उधार / खाता रिपोर्ट"
+    override val dailyBusinessSummary = "दैनिक व्यापार सारांश"
+    override val customersTitle = "ग्राहक और खाता"
+    override val editCustomer = "ग्राहक संपादित करें"
+    override val customerName = "ग्राहक का नाम *"
+    override val customerPhone = "मोबाइल नंबर *"
+    override val customerAddress = "ग्राहक का पता"
+    override val totalDueKhata = "कुल बकाया राशि"
+    override val customerSavedToast = "ग्राहक का विवरण सहेजा गया"
+    override val customerDeletedToast = "ग्राहक हटा दिया गया"
+    override val deleteCustomerTitle = "ग्राहक हटाएं?"
+    override val deleteCustomerConfirm = "क्या इस ग्राहक और खाता रिकॉर्ड को हटाना चाहते हैं?"
+    override val suppliersTitle = "आपूर्तिकर्ता और महाजन"
+    override val addSupplier = "सप्लायर जोड़ें"
+    override val editSupplier = "सप्लायर संपादित करें"
+    override val supplierAgencyName = "एजेंसी / सप्लायर नाम *"
+    override val contactPerson = "संपर्क व्यक्ति"
+    override val supplierSavedToast = "सप्लायर विवरण सहेजा गया"
+    override val supplierDeletedToast = "सप्लायर हटा दिया गया"
+    override val deleteSupplierTitle = "आपूर्तिकर्ता हटाएं?"
+    override val deleteSupplierConfirm = "क्या इस सप्लायर को डायरेक्टरी से हटाना चाहते हैं?"
+    override val expensesTitle = "दैनिक खर्च"
+    override val addExpense = "खर्च जोड़ें"
+    override val expenseTitle = "खर्च का कारण / नाम *"
+    override val expenseAmount = "राशि (₹) *"
+    override val expenseCategory = "खर्च श्रेणी"
+    override val totalExpenses = "कुल खर्च"
+    override val expenseSavedToast = "खर्च दर्ज किया गया"
+    override val expenseDeletedToast = "खर्च हटा दिया गया"
+    override val deleteExpenseTitle = "खर्च हटाएं?"
+    override val deleteExpenseConfirm = "क्या इस खर्च का रिकॉर्ड हटाना चाहते हैं?"
+    override val categoriesTitle = "श्रेणियां"
+    override val addCategory = "श्रेणी जोड़ें"
+    override val categoryName = "श्रेणी का नाम *"
+    override val categorySavedToast = "श्रेणी सहेजी गई"
+    override val categoryDeletedToast = "श्रेणी हटा दी गई"
+    override val deleteCategoryTitle = "श्रेणी हटाएं?"
+    override val deleteCategoryConfirm = "क्या यह श्रेणी हटाना चाहते हैं? मौजूदा उत्पाद सुरक्षित रहेंगे।"
+    override val storeInformation = "दुकान की जानकारी"
+    override val storeName = "दुकान का नाम *"
+    override val storePhone = "मोबाइल नंबर *"
+    override val storeAddress = "दुकान का पूरा पता"
+    override val storeGstin = "दुकान का जीएसटीआईएन (वैकल्पिक)"
+    override val receiptFooter = "रसीद का निचला संदेश"
+    override val profileUpdatedToast = "दुकान का विवरण सहेजा गया"
+    override val thermalPrinterSetup = "थर्मल प्रिंटर सेटअप"
+    override val testPrint = "टेस्ट रसीद प्रिंट"
+    override val testPrintSuccess = "टेस्ट रसीद सफलतापूर्वक प्रिंट हो गई"
+    override val testPrintFailed = "टेस्ट प्रिंट विफल रहा। ब्लूटूथ और पेपर जांचें।"
+    override val securityPin = "पिन और स्टाफ सुरक्षा"
+    override val enterOwnerPin = "मालिक का पिन सत्यापित करें"
+    override val enterSecurityPinPrompt = "आगे बढ़ने के लिए पिन दर्ज करें"
+    override val incorrectPinError = "गलत पिन। पुनः प्रयास करें।"
+    override val backupDatabase = "डेटा बैकअप"
+    override val restoreDatabase = "डेटा रीस्टोर"
+    override val restoreConfirmPrompt = "क्या बैकअप से डेटा रीस्टोर करना चाहते हैं? रिकॉर्ड सुरक्षित अपडेट होंगे।"
+    override val backupSuccessToast = "बैकअप सफलतापूर्वक सहेजा गया"
+    override val restoreSuccessToast = "डेटाबेस रीस्टोर संपन्न हुआ"
+    override val logoutConfirmTitle = "दुकान सत्र से बाहर निकलें?"
+    override val logoutConfirmPrompt = "क्या आप वाकई लॉगआउट करना चाहते हैं?"
+    override val howToScanBarcodes = "बारकोड स्कैन कैसे करें"
+    override val scanBarcode = "बारकोड स्कैन करें"
+    override val pointCameraAtBarcode = "उत्पाद के बारकोड पर कैमरा दिखाएं"
+    override val cameraPermissionNeeded = "बारकोड स्कैन करने के लिए कैमरा अनुमति आवश्यक है"
+    override val barcodeCapturedAuto = "बारकोड अपने आप स्कैन हो जाएगा"
+}
 
-val HiStrings = AppStrings(
-    navHome = "होम",
-    navProducts = "उत्पाद",
-    navInvoices = "इनवॉइस",
-    navReports = "रिपोर्ट्स",
-    navMore = "अन्य",
-    appSubtitle = "बिलिंग और पीओएस",
-    quickAddProduct = "उत्पाद जोड़ें",
-    quickProducts = "उत्पाद सूची",
-    quickInvoices = "इनवॉइस",
-    quickPrint = "प्रिंटर",
-    cartTitle = "कार्ट",
-    cartEmpty = "कार्ट खाली है",
-    cartEmptySub = "उत्पाद जोड़ने के लिए बारकोड स्कैन करें या चुनें",
-    clearCart = "हटाएं",
-    checkout = "बिल बनाएं",
-    productsTitle = "उत्पाद",
-    productsSubtitle = "अपनी दुकान के उत्पादों का प्रबंधन करें",
-    searchProducts = "नाम, बारकोड या क्यूआर से खोजें...",
-    filterAll = "सभी",
-    filterLowStock = "कम स्टॉक",
-    filterOutOfStock = "स्टॉक समाप्त",
-    invoicesTitle = "इनवॉइस",
-    invoicesSubtitle = "बिक्री देखें, खोजें और प्रबंधित करें",
-    tabCompleted = "पूर्ण",
-    tabDrafts = "ड्राफ्ट",
-    tabAll = "सभी इनवॉइस",
-    searchInvoices = "इनवॉइस नंबर या तारीख से खोजें...",
-    moreTitle = "अन्य",
-    moreSubtitle = "सेटिंग्स, बैकअप, रिपोर्ट और अन्य",
-    groupBusiness = "व्यवसाय",
-    groupDataReports = "डेटा और रिपोर्ट",
-    groupApp = "ऐप",
-    storeProfile = "दुकान विवरण",
-    userAccess = "स्टाफ और परमिशन",
-    printerSetup = "प्रिंटर सेटअप",
-    paymentSettings = "भुगतान सेटिंग्स",
-    salesReport = "बिक्री रिपोर्ट",
-    backupRestore = "बैकअप और रीस्टोर",
-    appearance = "थीम और डिस्प्ले",
-    language = "भाषा बदलें",
-    about = "ऐप के बारे में",
-    overview = "अवलोकन",
-    totalSales = "कुल बिक्री",
-    totalInvoices = "कुल इनवॉइस",
-    pendingBill = "बाकी बिल",
-    totalProducts = "कुल उत्पाद",
-    totalCustomers = "कुल ग्राहक",
-    scanQrBarcode = "स्कैन क्यूआर / बारकोड",
-    scanSubtitle = "उत्पाद बारकोड या क्यूआर कोड स्कैन करें",
-    manageYourStore = "अपनी दुकान का प्रबंधन करें",
-    heroSubtitle = "बिलिंग, उत्पाद, ग्राहक और रिपोर्ट्स",
-    newSalePos = "नई बिक्री (पीओएस)",
-    storeManagement = "दुकान प्रबंधन",
-    toolsUtilities = "टूल्स और सुविधाएं",
-    businessSupport = "व्यवसाय और सहायता",
-    categories = "श्रेणियां",
-    customers = "ग्राहक",
-    suppliers = "सप्लायर्स",
-    expenses = "खर्चे",
-    discounts = "छूट",
-    taxGst = "टैक्स / जीएसटी",
-    paymentMethods = "भुगतान के तरीके",
-    settings = "सेटिंग्स",
-    barcodeScanner = "बारकोड / क्यूआर स्कैनर",
-    importExport = "इम्पोर्ट / एक्सपोर्ट (एक्सेल)",
-    backupDataRestore = "डेटा बैकअप और रीस्टोर",
-    syncData = "डेटा सिंक",
-    helpSupport = "सहायता और सपोर्ट",
-    whatsappSupport = "व्हाट्सएप सपोर्ट",
-    rateApp = "ऐप को रेटिंग दें",
-    shareApp = "ऐप शेयर करें",
-    notifications = "सूचनाएं",
-    aboutApp = "ऐप के बारे में",
-    privacyPolicy = "गोपनीयता नीति",
-    termsConditions = "नियम और शर्तें",
-    logout = "लॉगआउट",
-    walkInCustomer = "सामान्य ग्राहक",
-    addCustomer = "ग्राहक जोड़ें",
-    holdBill = "होल्ड",
-    discardBill = "रद्द करें",
-    proceedToPay = "भुगतान करें",
-    addDiscount = "छूट जोड़ें",
-    grandTotal = "कुल देय",
-    subtotal = "उप-कुल",
-    inStock = "स्टॉक में",
-    items = "आइटम",
-    scanAddItems = "स्कैन करके उत्पाद जोड़ें",
-    scanSubtitleFull = "ऑटो स्कैन करें और एक साथ कई आइटम जोड़ें",
-    scannedItems = "स्कैन किए गए आइटम",
-    itemAddedToCart = "कार्ट में जोड़ा गया",
-    pointAtBarcode = "कैमरा बारकोड की ओर करें",
-    done = "पूर्ण",
-    add = "जोड़ें",
-    newInvoice = "नया इनवॉइस",
-    allInvoices = "सभी इनवॉइस",
-    sales = "बिक्री",
-    purchase = "खरीद",
-    returns = "वापसी",
-    paid = "भुगतान हुआ",
-    pending = "बाकी",
-    salesTrend = "बिक्री ट्रेंड",
-    topSellingItems = "सबसे ज्यादा बिकने वाले उत्पाद",
-    salesByCategory = "श्रेणी अनुसार बिक्री",
-    quickReports = "त्वरित रिपोर्ट्स",
-    save = "सुरक्षित करें",
-    cancel = "रद्द करें",
-    delete = "हटाएं",
-    edit = "संपादित करें",
-    total = "कुल",
-    confirm = "पुष्टि करें",
-    close = "बंद करें",
-    ok = "ठीक है",
-    apply = "लागू करें",
-    clearAll = "सब साफ करें",
-    reprint = "पुनः प्रिंट करें",
-    copy = "कॉपी करें",
-    grantPermission = "अनुमति दें",
-    openSettings = "सेटिंग्स खोलें",
-    noRecordsFound = "कोई रिकॉर्ड नहीं मिला",
-    customerKhata = "उधार (खाता)",
-    cash = "नकद",
-    upiOnline = "यूपीआई / ऑनलाइन",
-    otherCard = "अन्य / कार्ड",
-    paymentMode = "भुगतान का तरीका",
-    receivedAmount = "प्राप्त राशि",
-    changeToReturn = "वापसी राशि (छुट्टे)",
-    exactAmount = "सटीक राशि",
-    parkAsDraft = "ड्राफ्ट में रखें",
-    printAndSave = "प्रिंट और पूर्ण करें",
-    billSummary = "बिल का विवरण",
-    customerDetailsOptional = "ग्राहक का विवरण (वैकल्पिक)",
-    billCompleted = "बिल पूरा हुआ!",
-    billSavedInventoryDeducted = "बिल सहेजा गया और स्टॉक अपडेट हुआ।",
-    cartEmptyError = "कार्ट खाली है। पहले उत्पाद जोड़ें।",
-    udhaarCustomerRequired = "उधार बिल के लिए ग्राहक का नाम आवश्यक है",
-    billParkedToast = "बिल ड्राफ्ट में सहेजा गया",
-    saleCompletedSuccess = "बिक्री सफलतापूर्वक संपन्न हुई",
-    addNewProductTitle = "नया उत्पाद जोड़ें",
-    editProductTitle = "उत्पाद संपादित करें",
-    productCatalogSubtitle = "बारकोड और कैटलॉग विवरण",
-    updatePriceStockSubtitle = "मूल्य और स्टॉक अपडेट",
-    productNameLabel = "उत्पाद का नाम *",
-    barcodeLabel = "बारकोड / SKU *",
-    categoryLabel = "श्रेणी (कैटेगरी)",
-    sellingPriceLabel = "बिक्री मूल्य (₹) *",
-    purchasePriceLabel = "खरीद मूल्य / लागत (₹)",
-    stockQuantityLabel = "स्टॉक मात्रा *",
-    unitLabel = "मापने की इकाई",
-    quickStockAdjust = "स्टॉक अपडेट",
-    currentStock = "वर्तमान स्टॉक",
-    addStock = "जोड़ें (+)",
-    reduceStock = "घटाएं (-)",
-    deleteProductTitle = "उत्पाद हटाएं?",
-    deleteProductConfirm = "क्या आप इस उत्पाद को कैटलॉग से हटाना चाहते हैं?",
-    errorProductNameRequired = "कृपया उत्पाद का नाम दर्ज करें",
-    errorBarcodeRequired = "कृपया बारकोड स्कैन या दर्ज करें",
-    errorPriceGreaterThanZero = "बिक्री मूल्य ₹0 से अधिक होना चाहिए",
-    errorBarcodeExists = "यह बारकोड पहले से किसी अन्य उत्पाद में दर्ज है",
-    productSavedToast = "उत्पाद सहेजा गया",
-    stockUpdatedToast = "स्टॉक मात्रा अपडेट हो गई",
-    productDeletedToast = "उत्पाद हटा दिया गया",
-    itemOutOfStockToast = "स्टॉक समाप्त हो गया है",
-    statusTabPaid = "चुकता",
-    statusTabPending = "बाकी (उधार)",
-    statusTabDrafts = "ड्राफ्ट",
-    statusTabReturned = "रद्द / वापस",
-    invoiceHash = "इनवॉइस #",
-    billedTo = "ग्राहक",
-    itemsCount = "सामान",
-    badgePaid = "PAID",
-    badgePending = "DUE",
-    badgeDraft = "DRAFT",
-    badgeReturned = "VOID",
-    voidInvoiceTitle = "बिल रद्द करें?",
-    voidInvoicePrompt = "क्या यह बिल रद्द करके स्टॉक वापस जोड़ना चाहते हैं?",
-    settleDueTitle = "बकाया राशि चुकता करें?",
-    settleDuePrompt = "क्या बकाया राशि प्राप्त होने की पुष्टि करते हैं?",
-    invoicePrintedToast = "बिल सफलतापूर्वक प्रिंट हुआ",
-    periodToday = "आज",
-    periodThisWeek = "इस सप्ताह",
-    periodThisMonth = "इस माह",
-    periodThisYear = "इस वर्ष",
-    salesOverview = "बिक्री विवरण",
-    netSales = "शुद्ध बिक्री",
-    grossSales = "कुल बिक्री",
-    totalProfit = "कुल लाभ",
-    customerKhataReport = "उधार/खाता रिपोर्ट",
-    dailyBusinessSummary = "दैनिक व्यापार सारांश",
-    customersTitle = "ग्राहक एवं खाता",
-    editCustomer = "ग्राहक संपादित करें",
-    customerName = "ग्राहक का नाम *",
-    customerPhone = "मोबाइल नंबर *",
-    customerAddress = "पता",
-    totalDueKhata = "कुल बकाया राशि",
-    customerSavedToast = "ग्राहक विवरण सहेजा गया",
-    customerDeletedToast = "ग्राहक हटा दिया गया",
-    deleteCustomerTitle = "ग्राहक हटाएं?",
-    deleteCustomerConfirm = "क्या आप इस ग्राहक और खाते को हटाना चाहते हैं?",
-    suppliersTitle = "सप्लायर्स",
-    addSupplier = "नया सप्लायर जोड़ें",
-    editSupplier = "सप्लायर संपादित करें",
-    supplierAgencyName = "एजेंसी / सप्लायर नाम *",
-    contactPerson = "संपर्क व्यक्ति",
-    supplierSavedToast = "सप्लायर सहेजा गया",
-    supplierDeletedToast = "सप्लायर हटा दिया गया",
-    deleteSupplierTitle = "सप्लायर हटाएं?",
-    deleteSupplierConfirm = "क्या आप इस सप्लायर को हटाना चाहते हैं?",
-    expensesTitle = "दैनिक खर्च",
-    addExpense = "खर्च जोड़ें",
-    expenseTitle = "खर्च का विवरण *",
-    expenseAmount = "राशि (₹) *",
-    expenseCategory = "खर्च की श्रेणी",
-    totalExpenses = "कुल खर्च",
-    expenseSavedToast = "खर्च दर्ज किया गया",
-    expenseDeletedToast = "खर्च हटा दिया गया",
-    deleteExpenseTitle = "खर्च हटाएं?",
-    deleteExpenseConfirm = "क्या इस खर्च को हटाना चाहते हैं?",
-    categoriesTitle = "श्रेणियां",
-    addCategory = "नई श्रेणी जोड़ें",
-    categoryName = "श्रेणी का नाम *",
-    categorySavedToast = "श्रेणी सहेजी गई",
-    categoryDeletedToast = "श्रेणी हटा दी गई",
-    deleteCategoryTitle = "श्रेणी हटाएं?",
-    deleteCategoryConfirm = "क्या इस श्रेणी को हटाना चाहते हैं? उत्पाद नहीं हटेंगे।",
-    storeInformation = "दुकान विवरण",
-    storeName = "दुकान का नाम *",
-    storePhone = "मोबाइल नंबर *",
-    storeAddress = "दुकान का पूरा पता",
-    storeGstin = "दुकान का GSTIN (वैकल्पिक)",
-    receiptFooter = "रसीद का फुटर संदेश",
-    profileUpdatedToast = "दुकान विवरण सहेजा गया",
-    thermalPrinterSetup = "थर्मल प्रिंटर सेटअप",
-    testPrint = "टेस्ट रसीद प्रिंट करें",
-    testPrintSuccess = "टेस्ट रसीद सफलतापूर्वक प्रिंट हुई",
-    testPrintFailed = "टेस्ट प्रिंट विफल। प्रिंटर और पेपर जांचें।",
-    securityPin = "पिन सुरक्षा और स्टाफ",
-    enterOwnerPin = "मालिक का पिन सत्यापित करें",
-    enterSecurityPinPrompt = "आगे बढ़ने के लिए पिन दर्ज करें",
-    incorrectPinError = "गलत पिन। पुनः प्रयास करें।",
-    backupDatabase = "डेटा बैकअप",
-    restoreDatabase = "डेटा रीस्टोर",
-    restoreConfirmPrompt = "क्या बैकअप से डेटा रीस्टोर करना चाहते हैं? रिकॉर्ड सुरक्षित अपडेट होंगे।",
-    backupSuccessToast = "बैकअप सफलतापूर्वक सहेजा गया",
-    restoreSuccessToast = "डेटाबेस रीस्टोर संपन्न हुआ",
-    logoutConfirmTitle = "दुकान सत्र से बाहर निकलें?",
-    logoutConfirmPrompt = "क्या आप वाकई लॉगआउट करना चाहते हैं?",
-    howToScanBarcodes = "बारकोड स्कैन कैसे करें",
-    scanBarcode = "बारकोड स्कैन करें",
-    pointCameraAtBarcode = "उत्पाद के बारकोड पर कैमरा दिखाएं",
-    cameraPermissionNeeded = "बारकोड स्कैन करने के लिए कैमरा अनुमति आवश्यक है",
-    barcodeCapturedAuto = "बारकोड अपने आप स्कैन हो जाएगा"
-)
+val EnStrings: AppStrings = AppStrings()
+val BnStrings: AppStrings = BengaliStrings()
+val HiStrings: AppStrings = HindiStrings()
 
 fun getAppStrings(languageCode: String?): AppStrings {
     return when (languageCode?.lowercase()) {
