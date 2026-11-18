@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.DokandaarActionPill
+import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.InputField
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -211,27 +212,11 @@ fun CustomersScreen(
         ) {
             // Search field
             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                OutlinedTextField(
+                DokandaarSearchBar(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search by name or mobile number...", fontSize = 13.sp, color = DokandaarTheme.textMuted) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = DokandaarTheme.textMuted) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = null, tint = DokandaarTheme.textMuted)
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = DokandaarTheme.border,
-                        focusedContainerColor = DokandaarTheme.cardBackground,
-                        unfocusedContainerColor = DokandaarTheme.cardBackground
-                    ),
-                    singleLine = true
+                    placeholder = "Search by name or mobile number...",
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 

@@ -76,6 +76,10 @@ import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
 import com.billing.app.core.ui.components.DokandaarActionPill
+import com.billing.app.core.ui.components.DokandaarDateFilterPill
+import com.billing.app.core.ui.components.DokandaarKpiFourRow
+import com.billing.app.core.ui.components.DokandaarSearchBar
+import com.billing.app.core.ui.components.DokandaarStatCard
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -302,62 +306,46 @@ fun InvoicesScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 4 KPI Summary Cards (2x2 Grid matching Screenshot 5)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    InvoiceKpiCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.ShoppingCart,
-                        iconBg = PastelGreenBg,
-                        iconTint = PastelGreenContent,
-                        title = "Today ${strings.sales}",
-                        value = Money(todaySalesAmount).format()
-                    )
-                    InvoiceKpiCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Receipt,
-                        iconBg = PastelPurpleBg,
-                        iconTint = PastelPurpleContent,
-                        title = strings.totalInvoices,
-                        value = invoicesCount.toString()
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    InvoiceKpiCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Schedule,
-                        iconBg = PastelOrangeBg,
-                        iconTint = PastelOrangeContent,
-                        title = strings.pendingBill,
-                        value = Money(pendingBillsAmount).format(),
-                        valueColor = Color(0xFFD97706)
-                    )
-                    InvoiceKpiCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Inventory2,
-                        iconBg = PastelBlueBg,
-                        iconTint = PastelBlueContent,
-                        title = "Total ${strings.items}",
-                        value = totalItemsCount.toString()
-                    )
-                }
+            // 4 KPI Summary Cards in a Single Horizontal Row matching Screenshot 5
+            DokandaarKpiFourRow {
+                DokandaarStatCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Today Sales",
+                    value = Money(todaySalesAmount).format(),
+                    icon = Icons.Default.ShoppingCart,
+                    iconTint = PastelGreenContent,
+                    containerBg = PastelGreenBg
+                )
+                DokandaarStatCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Invoices",
+                    value = invoicesCount.toString(),
+                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                    iconTint = PastelPurpleContent,
+                    containerBg = PastelPurpleBg
+                )
+                DokandaarStatCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Pending Bill",
+                    value = Money(pendingBillsAmount).format(),
+                    icon = Icons.Default.Schedule,
+                    iconTint = PastelOrangeContent,
+                    containerBg = PastelOrangeBg,
+                    valueColor = Color(0xFFD97706)
+                )
+                DokandaarStatCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Total Items",
+                    value = totalItemsCount.toString(),
+                    icon = Icons.Default.Inventory2,
+                    iconTint = PastelBlueContent,
+                    containerBg = PastelBlueBg
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Search Bar & Date Filter Dropdown Row
+            // Search Bar & Date Filter Dropdown Row (Matched Height 44.dp & Non-breaking placeholder)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -365,85 +353,24 @@ fun InvoicesScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
+                DokandaarSearchBar(
                     value = searchQuery,
                     onValueChange = { viewModel.searchQuery.value = it },
-                    placeholder = {
-                        Text(
-                            text = "Search by Invoice No., Customer, or Mobile...",
-                            fontSize = 12.sp,
-                            color = DokandaarTheme.textMuted
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = DokandaarTheme.textMuted,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.searchQuery.value = "" }) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Clear",
-                                    tint = DokandaarTheme.textMuted,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = DokandaarTheme.border,
-                        focusedContainerColor = DokandaarTheme.cardBackground,
-                        unfocusedContainerColor = DokandaarTheme.cardBackground
-                    ),
-                    singleLine = true
+                    placeholder = "Search by Invoice No., Customer, or Mobile...",
+                    modifier = Modifier.weight(1f)
                 )
 
                 // Date Dropdown Button
                 Box {
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = DokandaarTheme.cardBackground,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-                        modifier = Modifier.clickable { showDateFilterMenu = true }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = null,
-                                tint = PrimaryPurple,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = when (dateFilter) {
-                                    InvoiceDateFilter.TODAY -> "Today"
-                                    InvoiceDateFilter.THIS_WEEK -> "This Week"
-                                    InvoiceDateFilter.THIS_MONTH -> "This Month"
-                                    else -> "All"
-                                },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DokandaarTheme.textPrimary
-                            )
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = null,
-                                tint = DokandaarTheme.textMuted,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                    DokandaarDateFilterPill(
+                        label = when (dateFilter) {
+                            InvoiceDateFilter.TODAY -> "Today"
+                            InvoiceDateFilter.THIS_WEEK -> "This Week"
+                            InvoiceDateFilter.THIS_MONTH -> "This Month"
+                            else -> "All"
+                        },
+                        onClick = { showDateFilterMenu = true }
+                    )
 
                     DropdownMenu(
                         expanded = showDateFilterMenu,
@@ -654,62 +581,7 @@ fun InvoicesScreen(
     }
 }
 
-@Composable
-private fun InvoiceKpiCard(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    iconBg: Color,
-    iconTint: Color,
-    title: String,
-    value: String,
-    valueColor: Color = DokandaarTheme.textPrimary
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(iconBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-                Text(
-                    text = title,
-                    fontSize = 11.sp,
-                    color = DokandaarTheme.textMuted,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = value,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = valueColor
-                )
-            }
-        }
-    }
-}
+
 
 @Composable
 private fun InvoiceItemCard(

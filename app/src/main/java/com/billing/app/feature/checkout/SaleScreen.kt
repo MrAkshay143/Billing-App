@@ -86,6 +86,7 @@ import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.DokandaarBottomBarCta
 import com.billing.app.core.ui.components.DokandaarBottomIconButton
+import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.DarkPurple
@@ -390,51 +391,30 @@ fun SaleScreen(
             }
 
             // 2. Product Search Bar with Scanner Icon
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    .padding(horizontal = 14.dp, vertical = 4.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = DokandaarTheme.textMuted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { viewModel.searchQuery.value = it },
-                        placeholder = { Text(strings.searchProducts, fontSize = 12.sp) },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
-                        )
-                    )
-                    IconButton(
-                        onClick = onNavigateToScanner,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan",
-                            tint = PrimaryPurple,
-                            modifier = Modifier.size(22.dp)
-                        )
+                DokandaarSearchBar(
+                    value = searchQuery,
+                    onValueChange = { viewModel.searchQuery.value = it },
+                    placeholder = strings.searchProducts,
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingContent = {
+                        IconButton(
+                            onClick = onNavigateToScanner,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan",
+                                tint = PrimaryPurple,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
-                }
+                )
             }
 
             // 3. Category Cards (Horizontal Scroll matching Screenshot 2)

@@ -64,8 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.BottomDokandaarNav
-import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.CategoryCard
+import com.billing.app.core.ui.components.DokandaarActionPill
+import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.DokandaarTab
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.theme.DarkPurple
@@ -313,57 +314,26 @@ fun ProductListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Search Input with Barcode Scanner Icon
+            // Search Input with Barcode Scanner Icon matching Screenshot 4
             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                OutlinedTextField(
+                DokandaarSearchBar(
                     value = searchQuery,
                     onValueChange = { viewModel.searchQuery.value = it },
-                    placeholder = {
-                        Text(
-                            text = strings.searchProducts,
-                            fontSize = 13.sp,
-                            color = DokandaarTheme.textMuted
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = DokandaarTheme.textMuted,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    trailingIcon = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { viewModel.searchQuery.value = "" }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Clear",
-                                        tint = DokandaarTheme.textMuted,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                            IconButton(onClick = onNavigateToScannerForSearch) {
-                                Icon(
-                                    imageVector = Icons.Default.QrCodeScanner,
-                                    contentDescription = "Scan",
-                                    tint = PrimaryPurple,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-                    },
+                    placeholder = "Search items by name, SKU or barcode...",
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = DokandaarTheme.border,
-                        focusedContainerColor = DokandaarTheme.cardBackground,
-                        unfocusedContainerColor = DokandaarTheme.cardBackground
-                    ),
-                    singleLine = true
+                    trailingContent = {
+                        IconButton(
+                            onClick = onNavigateToScannerForSearch,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan",
+                                tint = PrimaryPurple,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 )
             }
 
