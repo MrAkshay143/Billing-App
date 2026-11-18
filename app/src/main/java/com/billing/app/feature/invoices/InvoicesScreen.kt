@@ -742,13 +742,13 @@ private fun InvoiceItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 10.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Purple Document Icon
+            // Purple Document Icon matching Screenshot 5
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(38.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(PastelPurpleBg),
                 contentAlignment = Alignment.Center
@@ -757,33 +757,41 @@ private fun InvoiceItemCard(
                     imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                     contentDescription = null,
                     tint = PrimaryPurple,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            // Invoice details
-            Column(modifier = Modifier.weight(1f)) {
+            // Column 1: Invoice details (Invoice No, Customer Name, Phone) matching Screenshot 5
+            Column(
+                modifier = Modifier.weight(1.05f),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = invoice.invoiceNumber,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DokandaarTheme.textPrimary
+                    color = DokandaarTheme.textPrimary,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
                     text = invoice.customerName?.ifBlank { "Walk-in Customer" } ?: "Walk-in Customer",
-                    fontSize = 12.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
                     color = DokandaarTheme.textPrimary,
                     maxLines = 1,
+                    softWrap = false,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                if (!invoice.customerPhone.isNullOrBlank()) {
+                if (!invoice.customerPhone.isNullOrBlank() && (invoice.customerName != "Walk-in Customer" || invoice.customerPhone.isNotBlank())) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Phone,
@@ -794,15 +802,24 @@ private fun InvoiceItemCard(
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = invoice.customerPhone,
-                            fontSize = 11.sp,
-                            color = DokandaarTheme.textMuted
+                            fontSize = 10.5.sp,
+                            color = DokandaarTheme.textMuted,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
             }
 
-            // Date, Items & Badge matching Screenshot 5
-            Column(horizontalAlignment = Alignment.Start, modifier = Modifier.padding(horizontal = 6.dp)) {
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Column 2: Date, Items & Badge matching Screenshot 5
+            Column(
+                modifier = Modifier.weight(1.15f),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
@@ -813,8 +830,11 @@ private fun InvoiceItemCard(
                     Spacer(modifier = Modifier.width(3.dp))
                     Text(
                         text = formattedDate,
-                        fontSize = 10.sp,
-                        color = DokandaarTheme.textMuted
+                        fontSize = 9.5.sp,
+                        color = DokandaarTheme.textMuted,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -830,8 +850,10 @@ private fun InvoiceItemCard(
                     Spacer(modifier = Modifier.width(3.dp))
                     Text(
                         text = "${invoice.itemsCount} Items",
-                        fontSize = 11.sp,
-                        color = DokandaarTheme.textMuted
+                        fontSize = 10.sp,
+                        color = DokandaarTheme.textMuted,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
 
@@ -863,41 +885,50 @@ private fun InvoiceItemCard(
                         Text(
                             text = badgeText as String,
                             color = badgeColor,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(4.dp))
 
-            // Amount & 3-dots matching Screenshot 5
+            // Column 3: Amount & 3-dots matching Screenshot 5
             val isCancelled = invoice.status == InvoiceStatus.CANCELLED
-            Text(
-                text = if (isCancelled) "-${Money(invoice.grandTotalPaise).format()}" else Money(invoice.grandTotalPaise).format(),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isCancelled) ErrorColor else PrimaryPurple
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (isCancelled) "-${Money(invoice.grandTotalPaise).format()}" else Money(invoice.grandTotalPaise).format(),
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isCancelled) ErrorColor else PrimaryPurple,
+                    maxLines = 1,
+                    softWrap = false
+                )
 
-            Box {
-                IconButton(
-                    onClick = { menuExpanded = true },
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Options",
-                        tint = DokandaarTheme.textMuted,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(2.dp))
 
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
+                Box {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Options",
+                            tint = DokandaarTheme.textMuted,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
                     DropdownMenuItem(
                         text = { Text("View Details") },
                         onClick = {
@@ -950,4 +981,5 @@ private fun InvoiceItemCard(
             }
         }
     }
+}
 }

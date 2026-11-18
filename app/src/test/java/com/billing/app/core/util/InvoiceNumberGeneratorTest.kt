@@ -9,18 +9,17 @@ class InvoiceNumberGeneratorTest {
 
     @Test
     fun testConsecutiveInvoiceNumberFormatting() {
-        val year = 2026
         val number1 = 1L
-        val formatted1 = String.format(Locale.US, "INV-%d-%06d", year, number1)
-        assertEquals("INV-2026-000001", formatted1)
+        val formatted1 = String.format(Locale.US, "INV-%06d", number1)
+        assertEquals("INV-000001", formatted1)
 
-        val number2 = 42L
-        val formatted2 = String.format(Locale.US, "INV-%d-%06d", year, number2)
-        assertEquals("INV-2026-000042", formatted2)
+        val number2 = 1248L
+        val formatted2 = String.format(Locale.US, "INV-%06d", number2)
+        assertEquals("INV-001248", formatted2)
 
         val number3 = 100000L
-        val formatted3 = String.format(Locale.US, "INV-%d-%06d", year, number3)
-        assertEquals("INV-2026-100000", formatted3)
+        val formatted3 = String.format(Locale.US, "INV-%06d", number3)
+        assertEquals("INV-100000", formatted3)
     }
 
     @Test

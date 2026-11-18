@@ -97,8 +97,7 @@ class InvoiceRepositoryImpl(
             val lastNum = database.invoiceDao().getLastInvoiceNumber() ?: 0L
             val nextNum = lastNum + 1
             database.invoiceDao().setInvoiceCounter(InvoiceCounterEntity(id = 1, lastNumber = nextNum))
-            val year = Calendar.getInstance().get(Calendar.YEAR)
-            String.format(Locale.US, "INV-%d-%06d", year, nextNum)
+            String.format(Locale.US, "INV-%06d", nextNum)
         }
     }
 
