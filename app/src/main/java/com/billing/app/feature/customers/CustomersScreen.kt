@@ -63,6 +63,7 @@ import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.BillingApplication
 import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.ui.components.DokandaarActionPill
@@ -73,17 +74,23 @@ import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
 import com.billing.app.core.ui.theme.PastelBlueBg
 import com.billing.app.core.ui.theme.PastelBlueContent
+import com.billing.app.core.ui.theme.PastelGreenContent
 import com.billing.app.core.ui.theme.PastelOrangeBg
 import com.billing.app.core.ui.theme.PastelOrangeContent
 import com.billing.app.core.ui.theme.PrimaryPurple
 import com.billing.app.core.util.Money
 import com.billing.app.data.local.entity.CustomerEntity
 import com.billing.app.domain.repository.CustomerRepository
+import com.billing.app.domain.repository.ShiftRepository
+import com.billing.app.domain.repository.ShopRepository
+import com.billing.app.feature.customers.components.CustomerKhataDetailSheet
 import kotlinx.coroutines.launch
 
 @Composable
 fun CustomersScreen(
     customerRepository: CustomerRepository,
+    shiftRepository: ShiftRepository = BillingApplication.instance.shiftRepository,
+    shopRepository: ShopRepository = BillingApplication.instance.shopRepository,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -95,6 +102,7 @@ fun CustomersScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var customerToEdit by remember { mutableStateOf<CustomerEntity?>(null) }
     var customerToDelete by remember { mutableStateOf<CustomerEntity?>(null) }
+    var selectedCustomerForKhata by remember { mutableStateOf<CustomerEntity?>(null) }
 
     var formName by remember { mutableStateOf("") }
     var formPhone by remember { mutableStateOf("") }
@@ -250,11 +258,22 @@ fun CustomersScreen(
         )
     }
 
+    if (selectedCustomerForKhata != null) {
+        val liveCustomer = customers.find { it.id == selectedCustomerForKhata!!.id } ?: selectedCustomerForKhata!!
+        CustomerKhataDetailSheet(
+            customer = liveCustomer,
+            customerRepository = customerRepository,
+            shiftRepository = shiftRepository,
+            shopRepository = shopRepository,
+            onDismissRequest = { selectedCustomerForKhata = null }
+        )
+    }
+
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Customers",
-                subtitle = "${customers.size} Customers • Khata",
+                title = strings.customersTitle,
+                subtitle = "${customers.size} ${strings.customers} • Khata",
                 icon = Icons.Default.People,
                 onNavigateBack = onNavigateBack,
                 actions = {
@@ -303,7 +322,7 @@ fun CustomersScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No customers found",
+                            text = strings.noCustomersFound,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = DokandaarTheme.textMuted
@@ -321,7 +340,9 @@ fun CustomersScreen(
                 ) {
                     items(displayedCustomers, key = { it.id }) { cust ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedCustomerForKhata = cust },
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
                             border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
@@ -371,17 +392,28 @@ fun CustomersScreen(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = cust.phone.ifBlank { "No phone" },
+                                            text = cust.phone.ifBlank { strings.noPhone },
                                             fontSize = 12.sp,
                                             color = if (cust.phone.isNotBlank()) PrimaryPurple else DokandaarTheme.textMuted
                                         )
                                     }
                                     if (cust.openingBalancePaise != 0L) {
                                         Text(
-                                            text = "Due Khata: ${Money(cust.openingBalancePaise).format()}",
+                                            text = if (cust.openingBalancePaise > 0L) {
+                                                strings.dueKhata(Money(cust.openingBalancePaise).format())
+                                            } else {
+                                                strings.advanceKhata(Money(-cust.openingBalancePaise).format())
+                                            },
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (cust.openingBalancePaise > 0) Color(0xFFD97706) else PastelBlueContent
+                                            color = if (cust.openingBalancePaise > 0L) Color(0xFFD97706) else PastelGreenContent
+                                        )
+                                    } else {
+                                        Text(
+                                            text = strings.khataAllClear,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = PastelGreenContent
                                         )
                                     }
                                     if (!cust.address.isNullOrBlank()) {

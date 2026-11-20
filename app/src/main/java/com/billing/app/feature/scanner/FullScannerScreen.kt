@@ -122,6 +122,7 @@ fun FullScannerScreen(
     var showHelpDialog by remember { mutableStateOf(false) }
     var lastAddedProductName by remember { mutableStateOf<String?>(null) }
     var showAddedBadge by remember { mutableStateOf(false) }
+    var activeAnalyzer by remember { mutableStateOf<com.billing.app.core.scanner.BarcodeAnalyzer?>(null) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -146,6 +147,9 @@ fun FullScannerScreen(
 
     DisposableEffect(lifecycleOwner) {
         onDispose {
+            try {
+                activeAnalyzer?.close()
+            } catch (_: Exception) {}
             try {
                 ProcessCameraProvider.getInstance(context).get()?.unbindAll()
             } catch (_: Exception) {}
@@ -352,26 +356,25 @@ fun FullScannerScreen(
                                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                         .build()
                                         .also { imageAnalysis ->
-                                            imageAnalysis.setAnalyzer(
-                                                cameraExecutor,
-                                                BarcodeAnalyzer(debounceManager) { rawBarcode ->
-                                                    ContextCompat.getMainExecutor(ctx).execute {
-                                                        if (onBarcodeCaptured != null) {
-                                                            onBarcodeCaptured(rawBarcode)
-                                                        } else {
-                                                            cartManager.scanBarcode(rawBarcode) { success, name, errorMsg ->
-                                                                if (success) {
-                                                                    lastAddedProductName = name
-                                                                    showAddedBadge = true
-                                                                    scanTriggerCount++
-                                                                } else {
-                                                                    FeedbackManager.showToast(context, errorMsg ?: "Product not found")
-                                                                }
+                                            val bAnalyzer = BarcodeAnalyzer(debounceManager) { rawBarcode ->
+                                                ContextCompat.getMainExecutor(ctx).execute {
+                                                    if (onBarcodeCaptured != null) {
+                                                        onBarcodeCaptured(rawBarcode)
+                                                    } else {
+                                                        cartManager.scanBarcode(rawBarcode) { success, name, errorMsg ->
+                                                            if (success) {
+                                                                lastAddedProductName = name
+                                                                showAddedBadge = true
+                                                                scanTriggerCount++
+                                                            } else {
+                                                                FeedbackManager.showToast(context, errorMsg ?: "Product not found")
                                                             }
                                                         }
                                                     }
                                                 }
-                                            )
+                                            }
+                                            activeAnalyzer = bAnalyzer
+                                            imageAnalysis.setAnalyzer(cameraExecutor, bAnalyzer)
                                         }
 
                                     try {

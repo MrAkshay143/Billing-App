@@ -11,6 +11,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import com.billing.app.domain.model.BluetoothPrinterDevice
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -136,7 +137,7 @@ class BluetoothPrinterManager(private val context: Context) {
                     stream.flush()
                     offset += len
                     if (offset < bytes.size) {
-                        Thread.sleep(15)
+                        delay(15)
                     }
                 }
                 Result.success(Unit)

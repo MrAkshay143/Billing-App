@@ -224,8 +224,8 @@ fun SuppliersScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Suppliers",
-                subtitle = "${suppliers.size} Suppliers • Directory",
+                title = strings.suppliersTitle,
+                subtitle = "${suppliers.size} ${strings.suppliers} • Directory",
                 icon = Icons.Default.LocalShipping,
                 onNavigateBack = onNavigateBack,
                 actions = {
@@ -274,7 +274,7 @@ fun SuppliersScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No suppliers found",
+                            text = strings.noSuppliersFound,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = DokandaarTheme.textMuted
@@ -326,7 +326,7 @@ fun SuppliersScreen(
                                     )
                                     if (!sup.contactPerson.isNullOrBlank()) {
                                         Text(
-                                            text = "Contact: ${sup.contactPerson}",
+                                            text = strings.supplierContact(sup.contactPerson),
                                             fontSize = 12.sp,
                                             color = DokandaarTheme.textMuted
                                         )
@@ -348,7 +348,7 @@ fun SuppliersScreen(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = sup.phone.ifBlank { "No phone" },
+                                            text = sup.phone.ifBlank { strings.noPhone },
                                             fontSize = 12.sp,
                                             color = if (sup.phone.isNotBlank()) PrimaryPurple else DokandaarTheme.textMuted
                                         )

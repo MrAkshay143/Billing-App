@@ -17,8 +17,13 @@ import com.billing.app.data.repository.InvoiceRepositoryImpl
 import com.billing.app.data.repository.PrinterRepositoryImpl
 import com.billing.app.data.repository.ProductRepositoryImpl
 import com.billing.app.data.repository.PurchaseRepositoryImpl
+import com.billing.app.data.repository.ShiftRepositoryImpl
 import com.billing.app.data.repository.ShopRepositoryImpl
 import com.billing.app.data.repository.SupplierRepositoryImpl
+import com.billing.app.data.repository.UserRepositoryImpl
+import com.billing.app.data.repository.AuditRepositoryImpl
+import com.billing.app.data.repository.ReturnRepositoryImpl
+import com.billing.app.data.repository.StockAdjustmentRepositoryImpl
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.repository.CategoryRepository
 import com.billing.app.domain.repository.CustomerRepository
@@ -27,8 +32,13 @@ import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
 import com.billing.app.domain.repository.ProductRepository
 import com.billing.app.domain.repository.PurchaseRepository
+import com.billing.app.domain.repository.ReturnRepository
+import com.billing.app.domain.repository.ShiftRepository
 import com.billing.app.domain.repository.ShopRepository
+import com.billing.app.domain.repository.StockAdjustmentRepository
 import com.billing.app.domain.repository.SupplierRepository
+import com.billing.app.domain.repository.UserRepository
+import com.billing.app.domain.repository.AuditRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -73,12 +83,23 @@ class BillingApplication : Application() {
         private set
     lateinit var purchaseRepository: PurchaseRepository
         private set
+    lateinit var shiftRepository: ShiftRepository
+        private set
+    lateinit var userRepository: UserRepository
+        private set
+    lateinit var auditRepository: AuditRepository
+        private set
+    lateinit var stockAdjustmentRepository: StockAdjustmentRepository
+        private set
+    lateinit var returnRepository: ReturnRepository
+        private set
     lateinit var cartManager: com.billing.app.core.cart.CartManager
         private set
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+        com.billing.app.core.localization.StringsProvider.init(this)
 
         val currentProcessName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             Application.getProcessName()
@@ -123,19 +144,32 @@ class BillingApplication : Application() {
             productRepository = ProductRepositoryImpl(database.productDao())
             shopRepository = ShopRepositoryImpl(database.shopDao())
             invoiceRepository = InvoiceRepositoryImpl(database)
-            printerRepository = PrinterRepositoryImpl(printerManager, settingsDataStore)
-            customerRepository = CustomerRepositoryImpl(database.customerDao())
+            printerRepository = PrinterRepositoryImpl(printerManager, settingsDataStore, database.shopDao())
+            customerRepository = CustomerRepositoryImpl(
+                customerDao = database.customerDao(),
+                customerLedgerDao = database.customerLedgerDao(),
+                paymentAllocationDao = database.paymentAllocationDao(),
+                invoiceDao = database.invoiceDao(),
+                cashMovementDao = database.cashMovementDao(),
+                database = database
+            )
             categoryRepository = CategoryRepositoryImpl(database.categoryDao())
             supplierRepository = SupplierRepositoryImpl(database.supplierDao())
-            expenseRepository = ExpenseRepositoryImpl(database.expenseDao())
+            expenseRepository = ExpenseRepositoryImpl(database)
             purchaseRepository = PurchaseRepositoryImpl(database)
+            shiftRepository = ShiftRepositoryImpl(database)
+            userRepository = UserRepositoryImpl(database.userDao())
+            auditRepository = AuditRepositoryImpl(database.auditLogDao())
+            stockAdjustmentRepository = StockAdjustmentRepositoryImpl(database)
+            returnRepository = ReturnRepositoryImpl(database)
             cartManager = com.billing.app.core.cart.CartManager(productRepository, soundHapticManager)
 
             DokandaarNotificationManager.initChannels(this)
 
-            // Seed default categories if empty
+            // Seed default categories and default admin if needed
             CoroutineScope(Dispatchers.IO).launch {
                 categoryRepository.seedDefaultCategoriesIfEmpty()
+                userRepository.createDefaultAdminIfNeeded()
             }
         } catch (e: Exception) {
             Log.e("BillingApplication", "Error initializing repositories in onCreate", e)

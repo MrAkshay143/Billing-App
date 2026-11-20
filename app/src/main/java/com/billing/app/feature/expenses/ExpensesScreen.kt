@@ -226,8 +226,8 @@ fun ExpensesScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Expenses",
-                subtitle = "Total: ${Money(totalExpensesPaise).format()}",
+                title = strings.expensesTitle,
+                subtitle = "${strings.total}: ${Money(totalExpensesPaise).format()}",
                 icon = Icons.Default.Payments,
                 onNavigateBack = onNavigateBack,
                 actions = {
@@ -252,16 +252,20 @@ fun ExpensesScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("All Time", "Today", "This Month").forEach { filterOpt ->
-                    val isSel = dateFilter == filterOpt
+                listOf(
+                    "All Time" to strings.periodAllTime,
+                    "Today" to strings.periodToday,
+                    "This Month" to strings.periodThisMonth
+                ).forEach { (filterKey, filterLabel) ->
+                    val isSel = dateFilter == filterKey
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSel) PrimaryPurple else DokandaarTheme.cardBackground,
                         border = androidx.compose.foundation.BorderStroke(1.dp, if (isSel) PrimaryPurple else DokandaarTheme.border),
-                        modifier = Modifier.clickable { dateFilter = filterOpt }
+                        modifier = Modifier.clickable { dateFilter = filterKey }
                     ) {
                         Text(
-                            text = filterOpt,
+                            text = filterLabel,
                             fontSize = 12.sp,
                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSel) Color.White else DokandaarTheme.textPrimary,
@@ -287,7 +291,7 @@ fun ExpensesScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No expenses recorded for this filter",
+                            text = strings.noExpensesFound,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = DokandaarTheme.textMuted

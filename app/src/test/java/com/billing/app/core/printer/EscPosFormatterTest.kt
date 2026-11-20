@@ -40,8 +40,8 @@ class EscPosFormatterTest {
             invoiceNumber = "INV-2026-000042",
             timestamp = 1700000000000L,
             items = listOf(
-                ReceiptItem(name = "Atta 5kg", quantity = 1, unitPricePaise = 25000L, lineTotalPaise = 25000L),
-                ReceiptItem(name = "Rice 1kg", quantity = 2, unitPricePaise = 6000L, lineTotalPaise = 12000L)
+                ReceiptItem(name = "Atta 5kg", quantityMilli = 1000L, unitCode = "PCS", unitPricePaise = 25000L, lineTotalPaise = 25000L),
+                ReceiptItem(name = "Rice 1kg", quantityMilli = 2000L, unitCode = "PCS", unitPricePaise = 6000L, lineTotalPaise = 12000L)
             ),
             subtotalPaise = 37000L,
             discountPaise = 2000L, // Rs. 20 discount
@@ -72,7 +72,7 @@ class EscPosFormatterTest {
             shopName = "Mega Store",
             invoiceNumber = "INV-80MM-1",
             timestamp = 1700000000000L,
-            items = listOf(ReceiptItem(name = "Item 1", quantity = 1, unitPricePaise = 1000L, lineTotalPaise = 1000L)),
+            items = listOf(ReceiptItem(name = "Item 1", quantityMilli = 1000L, unitCode = "PCS", unitPricePaise = 1000L, lineTotalPaise = 1000L)),
             subtotalPaise = 1000L,
             grandTotalPaise = 1000L
         )

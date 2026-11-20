@@ -2,7 +2,8 @@ package com.billing.app.domain.model
 
 data class ReceiptItem(
     val name: String,
-    val quantity: Int,
+    val quantityMilli: Long,
+    val unitCode: String = "PCS",
     val unitPricePaise: Long,
     val lineTotalPaise: Long
 )
@@ -26,5 +27,9 @@ data class InvoiceReceipt(
     val changeReturnedPaise: Long = 0L,
     val duePaise: Long = 0L,
     val customerName: String? = null,
-    val customerPhone: String? = null
+    val customerPhone: String? = null,
+    val receiptType: String = "Tax Invoice",
+    val cashierName: String = "",
+    val roundOffPaise: Long = 0L,
+    val upiPaidPaise: Long = 0L
 )

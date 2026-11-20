@@ -9,7 +9,8 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["purchaseNumber"], unique = true),
         Index(value = ["timestamp"]),
-        Index(value = ["supplierId"])
+        Index(value = ["supplierId"]),
+        Index(value = ["shiftId"])
     ]
 )
 data class PurchaseEntity(
@@ -19,5 +20,10 @@ data class PurchaseEntity(
     val supplierName: String? = null,
     val timestamp: Long = System.currentTimeMillis(),
     val totalPaise: Long,
-    val paymentStatus: String = "PAID"
+    val paymentStatus: String = "PAID",
+    val shiftId: Long? = null,
+    val createdByUserId: String? = null,
+    val paidPaise: Long = 0L,
+    val duePaise: Long = 0L,
+    val status: String = "RECEIVED"
 )

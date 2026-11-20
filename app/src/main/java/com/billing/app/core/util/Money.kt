@@ -12,10 +12,16 @@ data class Money(val paise: Long) : Comparable<Money> {
     fun toRupees(): Double = paise / 100.0
 
     fun format(includeSymbol: Boolean = true): String {
-        val rupees = paise / 100
-        val remainder = kotlin.math.abs(paise % 100)
-        val formatted = String.format(Locale.US, "%d.%02d", rupees, remainder)
-        return if (includeSymbol) "₹$formatted" else formatted
+        val isNegative = paise < 0
+        val absPaise = kotlin.math.abs(paise)
+        val rupees = absPaise / 100
+        val remainder = absPaise % 100
+        val numberPart = String.format(Locale.ROOT, "%d.%02d", rupees, remainder)
+        return if (includeSymbol) {
+            if (isNegative) "-₹$numberPart" else "₹$numberPart"
+        } else {
+            if (isNegative) "-$numberPart" else numberPart
+        }
     }
 
     companion object {
@@ -28,7 +34,8 @@ data class Money(val paise: Long) : Comparable<Money> {
         }
 
         fun fromRupees(amount: String): Money {
-            val clean = amount.trim().replace(",", "").replace("₹", "")
+            val normalized = Quantity.normalizeInputDigits(amount)
+            val clean = normalized.trim().replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "").trim()
             val parsed = clean.toDoubleOrNull() ?: 0.0
             return fromRupees(parsed)
         }

@@ -75,6 +75,7 @@ fun StoreProfileScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = com.billing.app.core.localization.LocalAppStrings.current
     val profile by viewModel.shopProfile.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -121,7 +122,7 @@ fun StoreProfileScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Store Profile",
+                title = strings.storeProfile,
                 subtitle = "Shop details, address & contact",
                 icon = Icons.Default.Storefront,
                 onNavigateBack = onNavigateBack
@@ -168,7 +169,7 @@ fun StoreProfileScreen(
                         Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Save Store Profile",
+                            text = strings.saveStoreProfile,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -236,7 +237,7 @@ fun StoreProfileScreen(
 
             // Section 1: Basic Information
             Text(
-                text = "Store Information",
+                text = strings.storeInformation,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = DokandaarTheme.textPrimary
@@ -253,7 +254,7 @@ fun StoreProfileScreen(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Store Name *") },
+                        label = { Text(strings.storeName) },
                         placeholder = { Text("e.g. Dokandaar Grocery Store") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Business, contentDescription = null, tint = HeaderGradientStart)
@@ -272,7 +273,7 @@ fun StoreProfileScreen(
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
-                        label = { Text("Store Phone Number") },
+                        label = { Text(strings.storePhone) },
                         placeholder = { Text("+91 9876543210") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = HeaderGradientStart)
@@ -293,7 +294,7 @@ fun StoreProfileScreen(
 
             // Section 2: Address Details
             Text(
-                text = "Store Address (Printed on Receipts)",
+                text = strings.storeAddress,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = DokandaarTheme.textPrimary
@@ -310,7 +311,7 @@ fun StoreProfileScreen(
                     OutlinedTextField(
                         value = address1,
                         onValueChange = { address1 = it },
-                        label = { Text("Address Line 1") },
+                        label = { Text(strings.addressLine1) },
                         placeholder = { Text("Shop No, Building, Street") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = HeaderGradientStart)
@@ -329,7 +330,7 @@ fun StoreProfileScreen(
                     OutlinedTextField(
                         value = address2,
                         onValueChange = { address2 = it },
-                        label = { Text("Address Line 2 (City, Pincode)") },
+                        label = { Text(strings.addressLine2) },
                         placeholder = { Text("Kolkata, WB - 700001") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = HeaderGradientStart)
@@ -349,7 +350,7 @@ fun StoreProfileScreen(
 
             // Section: GST & Taxation Details (H7)
             Text(
-                text = "GST & Tax Details",
+                text = strings.gstTaxConfig,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = DokandaarTheme.textPrimary
@@ -369,7 +370,7 @@ fun StoreProfileScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Enable GST Billing", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                            Text(strings.enableGstBilling, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                             Text("Display GSTIN and tax split on invoices", fontSize = 12.sp, color = TextMutedColor)
                         }
                         Switch(
@@ -387,7 +388,7 @@ fun StoreProfileScreen(
                         OutlinedTextField(
                             value = gstinInput,
                             onValueChange = { gstinInput = it.uppercase() },
-                            label = { Text("Store GSTIN") },
+                            label = { Text(strings.storeGstin) },
                             placeholder = { Text("e.g. 27AAPFU0939F1ZV") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
@@ -399,7 +400,7 @@ fun StoreProfileScreen(
                         )
 
                         Spacer(modifier = Modifier.height(14.dp))
-                        Text("Default Tax Rate:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
+                        Text(strings.defaultTaxRate, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Row(
@@ -437,7 +438,7 @@ fun StoreProfileScreen(
 
             // Section 3: Receipt Footer
             Text(
-                text = "Receipt Customization",
+                text = strings.receiptCustomization,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = DokandaarTheme.textPrimary
@@ -454,7 +455,7 @@ fun StoreProfileScreen(
                     OutlinedTextField(
                         value = footer,
                         onValueChange = { footer = it },
-                        label = { Text("Receipt Footer Message") },
+                        label = { Text(strings.receiptFooterMessage) },
                         placeholder = { Text("Thank you! Visit again.") },
                         leadingIcon = {
                             Icon(imageVector = Icons.AutoMirrored.Filled.Message, contentDescription = null, tint = HeaderGradientStart)

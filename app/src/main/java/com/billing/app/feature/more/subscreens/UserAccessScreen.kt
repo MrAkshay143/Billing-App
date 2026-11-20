@@ -75,6 +75,7 @@ fun UserAccessScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = com.billing.app.core.localization.LocalAppStrings.current
     val scope = rememberCoroutineScope()
     val staffList by viewModel.staffList.collectAsState()
     val isPinEnabled by viewModel.isPinEnabled.collectAsState()
@@ -94,7 +95,7 @@ fun UserAccessScreen(
             onDismissRequest = { staffToDelete = null },
             title = {
                 Text(
-                    text = "Remove Staff Member?",
+                    text = strings.removeStaffTitle,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = DokandaarTheme.textPrimary
@@ -115,12 +116,12 @@ fun UserAccessScreen(
                         staffToDelete = null
                     }
                 ) {
-                    Text("Remove", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    Text(strings.delete, color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { staffToDelete = null }) {
-                    Text("Cancel", color = DokandaarTheme.textMuted)
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
             },
             containerColor = DokandaarTheme.cardBackground,
@@ -198,7 +199,7 @@ fun UserAccessScreen(
 
         AlertDialog(
             onDismissRequest = { showSetPinDialog = false },
-            title = { Text(if (hasPinSet) "Change Owner PIN" else "Set Owner Security PIN", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text(if (hasPinSet) strings.changePin else strings.setPin, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
@@ -210,7 +211,7 @@ fun UserAccessScreen(
                     OutlinedTextField(
                         value = pinInput,
                         onValueChange = { if (it.length <= 6) pinInput = it },
-                        label = { Text("New PIN (4-6 digits)") },
+                        label = { Text(strings.fourToSixDigitPin) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true,
@@ -220,7 +221,7 @@ fun UserAccessScreen(
                     OutlinedTextField(
                         value = confirmPinInput,
                         onValueChange = { if (it.length <= 6) confirmPinInput = it },
-                        label = { Text("Confirm PIN") },
+                        label = { Text(strings.fourToSixDigitPin) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true,
@@ -250,12 +251,12 @@ fun UserAccessScreen(
                         }
                     }
                 ) {
-                    Text("Save PIN", color = HeaderGradientStart, fontWeight = FontWeight.Bold)
+                    Text(strings.save, color = HeaderGradientStart, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSetPinDialog = false }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text(strings.cancel, color = Color.Gray)
                 }
             }
         )
@@ -268,13 +269,13 @@ fun UserAccessScreen(
 
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Staff Member", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text(strings.addStaffMember, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Full Name *") },
+                        label = { Text(strings.fullName) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -282,13 +283,13 @@ fun UserAccessScreen(
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
-                        label = { Text("Phone Number") },
+                        label = { Text(strings.phoneNumber) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text("Access Role:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                    Text(strings.accessRole, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
 
                     listOf(
                         "Cashier (Billing Only)" to "Can scan products and complete sales",
@@ -340,12 +341,12 @@ fun UserAccessScreen(
                         }
                     }
                 ) {
-                    Text("Add Staff", color = HeaderGradientStart, fontWeight = FontWeight.Bold)
+                    Text(strings.addStaffMember, color = HeaderGradientStart, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddDialog = false }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text(strings.cancel, color = Color.Gray)
                 }
             }
         )
@@ -354,7 +355,7 @@ fun UserAccessScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "User & Access",
+                title = strings.userAccess,
                 subtitle = "PIN security & staff accounts",
                 icon = Icons.Default.Lock,
                 onNavigateBack = onNavigateBack
@@ -398,7 +399,7 @@ fun UserAccessScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text("Owner PIN Lock", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                                Text(strings.ownerPinLock, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                                 Text(
                                     text = if (isPinEnabled) "PIN protection is active" else "Protect reports & settings with PIN",
                                     fontSize = 12.sp,
@@ -452,7 +453,7 @@ fun UserAccessScreen(
                                     Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (hasPinSet) "Change PIN" else "Set PIN",
+                                        text = if (hasPinSet) strings.changePin else strings.setPin,
                                         color = HeaderGradientStart,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp
@@ -475,7 +476,7 @@ fun UserAccessScreen(
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("Remove PIN", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text(strings.removePin, color = Color(0xFFDC2626), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -518,7 +519,7 @@ fun UserAccessScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Staff & Cashiers",
+                            text = strings.staffAndCashiers,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = DokandaarTheme.textPrimary
@@ -531,7 +532,7 @@ fun UserAccessScreen(
                     }
 
                     DokandaarActionPill(
-                        text = "Add Staff",
+                        text = strings.addStaffMember,
                         backgroundColor = HeaderGradientStart,
                         contentColor = Color.White,
                         onClick = { showAddDialog = true }

@@ -24,6 +24,7 @@ class SettingsDataStore(private val context: Context) {
         private val KEY_PRINTER_PAPER_WIDTH = stringPreferencesKey("printer_paper_width")
         private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val KEY_APP_LANGUAGE = stringPreferencesKey("app_language")
+        private val KEY_RECEIPT_LANGUAGE = stringPreferencesKey("receipt_language")
         private val KEY_APP_THEME = stringPreferencesKey("app_theme")
         private val KEY_STAFF_LIST_JSON = stringPreferencesKey("staff_list_json")
         private val KEY_DEFAULT_PAYMENT_METHOD = stringPreferencesKey("default_payment_method")
@@ -58,6 +59,10 @@ class SettingsDataStore(private val context: Context) {
 
     val appLanguageFlow: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[KEY_APP_LANGUAGE] ?: "en"
+    }
+
+    val receiptLanguageFlow: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[KEY_RECEIPT_LANGUAGE] ?: "en"
     }
 
     val appThemeFlow: Flow<String> = context.dataStore.data.map { preferences ->
@@ -143,8 +148,26 @@ class SettingsDataStore(private val context: Context) {
     }
 
     suspend fun saveAppLanguage(language: String) {
+        context.getSharedPreferences("dokandaar_prefs", android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putString("app_language", language)
+            .apply()
+        com.billing.app.core.localization.StringsProvider.updateLanguage(language)
+
         context.dataStore.edit { preferences ->
             preferences[KEY_APP_LANGUAGE] = language
+        }
+    }
+
+    suspend fun saveReceiptLanguage(language: String) {
+        context.getSharedPreferences("dokandaar_prefs", android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putString("receipt_language", language)
+            .apply()
+        com.billing.app.core.localization.StringsProvider.updateReceiptLanguage(language)
+
+        context.dataStore.edit { preferences ->
+            preferences[KEY_RECEIPT_LANGUAGE] = language
         }
     }
 

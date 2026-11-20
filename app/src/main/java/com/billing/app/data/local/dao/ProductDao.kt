@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.billing.app.data.local.entity.ProductEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -34,10 +35,10 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertProduct(product: ProductEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertProduct(product: ProductEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertAll(products: List<ProductEntity>)
 
     @Update
@@ -46,27 +47,51 @@ interface ProductDao {
     @Query("DELETE FROM products WHERE id = :id")
     suspend fun deleteProduct(id: String)
 
-    @Query("UPDATE products SET stock = stock - :quantity WHERE id = :productId AND stock >= :quantity")
-    suspend fun decrementProductStock(productId: String, quantity: Int): Int
+    @Query("UPDATE products SET stockMilli = stockMilli - :quantityMilli WHERE id = :productId AND stockMilli >= :quantityMilli")
+    suspend fun decrementProductStockMilli(productId: String, quantityMilli: Long): Int
 
-    @Query("UPDATE products SET stock = stock + :quantity WHERE id = :productId")
-    suspend fun restoreProductStock(productId: String, quantity: Int): Int
+    suspend fun decrementProductStock(productId: String, quantity: Int): Int =
+        decrementProductStockMilli(productId, quantity * 1000L)
 
-    @Query("UPDATE products SET stock = :newStock WHERE id = :productId")
-    suspend fun updateStock(productId: String, newStock: Int): Int
+    @Query("UPDATE products SET stockMilli = stockMilli - :quantityMilli WHERE id = :productId")
+    suspend fun forceDecrementProductStockMilli(productId: String, quantityMilli: Long): Int
+
+    suspend fun forceDecrementProductStock(productId: String, quantity: Int): Int =
+        forceDecrementProductStockMilli(productId, quantity * 1000L)
+
+    @Query("UPDATE products SET stockMilli = stockMilli + :quantityMilli WHERE id = :productId")
+    suspend fun restoreProductStockMilli(productId: String, quantityMilli: Long): Int
+
+    suspend fun restoreProductStock(productId: String, quantity: Int): Int =
+        restoreProductStockMilli(productId, quantity * 1000L)
+
+    @Query("UPDATE products SET stockMilli = :newStockMilli WHERE id = :productId")
+    suspend fun updateStockMilli(productId: String, newStockMilli: Long): Int
+
+    suspend fun updateStock(productId: String, newStock: Int): Int =
+        updateStockMilli(productId, newStock * 1000L)
 
     @Query("SELECT COUNT(*) FROM products")
     fun getTotalCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM products WHERE stock > 0 AND stock <= minStockAlert")
+    @Query("SELECT COUNT(*) FROM products WHERE stockMilli > 0 AND stockMilli <= minStockAlertMilli")
     fun getLowStockCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM products WHERE stock = 0")
+    @Query("SELECT COUNT(*) FROM products WHERE stockMilli <= 0")
     fun getOutOfStockCount(): Flow<Int>
 
-    @Query("SELECT * FROM products WHERE stock <= minStockAlert ORDER BY stock ASC")
+    @Query("SELECT * FROM products WHERE stockMilli <= minStockAlertMilli ORDER BY stockMilli ASC")
     suspend fun getLowAndOutOfStockProducts(): List<ProductEntity>
 
     @Query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''")
     fun getAllCategories(): Flow<List<String>>
+
+    @Query("""
+        SELECT (
+            (SELECT COUNT(*) FROM invoice_items WHERE productId = :productId) +
+            (SELECT COUNT(*) FROM purchase_items WHERE productId = :productId) +
+            (SELECT COUNT(*) FROM product_batches WHERE productId = :productId)
+        )
+    """)
+    suspend fun getProductTransactionCount(productId: String): Int
 }

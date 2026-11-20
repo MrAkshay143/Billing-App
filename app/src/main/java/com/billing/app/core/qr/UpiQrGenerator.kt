@@ -17,21 +17,20 @@ object UpiQrGenerator {
         return UPI_VPA_REGEX.matches(upiId.trim())
     }
 
-    fun generateUpiQrBitmap(
+    fun buildUpiUri(
         upiId: String,
         shopName: String,
         amount: Money,
         transactionRef: String? = null,
-        transactionNote: String = "Store Payment",
-        sizePx: Int = 360
-    ): Bitmap? {
+        transactionNote: String = "Store Payment"
+    ): String? {
         val cleanUpi = upiId.trim()
         if (!isValidUpiId(cleanUpi)) return null
 
         val encodedPa = URLEncoder.encode(cleanUpi, "UTF-8").replace("+", "%20")
         val cleanShop = shopName.ifBlank { "Store" }
         val encodedPn = URLEncoder.encode(cleanShop, "UTF-8").replace("+", "%20")
-        val amountStr = amount.format(includeSymbol = false)
+        val amountStr = String.format(Locale.ROOT, "%.2f", amount.paise / 100.0)
         val encodedTn = URLEncoder.encode(transactionNote, "UTF-8").replace("+", "%20")
 
         val sb = StringBuilder("upi://pay?")
@@ -46,7 +45,18 @@ object UpiQrGenerator {
             sb.append("&tr=").append(encodedTr)
         }
 
-        val upiUri = sb.toString()
+        return sb.toString()
+    }
+
+    fun generateUpiQrBitmap(
+        upiId: String,
+        shopName: String,
+        amount: Money,
+        transactionRef: String? = null,
+        transactionNote: String = "Store Payment",
+        sizePx: Int = 360
+    ): Bitmap? {
+        val upiUri = buildUpiUri(upiId, shopName, amount, transactionRef, transactionNote) ?: return null
 
         return try {
             val hints = mapOf(

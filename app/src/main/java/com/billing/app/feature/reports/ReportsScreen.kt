@@ -116,6 +116,15 @@ fun ReportsScreen(
     val pendingBillsPaise by viewModel.pendingBillsPaise.collectAsState()
     val totalItemsCount by viewModel.totalItemsCount.collectAsState()
 
+    val taxableSalesPaise by viewModel.taxableSalesPaise.collectAsState()
+    val cogsPaise by viewModel.cogsPaise.collectAsState()
+    val realGrossProfitPaise by viewModel.realGrossProfitPaise.collectAsState()
+    val grossMarginPercent by viewModel.grossMarginPercent.collectAsState()
+    val totalGstPaise by viewModel.totalGstPaise.collectAsState()
+    val totalDiscountPaise by viewModel.totalDiscountPaise.collectAsState()
+    val totalRefundPaise by viewModel.totalRefundPaise.collectAsState()
+    val netSalesPaise by viewModel.netSalesPaise.collectAsState()
+
     val topSellingItems by viewModel.topSellingItems.collectAsState()
     val categorySales by viewModel.categorySales.collectAsState()
     val trendData by viewModel.trendData.collectAsState()
@@ -201,11 +210,11 @@ fun ReportsScreen(
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = when (period) {
-                                            ReportPeriod.TODAY -> "Today"
-                                            ReportPeriod.THIS_WEEK -> "This Week"
-                                            ReportPeriod.THIS_MONTH -> "This Month"
-                                            ReportPeriod.THIS_YEAR -> "This Year"
-                                            ReportPeriod.ALL -> "All Time"
+                                            ReportPeriod.TODAY -> strings.periodToday
+                                            ReportPeriod.THIS_WEEK -> strings.periodThisWeek
+                                            ReportPeriod.THIS_MONTH -> strings.periodThisMonth
+                                            ReportPeriod.THIS_YEAR -> strings.periodThisYear
+                                            ReportPeriod.ALL -> strings.periodAllTime
                                         },
                                         color = Color.White,
                                         fontSize = 12.sp,
@@ -225,35 +234,35 @@ fun ReportsScreen(
                                 onDismissRequest = { showPeriodDropdown = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Today") },
+                                    text = { Text(strings.periodToday) },
                                     onClick = {
                                         viewModel.setPeriod(ReportPeriod.TODAY)
                                         showPeriodDropdown = false
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("This Week") },
+                                    text = { Text(strings.periodThisWeek) },
                                     onClick = {
                                         viewModel.setPeriod(ReportPeriod.THIS_WEEK)
                                         showPeriodDropdown = false
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("This Month") },
+                                    text = { Text(strings.periodThisMonth) },
                                     onClick = {
                                         viewModel.setPeriod(ReportPeriod.THIS_MONTH)
                                         showPeriodDropdown = false
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("This Year") },
+                                    text = { Text(strings.periodThisYear) },
                                     onClick = {
                                         viewModel.setPeriod(ReportPeriod.THIS_YEAR)
                                         showPeriodDropdown = false
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("All Time") },
+                                    text = { Text(strings.periodAllTime) },
                                     onClick = {
                                         viewModel.setPeriod(ReportPeriod.ALL)
                                         showPeriodDropdown = false
@@ -642,7 +651,7 @@ fun ReportsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showPurchaseReportDialog = false }) {
-                    Text("Close", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.close, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -652,7 +661,7 @@ fun ReportsScreen(
     if (showCustomerReportDialog) {
         AlertDialog(
             onDismissRequest = { showCustomerReportDialog = false },
-            title = { Text("Customer Sales & Dues Report", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            title = { Text(strings.customerKhataReport, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Customer analytics and outstanding receivables:", fontSize = 12.sp, color = DokandaarTheme.textMuted)
@@ -666,7 +675,7 @@ fun ReportsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showCustomerReportDialog = false }) {
-                    Text("Close", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.close, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -676,7 +685,7 @@ fun ReportsScreen(
     if (showCategoryReportDialog) {
         AlertDialog(
             onDismissRequest = { showCategoryReportDialog = false },
-            title = { Text("Category Sales Breakdown", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            title = { Text(strings.salesByCategory, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -704,7 +713,7 @@ fun ReportsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showCategoryReportDialog = false }) {
-                    Text("Close", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.close, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -717,20 +726,28 @@ fun ReportsScreen(
             title = { Text("Profit & Loss Statement", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Estimated financial statement based on store transactions:", fontSize = 12.sp, color = DokandaarTheme.textMuted)
+                    Text("আসল ক্রয়মূল্য ও ব্যাচ স্ন্যাপশট ভিত্তিক লাভ-ক্ষতি (Real COGS & Profit):", fontSize = 12.sp, color = DokandaarTheme.textMuted)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Gross Revenue: ${Money(totalSalesPaise).format()}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    val goodsCost = totalSalesPaise * 70 / 100
-                    val grossProfit = (totalSalesPaise - goodsCost).coerceAtLeast(0L)
-                    Text("Cost of Goods Sold (approx 70%): -${Money(goodsCost).format()}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
-                    Text("Estimated Gross Profit: ${Money(grossProfit).format()}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = PastelGreenContent)
-                    Text("Gross Margin: 30%", fontSize = 12.sp, color = PastelGreenContent)
-                    Text("Operating Status: Healthy Kirana Margin", fontSize = 12.sp, color = DokandaarTheme.textMuted)
+                    Text("${strings.grossSales}: ${Money(totalSalesPaise).format()}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    if (totalRefundPaise > 0L) {
+                        Text("${strings.salesReturn}: -${Money(totalRefundPaise).format()}", fontSize = 13.sp, color = PastelRedContent)
+                        Text("${strings.netSales}: ${Money(netSalesPaise).format()}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Text("Taxable Sales: ${Money(taxableSalesPaise).format()}", fontSize = 13.sp)
+                    Text("GST Collected: ${Money(totalGstPaise).format()}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
+                    if (totalDiscountPaise > 0L) {
+                        Text("Total Bill Discounts: -${Money(totalDiscountPaise).format()}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
+                    }
+                    Text("Cost of Goods Sold (COGS): -${Money(cogsPaise).format()}", fontSize = 13.sp, color = PastelRedContent)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Text("${strings.totalProfit}: ${Money(realGrossProfitPaise).format()}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PastelGreenContent)
+                    val marginStr = String.format(java.util.Locale.US, "%.1f", grossMarginPercent)
+                    Text("Gross Margin: $marginStr%", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PastelGreenContent)
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showProfitLossDialog = false }) {
-                    Text("Close", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.close, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -740,7 +757,7 @@ fun ReportsScreen(
     if (showDailySummaryDialog) {
         AlertDialog(
             onDismissRequest = { showDailySummaryDialog = false },
-            title = { Text("Daily Business Summary", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
+            title = { Text(strings.dailyBusinessSummary, fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Summary of operations for today:", fontSize = 12.sp, color = DokandaarTheme.textMuted)
@@ -754,7 +771,7 @@ fun ReportsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showDailySummaryDialog = false }) {
-                    Text("Close", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(strings.close, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             }
         )

@@ -41,6 +41,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.billing.app.core.localization.AppStrings
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.SubPageHeader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,7 +76,14 @@ enum class ReportPeriod(val label: String) {
     TODAY("Today"),
     THIS_WEEK("This Week"),
     THIS_MONTH("This Month"),
-    ALL_TIME("All Time")
+    ALL_TIME("All Time");
+
+    fun localized(strings: AppStrings): String = when (this) {
+        TODAY -> strings.periodToday
+        THIS_WEEK -> strings.periodThisWeek
+        THIS_MONTH -> strings.periodThisMonth
+        ALL_TIME -> strings.periodAllTime
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,6 +94,7 @@ fun SalesReportScreen(
     onNavigateToInvoices: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val shopProfile by viewModel.shopProfile.collectAsState()
     var selectedPeriod by remember { mutableStateOf(ReportPeriod.TODAY) }
     var summary by remember { mutableStateOf<SalesReportSummary?>(null) }
@@ -131,7 +141,7 @@ fun SalesReportScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Sales Report",
+                title = strings.salesReport,
                 subtitle = "Daily & monthly sales figures",
                 icon = Icons.Default.BarChart,
                 onNavigateBack = onNavigateBack
@@ -163,7 +173,7 @@ fun SalesReportScreen(
                         shape = RoundedCornerShape(20.dp)
                     ) {
                         Text(
-                            text = period.label,
+                            text = period.localized(strings),
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSelected) Color.White else DokandaarTheme.textMuted,
@@ -209,7 +219,7 @@ fun SalesReportScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "Performance Summary (${selectedPeriod.label})",
+                                text = "Performance Summary (${selectedPeriod.localized(strings)})",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DokandaarTheme.textPrimary
@@ -239,7 +249,7 @@ fun SalesReportScreen(
                             Icon(imageVector = Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF7C3AED), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = Money.fromPaise(report.totalRevenuePaise).format(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = "Total Revenue", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF5B21B6))
+                            Text(text = strings.totalRevenue, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF5B21B6))
                         }
                     }
 
@@ -254,7 +264,7 @@ fun SalesReportScreen(
                             Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = "${report.totalInvoices}", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = "Total Sales", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF065F46))
+                            Text(text = strings.totalSales, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF065F46))
                         }
                     }
                 }
@@ -274,7 +284,7 @@ fun SalesReportScreen(
                             Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = Money.fromPaise(report.avgBillPaise).format(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = "Avg. Bill Value", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF075985))
+                            Text(text = strings.avgBillValue, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF075985))
                         }
                     }
 
@@ -289,7 +299,7 @@ fun SalesReportScreen(
                             Icon(imageVector = Icons.Default.Payments, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = Money.fromPaise(report.totalDiscountPaise).format(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = "Discounts Given", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF92400E))
+                            Text(text = strings.discountsGiven, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF92400E))
                         }
                     }
                 }
@@ -303,7 +313,7 @@ fun SalesReportScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Payment Method Breakdown",
+                            text = strings.paymentMode,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = DokandaarTheme.textPrimary
@@ -319,7 +329,7 @@ fun SalesReportScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.Payments, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Cash Collected", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
+                                Text(strings.cashCollected, fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                             }
                             Text(text = Money.fromPaise(report.cashSalesPaise).format(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
@@ -335,7 +345,7 @@ fun SalesReportScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.QrCode, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("UPI Payments", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
+                                Text(strings.upiPayments, fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                             }
                             Text(text = Money.fromPaise(report.upiSalesPaise).format(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
@@ -351,7 +361,7 @@ fun SalesReportScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(imageVector = Icons.Default.CreditCard, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Other / Card", fontSize = 13.sp, color = DokandaarTheme.textPrimary)
+                                    Text(strings.otherCard, fontSize = 13.sp, color = DokandaarTheme.textPrimary)
                                 }
                                 Text(text = Money.fromPaise(report.otherSalesPaise).format(), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
@@ -394,7 +404,7 @@ fun SalesReportScreen(
                         ) {
                             Icon(imageVector = Icons.Default.ContentCopy, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copy Report", color = HeaderGradientStart, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(strings.copyReport, color = HeaderGradientStart, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
 
@@ -410,7 +420,7 @@ fun SalesReportScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("View Invoices", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(strings.viewInvoices, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,

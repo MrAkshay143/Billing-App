@@ -15,15 +15,16 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.billing.app.BillingApplication
 import com.billing.app.core.audio.SoundHapticManager
 import com.billing.app.core.cart.CartManager
 import com.billing.app.core.ui.components.DokandaarTab
+import com.billing.app.core.ui.components.ManagerPinDialog
 import com.billing.app.domain.repository.CategoryRepository
 import com.billing.app.domain.repository.CustomerRepository
 import com.billing.app.domain.repository.ExpenseRepository
 import com.billing.app.domain.repository.SupplierRepository
 import com.billing.app.feature.categories.CategoriesScreen
-import com.billing.app.feature.checkout.CheckoutScreen
 import com.billing.app.feature.checkout.CheckoutViewModel
 import com.billing.app.feature.checkout.SaleScreen
 import com.billing.app.feature.customers.CustomersScreen
@@ -48,6 +49,8 @@ import com.billing.app.feature.more.subscreens.UserAccessScreen
 import com.billing.app.feature.products.AddEditProductScreen
 import com.billing.app.feature.products.ProductListScreen
 import com.billing.app.feature.products.ProductViewModel
+import com.billing.app.feature.purchases.PurchasesScreen
+import com.billing.app.feature.purchases.PurchasesViewModel
 import com.billing.app.feature.reports.ReportsScreen
 import com.billing.app.feature.reports.ReportsViewModel
 import com.billing.app.feature.scanner.FullScannerScreen
@@ -64,6 +67,7 @@ fun AppNavHost(
     invoiceViewModel: InvoiceViewModel,
     reportsViewModel: ReportsViewModel,
     settingsViewModel: SettingsViewModel,
+    purchasesViewModel: PurchasesViewModel,
     cartManager: CartManager,
     customerRepository: CustomerRepository,
     supplierRepository: SupplierRepository,
@@ -72,6 +76,21 @@ fun AppNavHost(
     soundHapticManager: SoundHapticManager
 ) {
     var scanTargetMode by rememberSaveable { mutableStateOf("cart") } // "cart", "add", "search"
+    var pendingRestrictedNavAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    fun navigateWithRbac(route: String, onProceed: () -> Unit) {
+        val currentUser = BillingApplication.instance.userRepository.currentUser.value
+        val isCashier = currentUser?.role.equals("CASHIER", ignoreCase = true)
+        val isRestricted = route == Screen.Reports.route ||
+                route == Screen.Settings.route ||
+                route == Screen.More.route
+
+        if (isCashier && isRestricted) {
+            pendingRestrictedNavAction = onProceed
+        } else {
+            onProceed()
+        }
+    }
 
     fun navigateToTab(tab: DokandaarTab) {
         val route = when (tab) {
@@ -85,25 +104,43 @@ fun AppNavHost(
         val currentRoute = navController.currentDestination?.route
         if (currentRoute == route) return
 
-        if (tab == DokandaarTab.HOME) {
-            val popped = navController.popBackStack(Screen.Home.route, inclusive = false)
-            if (!popped) {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true }
+        val performNav = {
+            if (tab == DokandaarTab.HOME) {
+                val popped = navController.popBackStack(Screen.Home.route, inclusive = false)
+                if (!popped) {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            } else {
+                navController.navigate(route) {
+                    popUpTo(Screen.Home.route) {
+                        saveState = true
+                        inclusive = false
+                    }
                     launchSingleTop = true
+                    restoreState = true
                 }
             }
-            return
         }
 
-        navController.navigate(route) {
-            popUpTo(Screen.Home.route) {
-                saveState = true
-                inclusive = false
+        navigateWithRbac(route, performNav)
+    }
+
+    if (pendingRestrictedNavAction != null) {
+        ManagerPinDialog(
+            title = "Manager Authorization Required",
+            subtitle = "Cashier role requires Manager PIN to access this section",
+            onDismissRequest = {
+                pendingRestrictedNavAction = null
+            },
+            onAuthorized = {
+                val action = pendingRestrictedNavAction
+                pendingRestrictedNavAction = null
+                action?.invoke()
             }
-            launchSingleTop = true
-            restoreState = true
-        }
+        )
     }
 
     NavHost(
@@ -273,6 +310,7 @@ fun AppNavHost(
                 },
                 onNavigateToCustomers = { navController.navigate(Screen.Customers.route) },
                 onNavigateToSuppliers = { navController.navigate(Screen.Suppliers.route) },
+                onNavigateToPurchases = { navController.navigate(Screen.Purchases.route) },
                 onNavigateToExpenses = { navController.navigate(Screen.Expenses.route) },
                 onNavigateToCategories = { navController.navigate(Screen.Categories.route) },
                 onNavigateToImportExport = { navController.navigate(Screen.ImportExport.route) },
@@ -369,6 +407,13 @@ fun AppNavHost(
         composable(Screen.Categories.route) {
             CategoriesScreen(
                 categoryRepository = categoryRepository,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Purchases.route) {
+            PurchasesScreen(
+                viewModel = purchasesViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

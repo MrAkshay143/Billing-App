@@ -1,7 +1,5 @@
 package com.billing.app.feature.more.subscreens
 
-import android.widget.Toast
-import com.billing.app.core.ui.util.FeedbackManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,18 +18,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import com.billing.app.core.ui.components.SubPageHeader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,11 +39,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.LocalAppStrings
+import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.AddProductBg
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
-import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.feature.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,7 +54,9 @@ fun LanguageScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = LocalAppStrings.current
     val currentLang by viewModel.appLanguage.collectAsState()
+    val receiptLang by viewModel.receiptLanguage.collectAsState()
 
     val languages = listOf(
         LanguageOption(
@@ -80,8 +79,8 @@ fun LanguageScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "App Language",
-                subtitle = "English, हिन्दी, বাংলা & more",
+                title = strings.language,
+                subtitle = "English, বাংলা, हिंदी",
                 icon = Icons.Default.Language,
                 onNavigateBack = onNavigateBack
             )
@@ -127,13 +126,13 @@ fun LanguageScreen(
 
                     Column {
                         Text(
-                            text = "Language Preferences",
+                            text = strings.languagePreferences,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = DokandaarTheme.textPrimary
                         )
                         Text(
-                            text = "Select your preferred regional language",
+                            text = strings.selectPreferredLanguage,
                             fontSize = 13.sp,
                             color = DokandaarTheme.textMuted
                         )
@@ -143,8 +142,9 @@ fun LanguageScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Section 1: App UI Language
             Text(
-                text = "Available Languages",
+                text = strings.availableLanguages,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = DokandaarTheme.textPrimary
@@ -165,6 +165,87 @@ fun LanguageScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     viewModel.setAppLanguage(lang.code)
+                                    FeedbackManager.showToast(context, "${lang.nativeName} selected")
+                                }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = lang.nativeName,
+                                    fontSize = 16.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = DokandaarTheme.textPrimary
+                                )
+                                Text(
+                                    text = lang.subTitle,
+                                    fontSize = 12.sp,
+                                    color = DokandaarTheme.textMuted
+                                )
+                            }
+
+                            // Radio Check circle
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.5.dp,
+                                        color = if (isSelected) HeaderGradientStart else DokandaarTheme.border,
+                                        shape = CircleShape
+                                    )
+                                    .background(if (isSelected) HeaderGradientStart else Color.Transparent),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        if (index < languages.size - 1) {
+                            HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f))
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Section 2: Receipt Language (Printing / WhatsApp)
+            Text(
+                text = strings.receiptLanguageTitle,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = DokandaarTheme.textPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = strings.receiptLanguageSubtitle,
+                fontSize = 12.sp,
+                color = DokandaarTheme.textMuted
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column {
+                    languages.forEachIndexed { index, lang ->
+                        val isSelected = receiptLang == lang.code
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setReceiptLanguage(lang.code)
                                     FeedbackManager.showToast(context, "${lang.nativeName} selected")
                                 }
                                 .padding(16.dp),

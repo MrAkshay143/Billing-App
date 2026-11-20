@@ -76,6 +76,7 @@ fun BackupRestoreScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = com.billing.app.core.localization.LocalAppStrings.current
     val scope = rememberCoroutineScope()
     var backupFiles by remember { mutableStateOf<List<File>>(emptyList()) }
     var isWorking by remember { mutableStateOf(false) }
@@ -124,7 +125,7 @@ fun BackupRestoreScreen(
         val target = fileToRestore!!
         AlertDialog(
             onDismissRequest = { fileToRestore = null },
-            title = { Text("Restore Database?", fontWeight = FontWeight.Bold) },
+            title = { Text(strings.restoreDatabase, fontWeight = FontWeight.Bold) },
             text = {
                 Text("Restore data from '${target.name}'? Existing records will be safely updated.")
             },
@@ -142,12 +143,12 @@ fun BackupRestoreScreen(
                         }
                     }
                 ) {
-                    Text("Restore", color = HeaderGradientStart, fontWeight = FontWeight.Bold)
+                    Text(strings.restoreDatabase, color = HeaderGradientStart, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { fileToRestore = null }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text(strings.cancel, color = Color.Gray)
                 }
             }
         )
@@ -158,7 +159,7 @@ fun BackupRestoreScreen(
         val target = fileToDelete!!
         AlertDialog(
             onDismissRequest = { fileToDelete = null },
-            title = { Text("Delete Backup?", fontWeight = FontWeight.Bold) },
+            title = { Text(strings.deleteBackupTitle, fontWeight = FontWeight.Bold) },
             text = { Text("Delete backup file '${target.name}' permanently?") },
             confirmButton = {
                 TextButton(
@@ -169,12 +170,12 @@ fun BackupRestoreScreen(
                         FeedbackManager.showToast(context, "Backup deleted")
                     }
                 ) {
-                    Text("Delete", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    Text(strings.delete, color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { fileToDelete = null }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text(strings.cancel, color = Color.Gray)
                 }
             }
         )
@@ -183,7 +184,7 @@ fun BackupRestoreScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Backup & Restore",
+                title = strings.backupRestore,
                 subtitle = "Export & restore store data",
                 icon = Icons.Default.Restore,
                 onNavigateBack = onNavigateBack
@@ -252,7 +253,7 @@ fun BackupRestoreScreen(
                             } else {
                                 Icon(imageVector = Icons.Default.CloudDownload, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Create Local Backup", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(strings.createLocalBackup, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
                     }
@@ -282,7 +283,7 @@ fun BackupRestoreScreen(
                             ) {
                                 Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Export to File", color = HeaderGradientStart, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(strings.exportToFile, color = HeaderGradientStart, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
 
@@ -303,7 +304,7 @@ fun BackupRestoreScreen(
                             ) {
                                 Icon(imageVector = Icons.Default.CloudUpload, contentDescription = null, tint = DokandaarTheme.textPrimary, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Import File", color = DokandaarTheme.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(strings.importFile, color = DokandaarTheme.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }
@@ -317,7 +318,7 @@ fun BackupRestoreScreen(
                 Icon(imageVector = Icons.Default.History, contentDescription = null, tint = DokandaarTheme.textPrimary, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Saved Backups (${backupFiles.size})",
+                    text = "${strings.savedBackups} (${backupFiles.size})",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = DokandaarTheme.textPrimary
@@ -334,7 +335,7 @@ fun BackupRestoreScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No backup files saved yet.\nTap 'Create Local Backup' or 'Export to File' to safeguard your database.",
+                        text = strings.noSavedBackups,
                         fontSize = 13.sp,
                         color = TextMutedColor,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -405,7 +406,7 @@ fun BackupRestoreScreen(
                                         ) {
                                             Icon(imageVector = Icons.Default.Restore, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(13.dp))
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Restore", color = HeaderGradientStart, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(strings.restoreDatabase, color = HeaderGradientStart, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
 

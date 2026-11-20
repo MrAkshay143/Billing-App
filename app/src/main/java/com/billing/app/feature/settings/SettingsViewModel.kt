@@ -80,6 +80,9 @@ class SettingsViewModel(
     val appLanguage: StateFlow<String> = settingsDataStore.appLanguageFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, "en")
 
+    val receiptLanguage: StateFlow<String> = settingsDataStore.receiptLanguageFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "en")
+
     val appTheme: StateFlow<String> = settingsDataStore.appThemeFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, "system")
 
@@ -440,6 +443,12 @@ class SettingsViewModel(
     fun setAppLanguage(language: String) {
         viewModelScope.launch {
             settingsDataStore.saveAppLanguage(language)
+        }
+    }
+
+    fun setReceiptLanguage(language: String) {
+        viewModelScope.launch {
+            settingsDataStore.saveReceiptLanguage(language)
         }
     }
 

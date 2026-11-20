@@ -6,25 +6,50 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.billing.app.data.local.dao.AuditLogDao
+import com.billing.app.data.local.dao.CashMovementDao
 import com.billing.app.data.local.dao.CategoryDao
 import com.billing.app.data.local.dao.CustomerDao
+import com.billing.app.data.local.dao.CustomerLedgerDao
 import com.billing.app.data.local.dao.ExpenseDao
 import com.billing.app.data.local.dao.InvoiceDao
+import com.billing.app.data.local.dao.InvoiceItemBatchDao
+import com.billing.app.data.local.dao.PaymentAllocationDao
+import com.billing.app.data.local.dao.ProductBatchDao
 import com.billing.app.data.local.dao.ProductDao
 import com.billing.app.data.local.dao.PurchaseDao
+import com.billing.app.data.local.dao.ReturnDao
+import com.billing.app.data.local.dao.ReturnItemBatchDao
+import com.billing.app.data.local.dao.ShiftDao
 import com.billing.app.data.local.dao.ShopDao
+import com.billing.app.data.local.dao.StockAdjustmentDao
 import com.billing.app.data.local.dao.SupplierDao
+import com.billing.app.data.local.dao.SupplierLedgerDao
+import com.billing.app.data.local.dao.UserDao
+import com.billing.app.data.local.entity.AuditLogEntity
+import com.billing.app.data.local.entity.CashMovementEntity
 import com.billing.app.data.local.entity.CategoryEntity
 import com.billing.app.data.local.entity.CustomerEntity
+import com.billing.app.data.local.entity.CustomerLedgerEntity
 import com.billing.app.data.local.entity.ExpenseEntity
 import com.billing.app.data.local.entity.InvoiceCounterEntity
 import com.billing.app.data.local.entity.InvoiceEntity
+import com.billing.app.data.local.entity.InvoiceItemBatchEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
+import com.billing.app.data.local.entity.PaymentAllocationEntity
+import com.billing.app.data.local.entity.ProductBatchEntity
 import com.billing.app.data.local.entity.ProductEntity
 import com.billing.app.data.local.entity.PurchaseEntity
 import com.billing.app.data.local.entity.PurchaseItemEntity
+import com.billing.app.data.local.entity.ReturnEntity
+import com.billing.app.data.local.entity.ReturnItemBatchEntity
+import com.billing.app.data.local.entity.ReturnItemEntity
+import com.billing.app.data.local.entity.ShiftEntity
 import com.billing.app.data.local.entity.ShopEntity
+import com.billing.app.data.local.entity.StockAdjustmentEntity
 import com.billing.app.data.local.entity.SupplierEntity
+import com.billing.app.data.local.entity.SupplierLedgerEntity
+import com.billing.app.data.local.entity.UserEntity
 
 @Database(
     entities = [
@@ -38,9 +63,22 @@ import com.billing.app.data.local.entity.SupplierEntity
         SupplierEntity::class,
         ExpenseEntity::class,
         PurchaseEntity::class,
-        PurchaseItemEntity::class
+        PurchaseItemEntity::class,
+        CustomerLedgerEntity::class,
+        SupplierLedgerEntity::class,
+        PaymentAllocationEntity::class,
+        ShiftEntity::class,
+        CashMovementEntity::class,
+        UserEntity::class,
+        ProductBatchEntity::class,
+        InvoiceItemBatchEntity::class,
+        ReturnEntity::class,
+        ReturnItemEntity::class,
+        ReturnItemBatchEntity::class,
+        StockAdjustmentEntity::class,
+        AuditLogEntity::class
     ],
-    version = 5,
+    version = 7,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -52,7 +90,18 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun supplierDao(): SupplierDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun purchaseDao(): PurchaseDao
-
+    abstract fun userDao(): UserDao
+    abstract fun shiftDao(): ShiftDao
+    abstract fun cashMovementDao(): CashMovementDao
+    abstract fun customerLedgerDao(): CustomerLedgerDao
+    abstract fun supplierLedgerDao(): SupplierLedgerDao
+    abstract fun paymentAllocationDao(): PaymentAllocationDao
+    abstract fun productBatchDao(): ProductBatchDao
+    abstract fun invoiceItemBatchDao(): InvoiceItemBatchDao
+    abstract fun returnDao(): ReturnDao
+    abstract fun returnItemBatchDao(): ReturnItemBatchDao
+    abstract fun stockAdjustmentDao(): StockAdjustmentDao
+    abstract fun auditLogDao(): AuditLogDao
 
     companion object {
         @Volatile
@@ -266,21 +315,40 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("ALTER TABLE invoice_items ADD COLUMN unit TEXT NOT NULL DEFAULT 'PCS'")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE purchase_items ADD COLUMN unit TEXT NOT NULL DEFAULT 'PCS'")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE return_items ADD COLUMN unit TEXT NOT NULL DEFAULT 'PCS'")
+                } catch (_: Exception) {}
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                val builder = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "billing_app.db"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_6_7)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)
                         db.execSQL("PRAGMA foreign_keys = ON;")
                     }
                 })
-                .build()
+
+                if (com.billing.app.BuildConfig.DEBUG) {
+                    builder.fallbackToDestructiveMigration()
+                }
+
+                val instance = builder.build()
                 INSTANCE = instance
                 instance
             }

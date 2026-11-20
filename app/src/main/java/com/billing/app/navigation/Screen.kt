@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     object Invoices : Screen("invoices")
     object Reports : Screen("reports")
     object More : Screen("more")
+    object Settings : Screen("more") // Alias for More / Settings (RBAC)
     object FullScanner : Screen("scanner")
 
     // More Subscreens

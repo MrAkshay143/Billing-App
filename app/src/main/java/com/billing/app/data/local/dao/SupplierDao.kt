@@ -1,10 +1,9 @@
 package com.billing.app.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.billing.app.data.local.entity.SupplierEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -19,8 +18,11 @@ interface SupplierDao {
     @Query("SELECT * FROM suppliers WHERE id = :id LIMIT 1")
     suspend fun getSupplierById(id: String): SupplierEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertSupplier(supplier: SupplierEntity)
+
+    @Upsert
+    suspend fun insertAll(suppliers: List<SupplierEntity>)
 
     @Update
     suspend fun updateSupplier(supplier: SupplierEntity)

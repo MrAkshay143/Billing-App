@@ -61,24 +61,25 @@ fun AppearanceScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = com.billing.app.core.localization.LocalAppStrings.current
     val currentTheme by viewModel.appTheme.collectAsState()
 
     val themes = listOf(
         ThemeOption(
             key = "system",
-            title = "System Default",
+            title = strings.systemDefault,
             description = "Match your Android system dark/light mode",
             icon = Icons.Default.BrightnessAuto
         ),
         ThemeOption(
             key = "light",
-            title = "Light Mode",
+            title = strings.lightMode,
             description = "Dokandaar classic purple and clean white palette",
             icon = Icons.Default.LightMode
         ),
         ThemeOption(
             key = "dark",
-            title = "Dark Mode",
+            title = strings.darkMode,
             description = "Deep dark OLED theme for night & low-light stores",
             icon = Icons.Default.DarkMode
         )
@@ -87,7 +88,7 @@ fun AppearanceScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Appearance & Theme",
+                title = strings.appearanceTheme,
                 subtitle = "Light, Dark & System default",
                 icon = Icons.Default.Palette,
                 onNavigateBack = onNavigateBack
@@ -134,7 +135,7 @@ fun AppearanceScreen(
 
                     Column {
                         Text(
-                            text = "Theme & Display",
+                            text = strings.themeDisplay,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = DokandaarTheme.textPrimary
@@ -151,7 +152,7 @@ fun AppearanceScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "Select Application Theme",
+                text = strings.selectApplicationTheme,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = DokandaarTheme.textPrimary

@@ -2,6 +2,7 @@ package com.billing.app.feature.reports
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.billing.app.core.database.AppDatabase
 import com.billing.app.core.util.Money
 import com.billing.app.data.local.dao.CategorySalesSummary
 import com.billing.app.data.local.dao.TopProductSummary
@@ -29,7 +30,8 @@ data class DailyTrendPoint(
 
 class ReportsViewModel(
     private val invoiceRepository: InvoiceRepository,
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val database: AppDatabase? = null
 ) : ViewModel() {
 
     val selectedPeriod = MutableStateFlow(ReportPeriod.THIS_MONTH)
@@ -41,9 +43,22 @@ class ReportsViewModel(
     val pendingBillsPaise = MutableStateFlow(0L)
     val totalItemsCount = MutableStateFlow(0)
 
+    // Real Accounting & Profit Metrics
+    val taxableSalesPaise = MutableStateFlow(0L)
+    val cogsPaise = MutableStateFlow(0L)
+    val realGrossProfitPaise = MutableStateFlow(0L)
+    val grossMarginPercent = MutableStateFlow(0.0)
+    val totalGstPaise = MutableStateFlow(0L)
+    val totalDiscountPaise = MutableStateFlow(0L)
+    val totalRefundPaise = MutableStateFlow(0L)
+    val netSalesPaise = MutableStateFlow(0L)
+    val returnsCount = MutableStateFlow(0)
+
     val topSellingItems = MutableStateFlow<List<TopProductSummary>>(emptyList())
     val categorySales = MutableStateFlow<List<CategorySalesSummary>>(emptyList())
     val trendData = MutableStateFlow<List<DailyTrendPoint>>(emptyList())
+
+    private var reportLoadJob: kotlinx.coroutines.Job? = null
 
     init {
         loadReportData(ReportPeriod.THIS_MONTH)
@@ -59,16 +74,59 @@ class ReportsViewModel(
     }
 
     private fun loadReportData(period: ReportPeriod) {
-        viewModelScope.launch {
+        reportLoadJob?.cancel()
+        reportLoadJob = viewModelScope.launch {
             val (startTime, endTime) = getPeriodRange(period)
 
             launch {
                 invoiceRepository.getInvoicesSince(startTime).collect { list ->
                     val completed = list.filter { it.status == InvoiceStatus.COMPLETED }
-                    totalSalesPaise.value = completed.sumOf { it.grandTotalPaise }
+                    val grossSales = completed.sumOf { it.grandTotalPaise }
+                    totalSalesPaise.value = grossSales
                     totalInvoicesCount.value = list.size
                     totalItemsCount.value = completed.sumOf { it.itemsCount }
                     pendingBillsPaise.value = completed.filter { it.duePaise > 0 }.sumOf { it.duePaise }
+                    totalDiscountPaise.value = completed.sumOf { it.discountPaise }
+                    totalGstPaise.value = completed.sumOf { it.taxPaise }
+
+                    // Real COGS & Taxable Sales Calculation
+                    var periodTaxable = 0L
+                    var periodCogs = 0L
+
+                    for (inv in completed) {
+                        val items = database?.invoiceDao()?.getInvoiceItemsByInvoiceId(inv.id)
+                            ?: invoiceRepository.getInvoiceItems(inv.invoiceNumber)
+
+                        for (item in items) {
+                            periodTaxable += item.taxableValuePaise
+
+                            val batches = database?.invoiceItemBatchDao()?.getItemBatchListForInvoiceItem(item.id) ?: emptyList()
+                            val itemCost = if (batches.isNotEmpty()) {
+                                batches.sumOf { it.costPaise }
+                            } else {
+                                (item.quantityMilli * item.unitCostPaise + 500L) / 1000L
+                            }
+                            periodCogs += itemCost
+                        }
+                    }
+
+                    taxableSalesPaise.value = periodTaxable
+                    cogsPaise.value = periodCogs
+                    val profit = periodTaxable - periodCogs
+                    realGrossProfitPaise.value = profit
+                    grossMarginPercent.value = if (periodTaxable > 0L) {
+                        (profit.toDouble() / periodTaxable.toDouble()) * 100.0
+                    } else {
+                        0.0
+                    }
+
+                    // Returns & Refunds
+                    val returns = database?.returnDao()?.getAllReturnList() ?: emptyList()
+                    val periodReturns = returns.filter { it.createdAt >= startTime }
+                    returnsCount.value = periodReturns.size
+                    val refundTotal = periodReturns.sumOf { it.totalRefundPaise }
+                    totalRefundPaise.value = refundTotal
+                    netSalesPaise.value = (grossSales - refundTotal).coerceAtLeast(0L)
 
                     // Group by days for trend
                     val dayMap = mutableMapOf<String, Pair<Long, Int>>()

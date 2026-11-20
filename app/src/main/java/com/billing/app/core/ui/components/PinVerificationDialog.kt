@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 
@@ -40,6 +41,7 @@ fun PinVerificationDialog(
     onDismissRequest: () -> Unit,
     onVerify: (pin: String, onError: (String) -> Unit) -> Unit
 ) {
+    val strings = appStrings()
     var pinInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -83,8 +85,8 @@ fun PinVerificationDialog(
                             errorMessage = null
                         }
                     },
-                    label = { Text("Security PIN") },
-                    placeholder = { Text("4-6 digit PIN") },
+                    label = { Text(strings.securityPin) },
+                    placeholder = { Text(strings.fourToSixDigitPin) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     singleLine = true,
@@ -115,7 +117,7 @@ fun PinVerificationDialog(
                 }
             ) {
                 Text(
-                    text = "Verify",
+                    text = strings.verify,
                     fontWeight = FontWeight.Bold,
                     color = HeaderGradientStart
                 )
@@ -124,7 +126,7 @@ fun PinVerificationDialog(
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
                 Text(
-                    text = "Cancel",
+                    text = strings.cancel,
                     fontWeight = FontWeight.Medium,
                     color = DokandaarTheme.textMuted
                 )

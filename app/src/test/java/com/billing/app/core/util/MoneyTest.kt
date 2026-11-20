@@ -32,4 +32,15 @@ class MoneyTest {
         val m2 = Money.fromRupees(50.0)
         assertTrue(m1 > m2)
     }
+
+    @Test
+    fun testNegativeMoneyFormatting() {
+        val negFiftyPaise = Money(-50L)
+        assertEquals("-₹0.50", negFiftyPaise.format())
+        assertEquals("-0.50", negFiftyPaise.format(includeSymbol = false))
+
+        val negRupees = Money(-12550L)
+        assertEquals("-₹125.50", negRupees.format())
+        assertEquals("-125.50", negRupees.format(includeSymbol = false))
+    }
 }

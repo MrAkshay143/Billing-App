@@ -76,7 +76,10 @@ fun BarcodeScannerDialog(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val soundHapticManager = remember { SoundHapticManager(context) }
+    val soundHapticManager = remember {
+        (context.applicationContext as? com.billing.app.BillingApplication)?.soundHapticManager
+            ?: SoundHapticManager(context)
+    }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val debounceManager = remember { BarcodeDebounceManager(1000L) }
     val strings = appStrings()
@@ -84,6 +87,7 @@ fun BarcodeScannerDialog(
     var isFlashOn by remember { mutableStateOf(false) }
     var cameraControl by remember { mutableStateOf<Camera?>(null) }
     var hasScanned by remember { mutableStateOf(false) }
+    var activeAnalyzer by remember { mutableStateOf<BarcodeAnalyzer?>(null) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -105,6 +109,9 @@ fun BarcodeScannerDialog(
 
     DisposableEffect(lifecycleOwner) {
         onDispose {
+            try {
+                activeAnalyzer?.close()
+            } catch (_: Exception) {}
             try {
                 ProcessCameraProvider.getInstance(context).get()?.unbindAll()
             } catch (_: Exception) {}
@@ -213,18 +220,17 @@ fun BarcodeScannerDialog(
                                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                         .build()
                                         .also { imageAnalysis ->
-                                            imageAnalysis.setAnalyzer(
-                                                cameraExecutor,
-                                                BarcodeAnalyzer(debounceManager) { rawBarcode ->
-                                                    if (!hasScanned && rawBarcode.isNotBlank()) {
-                                                        hasScanned = true
-                                                        ContextCompat.getMainExecutor(ctx).execute {
-                                                            soundHapticManager.triggerScanFeedback()
-                                                            onBarcodeScanned(rawBarcode.trim())
-                                                        }
+                                            val bAnalyzer = BarcodeAnalyzer(debounceManager) { rawBarcode ->
+                                                if (!hasScanned && rawBarcode.isNotBlank()) {
+                                                    hasScanned = true
+                                                    ContextCompat.getMainExecutor(ctx).execute {
+                                                        soundHapticManager.triggerScanFeedback()
+                                                        onBarcodeScanned(rawBarcode.trim())
                                                     }
                                                 }
-                                            )
+                                            }
+                                            activeAnalyzer = bAnalyzer
+                                            imageAnalysis.setAnalyzer(cameraExecutor, bAnalyzer)
                                         }
 
                                     try {

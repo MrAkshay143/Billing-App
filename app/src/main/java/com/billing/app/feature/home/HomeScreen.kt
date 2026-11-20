@@ -88,10 +88,22 @@ import com.billing.app.core.ui.theme.PastelTealBg
 import com.billing.app.core.ui.theme.PastelTealContent
 import com.billing.app.core.ui.theme.PrimaryPurple
 import com.billing.app.core.ui.theme.SecondaryPurple
+import com.billing.app.BillingApplication
+import com.billing.app.core.ui.components.ShiftCloseDialog
+import com.billing.app.core.ui.components.ShiftOpenDialog
+import com.billing.app.core.ui.components.ShiftSummaryDialog
+import com.billing.app.core.util.Money
+import com.billing.app.domain.model.ShiftZReport
+import com.billing.app.domain.repository.PrinterRepository
+import com.billing.app.domain.repository.ShiftRepository
+import com.billing.app.domain.repository.UserRepository
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    shiftRepository: ShiftRepository = BillingApplication.instance.shiftRepository,
+    printerRepository: PrinterRepository = BillingApplication.instance.printerRepository,
+    userRepository: UserRepository = BillingApplication.instance.userRepository,
     onNavigateToSale: () -> Unit,
     onNavigateToProducts: () -> Unit,
     onNavigateToInvoices: () -> Unit,
@@ -111,8 +123,41 @@ fun HomeScreen(
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
     val lowStockCount by viewModel.lowStockCount.collectAsState()
 
+    val activeShift by shiftRepository.getActiveShiftFlow().collectAsState(initial = null)
+    var showShiftOpenDialog by remember { mutableStateOf(false) }
+    var showShiftCloseDialog by remember { mutableStateOf(false) }
+    var shiftSummaryZReport by remember { mutableStateOf<ShiftZReport?>(null) }
+
     var showPeriodMenu by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
+
+    if (showShiftOpenDialog) {
+        ShiftOpenDialog(
+            userId = userRepository.currentUser.value?.id,
+            onDismissRequest = { showShiftOpenDialog = false },
+            onShiftOpened = { showShiftOpenDialog = false }
+        )
+    }
+
+    if (showShiftCloseDialog) {
+        ShiftCloseDialog(
+            shiftRepository = shiftRepository,
+            onDismissRequest = { showShiftCloseDialog = false },
+            onShiftClosed = { zReport ->
+                showShiftCloseDialog = false
+                shiftSummaryZReport = zReport
+            }
+        )
+    }
+
+    shiftSummaryZReport?.let { zReport ->
+        ShiftSummaryDialog(
+            zReport = zReport,
+            printerRepository = printerRepository,
+            storeName = storeName,
+            onDismissRequest = { shiftSummaryZReport = null }
+        )
+    }
 
     if (showNotificationsDialog) {
         AlertDialog(
@@ -126,7 +171,7 @@ fun HomeScreen(
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Store Notifications", fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                    Text(strings.notifications, fontWeight = FontWeight.Bold, color = PrimaryPurple)
                 }
             },
             text = {
@@ -150,7 +195,7 @@ fun HomeScreen(
                                 Icon(Icons.Default.Warning, contentDescription = null, tint = ErrorColor, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
-                                    Text("Low Stock Alert", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ErrorColor)
+                                    Text(strings.lowStockAlert, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ErrorColor)
                                     Text("$lowStockCount items running low on shelf", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                                 }
                             }
@@ -203,12 +248,12 @@ fun HomeScreen(
                         if (lowStockCount > 0) onNavigateToProducts()
                     }
                 ) {
-                    Text(if (lowStockCount > 0) "View Low Stock" else "OK", color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                    Text(if (lowStockCount > 0) strings.filterLowStock else strings.ok, color = PrimaryPurple, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showNotificationsDialog = false }) {
-                    Text("Close", color = DokandaarTheme.textMuted)
+                    Text(strings.close, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -248,6 +293,104 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // 0. Shift Status Banner / Register Management
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (activeShift != null) {
+                        if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else PastelGreenBg
+                    } else {
+                        if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else PastelSlateBg
+                    }
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 1.dp,
+                    color = if (activeShift != null) {
+                        PastelGreenContent.copy(alpha = 0.35f)
+                    } else {
+                        DokandaarTheme.border
+                    }
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(if (activeShift != null) Color(0xFF16A34A) else Color(0xFF94A3B8))
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            if (activeShift != null) {
+                                Text(
+                                    text = "🟢 ${strings.cashDrawerActive}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (DokandaarTheme.isDark) DokandaarTheme.textPrimary else PastelGreenContent
+                                )
+                                Text(
+                                    text = "Float: ${Money(activeShift!!.openingFloatPaise).format()}",
+                                    fontSize = 11.sp,
+                                    color = DokandaarTheme.textMuted
+                                )
+                            } else {
+                                Text(
+                                    text = "⚪ ${strings.drawerClosed}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DokandaarTheme.textPrimary
+                                )
+                                Text(
+                                    text = strings.openRegisterShift,
+                                    fontSize = 11.sp,
+                                    color = DokandaarTheme.textMuted
+                                )
+                            }
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (activeShift != null) {
+                            if (DokandaarTheme.isDark) Color(0xFF374151) else Color.White
+                        } else {
+                            PrimaryPurple
+                        },
+                        shadowElevation = 1.dp,
+                        modifier = Modifier.clickable {
+                            if (activeShift != null) {
+                                showShiftCloseDialog = true
+                            } else {
+                                showShiftOpenDialog = true
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = if (activeShift != null) strings.closeShift else strings.openRegisterShift,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (activeShift != null) {
+                                if (DokandaarTheme.isDark) Color.White else Color(0xFFDC2626)
+                            } else {
+                                Color.White
+                            },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
             // 1. Hero Promotional Card (Mockup 1)
             Card(
                 modifier = Modifier

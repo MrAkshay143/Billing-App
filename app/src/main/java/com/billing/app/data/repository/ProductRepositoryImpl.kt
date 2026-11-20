@@ -1,8 +1,10 @@
 package com.billing.app.data.repository
 
 import com.billing.app.core.util.Money
+import com.billing.app.core.util.UnitRegistry
 import com.billing.app.data.local.dao.ProductDao
 import com.billing.app.data.local.entity.ProductEntity
+import com.billing.app.domain.model.AppError
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.repository.ProductRepository
 import kotlinx.coroutines.Dispatchers
@@ -27,10 +29,14 @@ class ProductRepositoryImpl(
     }
 
     override fun searchProducts(query: String, category: String?): Flow<List<Product>> {
+        val escaped = query
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
         val flow = if (category.isNullOrBlank() || category.equals("All", ignoreCase = true)) {
-            productDao.searchProducts(query)
+            productDao.searchProducts(escaped)
         } else {
-            productDao.searchProductsByCategory(query, category)
+            productDao.searchProductsByCategory(escaped, category)
         }
         return flow.map { entities -> entities.map { it.toDomain() } }
     }
@@ -59,9 +65,14 @@ class ProductRepositoryImpl(
         productDao.getLowAndOutOfStockProducts().map { it.toDomain() }
     }
 
-    override suspend fun addProduct(product: Product): Result<Unit> {
-        return try {
-            productDao.insertProduct(product.toEntity())
+    override suspend fun addProduct(product: Product): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val unitDef = UnitRegistry.resolve(product.unit)
+            if (!unitDef.allowsFractional && product.stockMilli % 1000L != 0L) {
+                return@withContext Result.failure(AppError.FractionalNotAllowed(unitDef.code))
+            }
+            val canonicalProduct = product.copy(unit = unitDef.code)
+            productDao.insertProduct(canonicalProduct.toEntity())
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -70,7 +81,14 @@ class ProductRepositoryImpl(
 
     override suspend fun addProducts(products: List<Product>): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            productDao.insertAll(products.map { it.toEntity() })
+            val canonicalList = products.map { p ->
+                val unitDef = UnitRegistry.resolve(p.unit)
+                if (!unitDef.allowsFractional && p.stockMilli % 1000L != 0L) {
+                    throw AppError.FractionalNotAllowed(unitDef.code)
+                }
+                p.copy(unit = unitDef.code)
+            }
+            productDao.insertAll(canonicalList.map { it.toEntity() })
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -80,7 +98,27 @@ class ProductRepositoryImpl(
     override suspend fun updateProduct(product: Product): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val existing = productDao.getProductById(product.id)
-            val entity = product.toEntity().copy(
+            if (existing != null) {
+                val existingCanonicalUnit = UnitRegistry.resolve(existing.unit).code
+                val newCanonicalUnit = UnitRegistry.resolve(product.unit).code
+                if (existingCanonicalUnit != newCanonicalUnit) {
+                    val hasStock = existing.stockMilli != 0L
+                    val txCount = productDao.getProductTransactionCount(product.id)
+                    if (hasStock || txCount > 0) {
+                        return@withContext Result.failure(
+                            AppError.UnitChangeNotAllowed(
+                                product.name,
+                                "Product has existing stock or transaction history"
+                            )
+                        )
+                    }
+                }
+            }
+            val unitDef = UnitRegistry.resolve(product.unit)
+            if (!unitDef.allowsFractional && product.stockMilli % 1000L != 0L) {
+                return@withContext Result.failure(AppError.FractionalNotAllowed(unitDef.code))
+            }
+            val entity = product.copy(unit = unitDef.code).toEntity().copy(
                 createdAt = existing?.createdAt ?: product.createdAt
             )
             productDao.updateProduct(entity)
@@ -88,6 +126,10 @@ class ProductRepositoryImpl(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun getProductTransactionCount(productId: String): Int = withContext(Dispatchers.IO) {
+        productDao.getProductTransactionCount(productId)
     }
 
     override suspend fun adjustStock(id: String, newStock: Int): Result<Unit> = withContext(Dispatchers.IO) {
@@ -118,16 +160,19 @@ class ProductRepositoryImpl(
             name = name,
             barcode = barcode,
             price = Money(pricePaise),
-            stock = stock,
+            stockMilli = stockMilli,
             imageUri = imageUri,
             sku = sku,
             category = category,
             unit = unit,
             purchasePrice = Money(purchasePricePaise),
             mrp = Money(mrpPaise),
-            minStockAlert = minStockAlert,
-            gstRate = gstRate,
+            minStockAlertMilli = minStockAlertMilli,
+            gstRateBp = gstRateBp,
             description = description,
+            trackBatch = trackBatch,
+            hsnCode = hsnCode,
+            isActive = isActive,
             createdAt = createdAt
         )
     }
@@ -138,17 +183,20 @@ class ProductRepositoryImpl(
             name = name,
             barcode = barcode,
             pricePaise = price.paise,
-            stock = stock,
+            stockMilli = stockMilli,
             imageUri = imageUri,
+            createdAt = createdAt,
             sku = sku,
             category = category,
             unit = unit,
             purchasePricePaise = purchasePrice.paise,
             mrpPaise = mrp.paise,
-            minStockAlert = minStockAlert,
-            gstRate = gstRate,
+            minStockAlertMilli = minStockAlertMilli,
+            gstRateBp = gstRateBp,
             description = description,
-            createdAt = createdAt
+            trackBatch = trackBatch,
+            hsnCode = hsnCode,
+            isActive = isActive
         )
     }
 }

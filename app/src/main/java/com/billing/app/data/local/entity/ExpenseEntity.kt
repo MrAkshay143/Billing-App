@@ -9,7 +9,8 @@ import java.util.UUID
     tableName = "expenses",
     indices = [
         Index(value = ["date"]),
-        Index(value = ["category"])
+        Index(value = ["category"]),
+        Index(value = ["shiftId"])
     ]
 )
 data class ExpenseEntity(
@@ -20,5 +21,7 @@ data class ExpenseEntity(
     val date: Long = System.currentTimeMillis(),
     val paymentMethod: String = "CASH",
     val description: String? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val shiftId: Long? = null,
+    val createdByUserId: String? = null
 )

@@ -1,10 +1,9 @@
 package com.billing.app.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.billing.app.data.local.entity.ExpenseEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -16,8 +15,11 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses WHERE date BETWEEN :start AND :end ORDER BY date DESC")
     fun getExpensesBetween(start: Long, end: Long): Flow<List<ExpenseEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertExpense(expense: ExpenseEntity)
+
+    @Upsert
+    suspend fun insertAll(expenses: List<ExpenseEntity>)
 
     @Update
     suspend fun updateExpense(expense: ExpenseEntity)

@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import com.billing.app.data.local.entity.InvoiceCounterEntity
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
@@ -26,15 +27,18 @@ data class CategorySalesSummary(
 @Dao
 interface InvoiceDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertInvoice(invoice: InvoiceEntity)
+    suspend fun insertInvoice(invoice: InvoiceEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertInvoiceItem(item: InvoiceItemEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertInvoiceItems(items: List<InvoiceItemEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertInvoice(invoice: InvoiceEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertInvoiceItems(items: List<InvoiceItemEntity>)
 
     @Query("SELECT * FROM invoices ORDER BY timestamp DESC")
@@ -76,10 +80,10 @@ interface InvoiceDao {
     @Query("SELECT COALESCE(SUM(grandTotalPaise), 0) FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime")
     fun getTotalSalesBetween(startTime: Long, endTime: Long): Flow<Long>
 
-    @Query("SELECT COALESCE(SUM(quantity), 0) FROM invoice_items WHERE invoiceNumber IN (SELECT invoiceNumber FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime)")
+    @Query("SELECT COALESCE(SUM(quantityMilli), 0) FROM invoice_items WHERE invoiceId IN (SELECT id FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime)")
     fun getTotalItemsSoldBetween(startTime: Long, endTime: Long): Flow<Int>
 
-    @Query("SELECT COALESCE(SUM(quantity), 0) FROM invoice_items WHERE invoiceNumber IN (SELECT invoiceNumber FROM invoices WHERE status = 'COMPLETED')")
+    @Query("SELECT COALESCE(SUM(quantityMilli), 0) FROM invoice_items WHERE invoiceId IN (SELECT id FROM invoices WHERE status = 'COMPLETED')")
     fun getTotalItemsSoldAllTime(): Flow<Int>
 
     @Query("SELECT COALESCE(AVG(grandTotalPaise), 0.0) FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime")
@@ -98,9 +102,9 @@ interface InvoiceDao {
     fun getInvoicesByCustomerPhone(phone: String): Flow<List<InvoiceEntity>>
 
     @Query("""
-        SELECT productId, productName, SUM(quantity) as totalQuantity, SUM(lineTotalPaise) as totalRevenuePaise
+        SELECT productId, productName, SUM(quantityMilli) as totalQuantity, SUM(lineTotalPaise) as totalRevenuePaise
         FROM invoice_items
-        WHERE invoiceNumber IN (SELECT invoiceNumber FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime)
+        WHERE invoiceId IN (SELECT id FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime)
         GROUP BY productId, productName
         ORDER BY totalQuantity DESC
         LIMIT :limit
@@ -111,7 +115,7 @@ interface InvoiceDao {
         SELECT COALESCE(p.category, 'Others') as category, SUM(i.lineTotalPaise) as totalRevenuePaise
         FROM invoice_items i
         LEFT JOIN products p ON i.productId = p.id
-        WHERE i.invoiceNumber IN (SELECT invoiceNumber FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime)
+        WHERE i.invoiceId IN (SELECT id FROM invoices WHERE status = 'COMPLETED' AND timestamp BETWEEN :startTime AND :endTime)
         GROUP BY p.category
         ORDER BY totalRevenuePaise DESC
     """)
@@ -120,8 +124,14 @@ interface InvoiceDao {
     @Query("SELECT * FROM invoices WHERE invoiceNumber = :invoiceNumber LIMIT 1")
     suspend fun getInvoiceByNumber(invoiceNumber: String): InvoiceEntity?
 
-    @Query("SELECT * FROM invoice_items WHERE invoiceNumber = :invoiceNumber")
+    @Query("SELECT * FROM invoices WHERE id = :id LIMIT 1")
+    suspend fun getInvoiceById(id: Long): InvoiceEntity?
+
+    @Query("SELECT invoice_items.* FROM invoice_items INNER JOIN invoices ON invoice_items.invoiceId = invoices.id WHERE invoices.invoiceNumber = :invoiceNumber")
     suspend fun getInvoiceItems(invoiceNumber: String): List<InvoiceItemEntity>
+
+    @Query("SELECT * FROM invoice_items WHERE invoiceId = :invoiceId")
+    suspend fun getInvoiceItemsByInvoiceId(invoiceId: Long): List<InvoiceItemEntity>
 
     @Query("SELECT * FROM invoice_items")
     suspend fun getAllInvoiceItems(): List<InvoiceItemEntity>
@@ -129,11 +139,22 @@ interface InvoiceDao {
     @Query("UPDATE invoices SET status = :status WHERE invoiceNumber = :invoiceNumber")
     suspend fun updateInvoiceStatus(invoiceNumber: String, status: InvoiceStatus)
 
+    @Query("UPDATE invoices SET status = 'CANCELLED', voidedAt = :voidedAt, voidedByUserId = :voidedByUserId, voidReason = :voidReason WHERE invoiceNumber = :invoiceNumber")
+    suspend fun updateInvoiceVoidStatus(
+        invoiceNumber: String,
+        voidedAt: Long,
+        voidedByUserId: String?,
+        voidReason: String?
+    )
+
     @Query("DELETE FROM invoices WHERE invoiceNumber = :invoiceNumber")
     suspend fun deleteInvoice(invoiceNumber: String)
 
-    @Query("DELETE FROM invoice_items WHERE invoiceNumber = :invoiceNumber")
+    @Query("DELETE FROM invoice_items WHERE invoiceId IN (SELECT id FROM invoices WHERE invoiceNumber = :invoiceNumber)")
     suspend fun deleteInvoiceItems(invoiceNumber: String)
+
+    @Query("DELETE FROM invoice_items WHERE invoiceId = :invoiceId")
+    suspend fun deleteInvoiceItemsByInvoiceId(invoiceId: Long)
 
     @Query("UPDATE invoices SET duePaise = :duePaise WHERE invoiceNumber = :invoiceNumber")
     suspend fun updateInvoiceDue(invoiceNumber: String, duePaise: Long)
@@ -142,6 +163,12 @@ interface InvoiceDao {
     @Query("SELECT lastNumber FROM invoice_counter WHERE id = 1")
     suspend fun getLastInvoiceNumber(): Long?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun setInvoiceCounter(counter: InvoiceCounterEntity)
+
+    @Query("SELECT * FROM invoices WHERE shiftId = :shiftId AND status = 'COMPLETED'")
+    suspend fun getInvoicesByShiftId(shiftId: Long): List<InvoiceEntity>
+
+    @Query("SELECT * FROM invoice_items WHERE invoiceId IN (SELECT id FROM invoices WHERE shiftId = :shiftId AND status = 'COMPLETED')")
+    suspend fun getInvoiceItemsByShiftId(shiftId: Long): List<InvoiceItemEntity>
 }

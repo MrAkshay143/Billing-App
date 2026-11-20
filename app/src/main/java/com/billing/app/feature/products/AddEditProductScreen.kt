@@ -38,10 +38,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import com.billing.app.core.localization.appStrings
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -80,6 +83,7 @@ fun AddEditProductScreen(
     onNavigateToScanner: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val isSaving by viewModel.isSaving.collectAsState()
 
     val name by viewModel.draftName.collectAsState()
@@ -90,10 +94,18 @@ fun AddEditProductScreen(
     val sku by viewModel.draftSku.collectAsState()
     val imageUri by viewModel.draftImageUri.collectAsState()
     val unit by viewModel.draftUnit.collectAsState()
+    val isUnitLocked by viewModel.isUnitLocked.collectAsState()
+    val purchasePrice by viewModel.draftPurchasePrice.collectAsState()
+    val mrp by viewModel.draftMrp.collectAsState()
+    val gstRate by viewModel.draftGstRate.collectAsState()
+    val minStockAlert by viewModel.draftMinStockAlert.collectAsState()
+    val hsnCode by viewModel.draftHsnCode.collectAsState()
+    val trackBatch by viewModel.draftTrackBatch.collectAsState()
 
     var showBarcodeScannerDialog by remember { mutableStateOf(false) }
     var categoryExpanded by remember { mutableStateOf(false) }
     var unitExpanded by remember { mutableStateOf(false) }
+    var gstExpanded by remember { mutableStateOf(false) }
     val dbCategories by viewModel.categories.collectAsState()
     val categoriesList = remember(dbCategories) {
         if (dbCategories.isNotEmpty()) {
@@ -109,7 +121,7 @@ fun AddEditProductScreen(
 
     LaunchedEffect(existingProduct) {
         if (existingProduct != null) {
-            viewModel.setDraftFromProduct(existingProduct)
+            viewModel.initFromProduct(existingProduct)
         }
     }
 
@@ -205,7 +217,7 @@ fun AddEditProductScreen(
                                 return@PrimaryButton
                             }
                             if (existingProduct == null) {
-                                viewModel.addProduct(
+                                viewModel.saveProduct(
                                     name = name,
                                     barcode = barcode,
                                     priceStr = priceStr,
@@ -213,7 +225,13 @@ fun AddEditProductScreen(
                                     category = category,
                                     sku = sku,
                                     imageUri = imageUri,
-                                    unit = unit
+                                    unit = unit,
+                                    purchasePriceStr = purchasePrice,
+                                    mrpStr = mrp,
+                                    gstRateStr = gstRate,
+                                    minStockAlertStr = minStockAlert,
+                                    hsnCodeStr = hsnCode,
+                                    trackBatch = trackBatch
                                 )
                             } else {
                                 viewModel.updateProduct(
@@ -225,7 +243,13 @@ fun AddEditProductScreen(
                                     category = category,
                                     sku = sku,
                                     imageUri = imageUri,
-                                    unit = unit
+                                    unit = unit,
+                                    purchasePriceStr = purchasePrice,
+                                    mrpStr = mrp,
+                                    gstRateStr = gstRate,
+                                    minStockAlertStr = minStockAlert,
+                                    hsnCodeStr = hsnCode,
+                                    trackBatch = trackBatch
                                 )
                             }
                         }
@@ -244,7 +268,7 @@ fun AddEditProductScreen(
         ) {
             // Optional Image Picker Card
             Text(
-                text = "Product Photo (Optional)",
+                text = strings.productPhotoOptional,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = DokandaarTheme.textPrimary
@@ -272,7 +296,7 @@ fun AddEditProductScreen(
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Photo Attached",
+                                text = strings.photoAttached,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DokandaarTheme.textPrimary
@@ -286,7 +310,7 @@ fun AddEditProductScreen(
                                     color = AddProductBg
                                 ) {
                                     Text(
-                                        text = "Retake",
+                                        text = strings.retake,
                                         color = HeaderGradientStart,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
@@ -312,7 +336,7 @@ fun AddEditProductScreen(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Remove",
+                                            text = strings.remove,
                                             color = Color(0xFFEF4444),
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold
@@ -354,7 +378,7 @@ fun AddEditProductScreen(
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Take Photo",
+                                text = strings.takePhoto,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = HeaderGradientStart
@@ -385,7 +409,7 @@ fun AddEditProductScreen(
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "From Gallery",
+                                text = strings.fromGallery,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = HeaderGradientStart
@@ -429,7 +453,7 @@ fun AddEditProductScreen(
 
             // Category Selector
             Text(
-                text = "Category",
+                text = strings.categoryLabel,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = DokandaarTheme.textMuted
@@ -500,21 +524,26 @@ fun AddEditProductScreen(
                 Box(modifier = Modifier.weight(0.8f)) {
                     Column {
                         Text(
-                            text = "Unit",
+                            text = strings.unitLabel,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = DokandaarTheme.textMuted
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         ExposedDropdownMenuBox(
-                            expanded = unitExpanded,
-                            onExpandedChange = { unitExpanded = it }
+                            expanded = unitExpanded && !isUnitLocked,
+                            onExpandedChange = { if (!isUnitLocked) unitExpanded = it }
                         ) {
                             OutlinedTextField(
                                 value = unit,
                                 onValueChange = {},
                                 readOnly = true,
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
+                                enabled = !isUnitLocked,
+                                trailingIcon = {
+                                    if (!isUnitLocked) {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded)
+                                    }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .menuAnchor(),
@@ -526,21 +555,183 @@ fun AddEditProductScreen(
                                     unfocusedContainerColor = DokandaarTheme.cardBackground
                                 )
                             )
-                            ExposedDropdownMenu(
-                                expanded = unitExpanded,
-                                onDismissRequest = { unitExpanded = false }
-                            ) {
-                                listOf("pc", "kg", "g", "l", "ml", "pack", "box", "dozen").forEach { u ->
-                                    DropdownMenuItem(
-                                        text = { Text(u) },
-                                        onClick = {
-                                            viewModel.draftUnit.value = u
-                                            unitExpanded = false
-                                        }
-                                    )
+                            if (!isUnitLocked) {
+                                ExposedDropdownMenu(
+                                    expanded = unitExpanded,
+                                    onDismissRequest = { unitExpanded = false }
+                                ) {
+                                    listOf("PCS", "KG", "L", "PACK", "BOX", "MTR").forEach { u ->
+                                        DropdownMenuItem(
+                                            text = { Text(u) },
+                                            onClick = {
+                                                viewModel.draftUnit.value = u
+                                                unitExpanded = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
+                        if (isUnitLocked) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = strings.unitLockedInUse,
+                                fontSize = 10.sp,
+                                color = DokandaarTheme.textMuted
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Pricing, GST & Batch Details Card
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = DokandaarTheme.cardBackground,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = strings.pricingGstBatchDetails,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DokandaarTheme.textPrimary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Purchase Price and MRP Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            InputField(
+                                label = "Purchase Price (₹)",
+                                value = purchasePrice,
+                                onValueChange = { viewModel.draftPurchasePrice.value = it },
+                                placeholder = "0.00",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            InputField(
+                                label = "MRP (₹)",
+                                value = mrp,
+                                onValueChange = { viewModel.draftMrp.value = it },
+                                placeholder = "0.00",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // GST Slab Dropdown & HSN Code Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            Column {
+                                Text(
+                                    text = strings.gstRate,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = DokandaarTheme.textMuted
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                ExposedDropdownMenuBox(
+                                    expanded = gstExpanded,
+                                    onExpandedChange = { gstExpanded = it }
+                                ) {
+                                    OutlinedTextField(
+                                        value = if (gstRate.isNotBlank()) "${gstRate}%" else "0%",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = gstExpanded) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .menuAnchor(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = HeaderGradientStart,
+                                            unfocusedBorderColor = DokandaarTheme.border,
+                                            focusedContainerColor = DokandaarTheme.cardBackground,
+                                            unfocusedContainerColor = DokandaarTheme.cardBackground
+                                        )
+                                    )
+                                    ExposedDropdownMenu(
+                                        expanded = gstExpanded,
+                                        onDismissRequest = { gstExpanded = false }
+                                    ) {
+                                        listOf("0", "5", "18", "40").forEach { rate ->
+                                            DropdownMenuItem(
+                                                text = { Text("$rate%") },
+                                                onClick = {
+                                                    viewModel.draftGstRate.value = rate
+                                                    gstExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Box(modifier = Modifier.weight(1f)) {
+                            InputField(
+                                label = "HSN Code",
+                                value = hsnCode,
+                                onValueChange = { viewModel.draftHsnCode.value = it },
+                                placeholder = "e.g. 1901",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Low Stock Alert
+                    InputField(
+                        label = "Low Stock Alert Threshold",
+                        value = minStockAlert,
+                        onValueChange = { viewModel.draftMinStockAlert.value = it },
+                        placeholder = "5",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Batch Tracking Switch / Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(
+                                text = strings.enableBatchFefo,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DokandaarTheme.textPrimary
+                            )
+                            Text(
+                                text = strings.batchTrackingDesc,
+                                fontSize = 12.sp,
+                                color = DokandaarTheme.textMuted
+                            )
+                        }
+                        Switch(
+                            checked = trackBatch,
+                            onCheckedChange = { viewModel.draftTrackBatch.value = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = HeaderGradientStart
+                            )
+                        )
                     }
                 }
             }

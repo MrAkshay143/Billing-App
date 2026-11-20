@@ -3,10 +3,14 @@ package com.billing.app.feature.products
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.billing.app.core.util.Money
+import com.billing.app.core.util.UnitRegistry
 import com.billing.app.data.local.entity.CategoryEntity
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.repository.CategoryRepository
 import com.billing.app.domain.repository.ProductRepository
+import com.billing.app.domain.repository.StockAdjustmentInput
+import com.billing.app.domain.repository.StockAdjustmentReason
+import com.billing.app.domain.repository.StockAdjustmentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +27,8 @@ enum class StockFilter {
 
 class ProductViewModel(
     private val productRepository: ProductRepository,
-    private val categoryRepository: CategoryRepository? = null
+    private val categoryRepository: CategoryRepository? = null,
+    private val stockAdjustmentRepository: StockAdjustmentRepository? = null
 ) : ViewModel() {
 
     val searchQuery = MutableStateFlow("")
@@ -120,7 +125,14 @@ class ProductViewModel(
     val draftCategory = MutableStateFlow("Grocery")
     val draftSku = MutableStateFlow("")
     val draftImageUri = MutableStateFlow<String?>(null)
-    val draftUnit = MutableStateFlow("pc")
+    val draftUnit = MutableStateFlow("PCS")
+    val isUnitLocked = MutableStateFlow(false)
+    val draftPurchasePrice = MutableStateFlow("")
+    val draftMrp = MutableStateFlow("")
+    val draftGstRate = MutableStateFlow("0")
+    val draftMinStockAlert = MutableStateFlow("5")
+    val draftHsnCode = MutableStateFlow("")
+    val draftTrackBatch = MutableStateFlow(false)
 
     fun clearDraft() {
         draftName.value = ""
@@ -130,10 +142,17 @@ class ProductViewModel(
         draftCategory.value = "Grocery"
         draftSku.value = ""
         draftImageUri.value = null
-        draftUnit.value = "pc"
+        draftUnit.value = "PCS"
+        isUnitLocked.value = false
+        draftPurchasePrice.value = ""
+        draftMrp.value = ""
+        draftGstRate.value = "0"
+        draftMinStockAlert.value = "5"
+        draftHsnCode.value = ""
+        draftTrackBatch.value = false
     }
 
-    fun setDraftFromProduct(product: Product) {
+    fun initFromProduct(product: Product) {
         draftName.value = product.name
         draftBarcode.value = product.barcode
         draftPrice.value = product.price.format(includeSymbol = false)
@@ -141,7 +160,21 @@ class ProductViewModel(
         draftCategory.value = product.category
         draftSku.value = product.sku
         draftImageUri.value = product.imageUri
-        draftUnit.value = product.unit
+        draftUnit.value = UnitRegistry.resolve(product.unit).code
+        viewModelScope.launch {
+            val txCount = productRepository.getProductTransactionCount(product.id)
+            isUnitLocked.value = product.stockMilli != 0L || txCount > 0
+        }
+        draftPurchasePrice.value = if (product.purchasePrice.paise > 0) (product.purchasePrice.paise / 100.0).toString() else ""
+        draftMrp.value = if (product.mrp.paise > 0) (product.mrp.paise / 100.0).toString() else ""
+        draftGstRate.value = (product.gstRateBp / 100).toString()
+        draftMinStockAlert.value = (product.minStockAlertMilli / 1000L).toString()
+        draftHsnCode.value = product.hsnCode ?: ""
+        draftTrackBatch.value = product.trackBatch
+    }
+
+    fun setDraftFromProduct(product: Product) {
+        initFromProduct(product)
     }
 
     fun setScannedBarcode(barcode: String) {
@@ -169,15 +202,21 @@ class ProductViewModel(
         resetPagination()
     }
 
-    fun addProduct(
-        name: String,
-        barcode: String,
-        priceStr: String,
-        stockStr: String,
-        category: String = "Grocery",
-        sku: String = "",
-        imageUri: String? = null,
-        unit: String = "pc"
+    fun saveProduct(
+        name: String = draftName.value,
+        barcode: String = draftBarcode.value,
+        priceStr: String = draftPrice.value,
+        stockStr: String = draftStock.value,
+        category: String = draftCategory.value,
+        sku: String = draftSku.value,
+        imageUri: String? = draftImageUri.value,
+        unit: String = draftUnit.value,
+        purchasePriceStr: String = draftPurchasePrice.value,
+        mrpStr: String = draftMrp.value,
+        gstRateStr: String = draftGstRate.value,
+        minStockAlertStr: String = draftMinStockAlert.value,
+        hsnCodeStr: String = draftHsnCode.value,
+        trackBatch: Boolean = draftTrackBatch.value
     ) {
         if (_isSaving.value) return
         if (name.isBlank()) {
@@ -194,6 +233,12 @@ class ProductViewModel(
             return
         }
         val stock = stockStr.toIntOrNull() ?: 0
+        val stockMilli = stock.toLong() * 1000L
+        val purchasePrice = Money.fromRupees(purchasePriceStr)
+        val mrp = Money.fromRupees(mrpStr)
+        val gstRateBp = (gstRateStr.toIntOrNull() ?: 0) * 100
+        val minStockAlertMilli = ((minStockAlertStr.toDoubleOrNull() ?: 5.0) * 1000L).toLong()
+        val hsnCode = hsnCodeStr.trim().ifBlank { null }
 
         _isSaving.value = true
         viewModelScope.launch {
@@ -210,12 +255,18 @@ class ProductViewModel(
                     id = UUID.randomUUID().toString(),
                     name = name.trim(),
                     barcode = barcode.trim(),
+                    price = price,
+                    stockMilli = stockMilli,
+                    imageUri = imageUri,
                     sku = autoSku,
                     category = category.trim(),
                     unit = unit,
-                    price = price,
-                    stock = stock,
-                    imageUri = imageUri
+                    purchasePrice = purchasePrice,
+                    mrp = mrp,
+                    minStockAlertMilli = minStockAlertMilli,
+                    gstRateBp = gstRateBp,
+                    trackBatch = trackBatch,
+                    hsnCode = hsnCode
                 )
                 val result = productRepository.addProduct(product)
                 if (result.isSuccess) {
@@ -230,16 +281,57 @@ class ProductViewModel(
         }
     }
 
+    fun addProduct(
+        name: String = draftName.value,
+        barcode: String = draftBarcode.value,
+        priceStr: String = draftPrice.value,
+        stockStr: String = draftStock.value,
+        category: String = draftCategory.value,
+        sku: String = draftSku.value,
+        imageUri: String? = null,
+        unit: String = "pc",
+        purchasePriceStr: String = draftPurchasePrice.value,
+        mrpStr: String = draftMrp.value,
+        gstRateStr: String = draftGstRate.value,
+        minStockAlertStr: String = draftMinStockAlert.value,
+        hsnCodeStr: String = draftHsnCode.value,
+        trackBatch: Boolean = draftTrackBatch.value
+    ) {
+        saveProduct(
+            name = name,
+            barcode = barcode,
+            priceStr = priceStr,
+            stockStr = stockStr,
+            category = category,
+            sku = sku,
+            imageUri = imageUri,
+            unit = unit,
+            purchasePriceStr = purchasePriceStr,
+            mrpStr = mrpStr,
+            gstRateStr = gstRateStr,
+            minStockAlertStr = minStockAlertStr,
+            hsnCodeStr = hsnCodeStr,
+            trackBatch = trackBatch
+        )
+    }
+
     fun updateProduct(
         id: String,
-        name: String,
-        barcode: String,
-        priceStr: String,
-        stockStr: String,
-        category: String = "Grocery",
-        sku: String = "",
-        imageUri: String? = null,
-        unit: String = "pc"
+        name: String = draftName.value,
+        barcode: String = draftBarcode.value,
+        priceStr: String = draftPrice.value,
+        stockStr: String = draftStock.value,
+        category: String = draftCategory.value,
+        sku: String = draftSku.value,
+        imageUri: String? = draftImageUri.value,
+        unit: String = draftUnit.value,
+        purchasePriceStr: String? = null,
+        mrpStr: String? = null,
+        gstRateStr: String? = null,
+        minStockAlertStr: String? = null,
+        hsnCodeStr: String? = null,
+        trackBatch: Boolean? = null,
+        isActive: Boolean? = null
     ) {
         if (_isSaving.value) return
         if (name.isBlank()) {
@@ -252,6 +344,7 @@ class ProductViewModel(
         }
         val price = Money.fromRupees(priceStr)
         val stock = stockStr.toIntOrNull() ?: 0
+        val stockMilli = stock.toLong() * 1000L
 
         _isSaving.value = true
         viewModelScope.launch {
@@ -263,7 +356,61 @@ class ProductViewModel(
                     return@launch
                 }
 
-                val autoSku = if (sku.isNotBlank()) sku.trim() else "SKU-${System.currentTimeMillis().toString().takeLast(6)}"
+                val existingInDb = productRepository.getProductById(id)
+
+                val effPurchasePriceStr = purchasePriceStr ?: draftPurchasePrice.value
+                val parsedPurchasePrice = if (effPurchasePriceStr.isNotBlank()) Money.fromRupees(effPurchasePriceStr) else null
+                val finalPurchasePrice = when {
+                    parsedPurchasePrice != null && parsedPurchasePrice.paise > 0L -> parsedPurchasePrice
+                    existingInDb != null && existingInDb.purchasePrice.paise > 0L -> existingInDb.purchasePrice
+                    parsedPurchasePrice != null -> parsedPurchasePrice
+                    else -> existingInDb?.purchasePrice ?: Money.ZERO
+                }
+
+                val effMrpStr = mrpStr ?: draftMrp.value
+                val parsedMrp = if (effMrpStr.isNotBlank()) Money.fromRupees(effMrpStr) else null
+                val finalMrp = when {
+                    parsedMrp != null && parsedMrp.paise > 0L -> parsedMrp
+                    existingInDb != null && existingInDb.mrp.paise > 0L -> existingInDb.mrp
+                    parsedMrp != null -> parsedMrp
+                    else -> existingInDb?.mrp ?: Money.ZERO
+                }
+
+                val finalGstRateBp = when {
+                    gstRateStr != null -> (gstRateStr.toIntOrNull() ?: 0) * 100
+                    existingInDb != null -> existingInDb.gstRateBp
+                    draftGstRate.value.isNotBlank() -> (draftGstRate.value.toIntOrNull() ?: 0) * 100
+                    else -> 0
+                }
+
+                val finalMinStockAlertMilli = when {
+                    minStockAlertStr != null && minStockAlertStr.isNotBlank() -> {
+                        ((minStockAlertStr.toDoubleOrNull() ?: 5.0) * 1000L).toLong()
+                    }
+                    existingInDb != null -> existingInDb.minStockAlertMilli
+                    draftMinStockAlert.value.isNotBlank() -> {
+                        ((draftMinStockAlert.value.toDoubleOrNull() ?: 5.0) * 1000L).toLong()
+                    }
+                    else -> 5000L
+                }
+
+                val finalHsnCode = when {
+                    hsnCodeStr != null -> hsnCodeStr.trim().ifBlank { existingInDb?.hsnCode }
+                    existingInDb != null -> existingInDb.hsnCode
+                    draftHsnCode.value.isNotBlank() -> draftHsnCode.value.trim()
+                    else -> null
+                }
+
+                val finalTrackBatch = when {
+                    trackBatch != null -> trackBatch
+                    existingInDb != null -> existingInDb.trackBatch
+                    else -> draftTrackBatch.value
+                }
+
+                val finalIsActive = isActive ?: existingInDb?.isActive ?: true
+
+                val autoSku = if (sku.isNotBlank()) sku.trim() else existingInDb?.sku?.ifBlank { null } ?: "SKU-${System.currentTimeMillis().toString().takeLast(6)}"
+
                 val product = Product(
                     id = id,
                     name = name.trim(),
@@ -272,8 +419,17 @@ class ProductViewModel(
                     category = category.trim(),
                     unit = unit,
                     price = price,
-                    stock = stock,
-                    imageUri = imageUri
+                    stockMilli = stockMilli,
+                    imageUri = imageUri,
+                    purchasePrice = finalPurchasePrice,
+                    mrp = finalMrp,
+                    minStockAlertMilli = finalMinStockAlertMilli,
+                    gstRateBp = finalGstRateBp,
+                    description = existingInDb?.description ?: "",
+                    trackBatch = finalTrackBatch,
+                    hsnCode = finalHsnCode,
+                    isActive = finalIsActive,
+                    createdAt = existingInDb?.createdAt ?: System.currentTimeMillis()
                 )
                 val result = productRepository.updateProduct(product)
                 if (result.isSuccess) {
@@ -294,9 +450,33 @@ class ProductViewModel(
         }
     }
 
-    fun adjustStock(productId: String, newStock: Int) {
+    fun adjustStock(
+        productId: String,
+        newStock: Int,
+        reason: StockAdjustmentReason = StockAdjustmentReason.CORRECTION,
+        managerUserId: String = "Admin",
+        notes: String = ""
+    ) {
         viewModelScope.launch {
-            productRepository.adjustStock(productId, newStock)
+            if (stockAdjustmentRepository != null) {
+                val currentProduct = productRepository.getProductById(productId)
+                val currentStockMilli = currentProduct?.stockMilli ?: (products.value.find { it.id == productId }?.stock?.toLong()?.times(1000L) ?: 0L)
+                val targetStockMilli = newStock.toLong() * 1000L
+                val diffMilli = targetStockMilli - currentStockMilli
+                if (diffMilli != 0L) {
+                    val input = StockAdjustmentInput(
+                        productId = productId,
+                        batchId = null,
+                        adjustedQuantityMilli = diffMilli,
+                        reason = reason.code,
+                        notes = notes.ifBlank { "Manual stock adjustment: $newStock (${reason.displayNameEn})" },
+                        managerUserId = managerUserId
+                    )
+                    stockAdjustmentRepository.adjustStock(input)
+                }
+            } else {
+                productRepository.adjustStock(productId, newStock)
+            }
         }
     }
 

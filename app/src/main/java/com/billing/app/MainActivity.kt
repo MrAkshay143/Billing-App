@@ -31,6 +31,7 @@ import com.billing.app.feature.checkout.CheckoutViewModel
 import com.billing.app.feature.home.HomeViewModel
 import com.billing.app.feature.invoices.InvoiceViewModel
 import com.billing.app.feature.products.ProductViewModel
+import com.billing.app.feature.purchases.PurchasesViewModel
 import com.billing.app.feature.reports.ReportsViewModel
 import com.billing.app.feature.settings.SettingsViewModel
 import com.billing.app.navigation.AppNavHost
@@ -70,7 +71,10 @@ class MainActivity : ComponentActivity() {
                         settingsDataStore = app.settingsDataStore,
                         productRepository = app.productRepository,
                         customerRepository = app.customerRepository,
-                        categoryRepository = app.categoryRepository
+                        categoryRepository = app.categoryRepository,
+                        auditRepository = app.auditRepository,
+                        userRepository = app.userRepository,
+                        shiftRepository = app.shiftRepository
                     ) as T
                 }
             }
@@ -83,7 +87,8 @@ class MainActivity : ComponentActivity() {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return ProductViewModel(
                         productRepository = app.productRepository,
-                        categoryRepository = app.categoryRepository
+                        categoryRepository = app.categoryRepository,
+                        stockAdjustmentRepository = app.stockAdjustmentRepository
                     ) as T
                 }
             }
@@ -94,7 +99,13 @@ class MainActivity : ComponentActivity() {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return InvoiceViewModel(app.invoiceRepository, app.printerRepository, app.shopRepository, app.settingsDataStore) as T
+                    return InvoiceViewModel(
+                        invoiceRepository = app.invoiceRepository,
+                        printerRepository = app.printerRepository,
+                        shopRepository = app.shopRepository,
+                        settingsDataStore = app.settingsDataStore,
+                        returnRepository = app.returnRepository
+                    ) as T
                 }
             }
         )[InvoiceViewModel::class.java]
@@ -104,7 +115,7 @@ class MainActivity : ComponentActivity() {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return ReportsViewModel(app.invoiceRepository, app.productRepository) as T
+                    return ReportsViewModel(app.invoiceRepository, app.productRepository, app.database) as T
                 }
             }
         )[ReportsViewModel::class.java]
@@ -118,6 +129,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         )[SettingsViewModel::class.java]
+
+        val purchasesViewModel = ViewModelProvider(
+            this,
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return PurchasesViewModel(
+                        purchaseRepository = app.purchaseRepository,
+                        productRepository = app.productRepository,
+                        supplierRepository = app.supplierRepository,
+                        shiftRepository = app.shiftRepository
+                    ) as T
+                }
+            }
+        )[PurchasesViewModel::class.java]
 
         setContent {
             val themePreference by app.settingsDataStore.appThemeFlow.collectAsState(initial = "system")
@@ -170,6 +196,7 @@ class MainActivity : ComponentActivity() {
                             invoiceViewModel = invoiceViewModel,
                             reportsViewModel = reportsViewModel,
                             settingsViewModel = settingsViewModel,
+                            purchasesViewModel = purchasesViewModel,
                             cartManager = app.cartManager,
                             customerRepository = app.customerRepository,
                             supplierRepository = app.supplierRepository,
@@ -182,5 +209,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            (application as? BillingApplication)?.printerManager?.disconnect()
+        } catch (_: Exception) {}
     }
 }

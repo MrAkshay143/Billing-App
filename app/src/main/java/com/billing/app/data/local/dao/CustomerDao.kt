@@ -1,10 +1,9 @@
 package com.billing.app.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.billing.app.data.local.entity.CustomerEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -22,10 +21,10 @@ interface CustomerDao {
     @Query("SELECT * FROM customers WHERE phone = :phone LIMIT 1")
     suspend fun getCustomerByPhone(phone: String): CustomerEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertCustomer(customer: CustomerEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertAll(customers: List<CustomerEntity>)
 
     @Update

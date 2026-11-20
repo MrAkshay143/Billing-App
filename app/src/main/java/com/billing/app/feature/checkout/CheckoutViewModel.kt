@@ -5,7 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.billing.app.BillingApplication
 import com.billing.app.core.datastore.SettingsDataStore
 import com.billing.app.core.notification.DokandaarNotificationManager
+import com.billing.app.core.util.BillCalculationResult
 import com.billing.app.core.util.Money
+import com.billing.app.core.util.Quantity
+import com.billing.app.core.util.TaxEngine
+import com.billing.app.core.util.UnitRegistry
 import com.billing.app.data.local.entity.CategoryEntity
 import com.billing.app.data.local.entity.CustomerEntity
 import com.billing.app.data.local.entity.InvoiceEntity
@@ -16,12 +20,15 @@ import com.billing.app.domain.model.InvoiceReceipt
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.model.ReceiptItem
 import com.billing.app.domain.model.ShopProfile
+import com.billing.app.domain.repository.AuditRepository
 import com.billing.app.domain.repository.CategoryRepository
 import com.billing.app.domain.repository.CustomerRepository
 import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
 import com.billing.app.domain.repository.ProductRepository
+import com.billing.app.domain.repository.ShiftRepository
 import com.billing.app.domain.repository.ShopRepository
+import com.billing.app.domain.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,12 +36,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 enum class PaymentMethodMode {
-    CASH, UPI, OTHER
+    CASH, UPI, OTHER, SPLIT
 }
 
 class CheckoutViewModel(
@@ -44,7 +52,10 @@ class CheckoutViewModel(
     private val settingsDataStore: SettingsDataStore? = null,
     private val productRepository: ProductRepository? = null,
     private val customerRepository: CustomerRepository? = null,
-    private val categoryRepository: CategoryRepository? = null
+    private val categoryRepository: CategoryRepository? = null,
+    private val auditRepository: AuditRepository? = null,
+    private val userRepository: UserRepository? = null,
+    private val shiftRepository: ShiftRepository? = null
 ) : ViewModel() {
 
     val shopProfile: StateFlow<ShopProfile> = shopRepository.getShopProfile()
@@ -53,6 +64,15 @@ class CheckoutViewModel(
     val selectedPaymentMethod = MutableStateFlow(PaymentMethodMode.UPI)
     val discountPaise = MutableStateFlow(0L)
     val cashReceivedPaise = MutableStateFlow(0L)
+    val splitCashPaise = MutableStateFlow(0L)
+    val splitUpiPaise = MutableStateFlow(0L)
+    val isCompositionScheme = MutableStateFlow(false)
+    val selectedCustomerId = MutableStateFlow<String?>(null)
+
+    val activeShift = shiftRepository?.getActiveShiftFlow()
+        ?.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        ?: MutableStateFlow(null).asStateFlow()
+
     val customerName = MutableStateFlow("Walk-in Customer")
     val customerPhone = MutableStateFlow("")
 
@@ -126,6 +146,7 @@ class CheckoutViewModel(
                     selectedPaymentMethod.value = when (defaultMethod.uppercase()) {
                         "CASH" -> PaymentMethodMode.CASH
                         "OTHER" -> PaymentMethodMode.OTHER
+                        "SPLIT" -> PaymentMethodMode.SPLIT
                         else -> PaymentMethodMode.UPI
                     }
                 }
@@ -156,18 +177,49 @@ class CheckoutViewModel(
         selectedPaymentMethod.value = method
     }
 
-    fun setCustomer(name: String, phone: String) {
+    fun setCustomer(name: String, phone: String, id: String? = null) {
         customerName.value = name.ifBlank { "Walk-in Customer" }
         customerPhone.value = phone
+        selectedCustomerId.value = id
+    }
+
+    fun setSplitPayment(cashPaise: Long, upiPaise: Long) {
+        splitCashPaise.value = cashPaise.coerceAtLeast(0L)
+        splitUpiPaise.value = upiPaise.coerceAtLeast(0L)
     }
 
     fun addNewCustomer(name: String, phone: String) {
         if (name.isBlank()) return
         viewModelScope.launch {
-            customerRepository?.addCustomer(
-                CustomerEntity(name = name.trim(), phone = phone.trim())
+            val newCustomer = CustomerEntity(name = name.trim(), phone = phone.trim())
+            customerRepository?.addCustomer(newCustomer)
+            setCustomer(name.trim(), phone.trim(), newCustomer.id)
+        }
+    }
+
+    fun logPriceOverride(productId: String, productName: String, oldPricePaise: Long, newPricePaise: Long) {
+        if (oldPricePaise == newPricePaise) return
+        viewModelScope.launch {
+            val currentUserId = userRepository?.currentUser?.value?.id ?: "SYSTEM"
+            auditRepository?.log(
+                action = "PRICE_OVERRIDE",
+                details = "Price changed for $productName from $oldPricePaise to $newPricePaise",
+                userId = currentUserId,
+                entityType = "PRODUCT",
+                entityId = productId
             )
-            setCustomer(name.trim(), phone.trim())
+        }
+    }
+
+    fun reactivateCustomer(customer: CustomerEntity) {
+        viewModelScope.launch {
+            customerRepository?.updateCustomer(customer.copy(isActive = true))
+        }
+    }
+
+    fun reactivateProduct(product: Product) {
+        viewModelScope.launch {
+            productRepository?.updateProduct(product.copy(isActive = true))
         }
     }
 
@@ -180,20 +232,40 @@ class CheckoutViewModel(
     }
 
     fun calculateTax(subtotalPaise: Long, discountPaise: Long): Long {
-        if (!isGstEnabled || taxRatePercent <= 0.0) return 0L
+        if (!isGstEnabled || isCompositionScheme.value || taxRatePercent <= 0.0) return 0L
         val taxablePaise = (subtotalPaise - discountPaise).coerceAtLeast(0L)
-        return (taxablePaise * (taxRatePercent / 100.0)).toLong()
+        return kotlin.math.round(taxablePaise * (taxRatePercent / 100.0)).toLong()
+    }
+
+    fun calculateBillResult(items: List<CartItem>, billDiscountPaise: Long): BillCalculationResult {
+        val isGstActive = isGstEnabled && !isCompositionScheme.value
+        val lineInputs = items.map { item ->
+            val effectiveRateBp = if (isGstActive) {
+                if (item.product.gstRateBp > 0) item.product.gstRateBp else (taxRatePercent * 100).toInt()
+            } else {
+                0
+            }
+            TaxEngine.LineItem(
+                lineTotalPaise = item.total.paise,
+                gstRateBp = effectiveRateBp
+            )
+        }
+        return TaxEngine.calculateBill(
+            items = lineInputs,
+            billDiscountPaise = billDiscountPaise.coerceAtLeast(0L),
+            isGstEnabled = isGstActive
+        )
     }
 
     fun calculateGrandTotal(subtotalPaise: Long): Long {
         val discount = discountPaise.value.coerceIn(0L, subtotalPaise)
         val tax = calculateTax(subtotalPaise, discount)
-        return (subtotalPaise - discount + tax).coerceAtLeast(0L)
+        val unrounded = (subtotalPaise - discount + tax).coerceAtLeast(0L)
+        return TaxEngine.roundToNearestRupee(unrounded).first
     }
 
     fun calculateDueAndChange(grandTotalPaise: Long): Pair<Long, Long> {
-        val method = selectedPaymentMethod.value
-        return when (method) {
+        return when (selectedPaymentMethod.value) {
             PaymentMethodMode.CASH -> {
                 val cash = cashReceivedPaise.value
                 if (cash < grandTotalPaise) {
@@ -213,10 +285,42 @@ class CheckoutViewModel(
                 }
             }
             PaymentMethodMode.UPI -> Pair(0L, 0L)
+            PaymentMethodMode.SPLIT -> {
+                val totalPaid = splitCashPaise.value + splitUpiPaise.value
+                if (totalPaid < grandTotalPaise) {
+                    Pair(grandTotalPaise - totalPaid, 0L)
+                } else {
+                    Pair(0L, totalPaid - grandTotalPaise)
+                }
+            }
         }
     }
 
-    fun completeSale(items: List<CartItem>, subtotal: Money, onSuccess: () -> Unit) {
+    suspend fun getTargetCustomer(): CustomerEntity? {
+        val custId = selectedCustomerId.value
+        val custPhone = customerPhone.value.trim()
+        return if (!custId.isNullOrBlank()) {
+            customerRepository?.getCustomerById(custId)
+        } else if (custPhone.isNotBlank()) {
+            customerRepository?.getCustomerByPhone(custPhone)
+        } else null
+    }
+
+    suspend fun isCreditLimitExceeded(duePaise: Long): Boolean {
+        if (duePaise <= 0L) return false
+        val customer = getTargetCustomer() ?: return false
+        val limit = customer.creditLimitPaise
+        if (limit <= 0L) return false
+        val currentBalance = customer.openingBalancePaise
+        return (currentBalance + duePaise) > limit
+    }
+
+    fun completeSale(
+        items: List<CartItem>,
+        subtotal: Money,
+        managerApprovedCreditLimit: Boolean = false,
+        onSuccess: () -> Unit
+    ) {
         if (_isCompletingSale.value) return
         if (items.isEmpty()) {
             _errorMessage.value = "Cart is empty. Scan or pick items first."
@@ -228,51 +332,119 @@ class CheckoutViewModel(
 
         viewModelScope.launch {
             try {
-                val discount = discountPaise.value.coerceIn(0L, subtotal.paise)
-                val tax = calculateTax(subtotal.paise, discount)
-                val grandTotalPaise = (subtotal.paise - discount + tax).coerceAtLeast(0L)
+                // 1. Mandatory Active Shift validation
+                val activeShift = shiftRepository?.getActiveShift()
+                if (shiftRepository != null && activeShift == null) {
+                    _errorMessage.value = "Active shift required before completing sale. Please open shift."
+                    _isCompletingSale.value = false
+                    return@launch
+                }
+
+                // 2. TaxEngine Bill Calculation
+                val billResult = calculateBillResult(items, discountPaise.value)
+                val grandTotalPaise = billResult.grandTotalPaise
+
+                val selectedMode = selectedPaymentMethod.value
                 val (duePaise, changeReturnedPaise) = calculateDueAndChange(grandTotalPaise)
+
+                val cashReceived = when (selectedMode) {
+                    PaymentMethodMode.CASH, PaymentMethodMode.OTHER -> cashReceivedPaise.value
+                    PaymentMethodMode.SPLIT -> splitCashPaise.value
+                    PaymentMethodMode.UPI -> 0L
+                }
+
+                val upiPaid = when (selectedMode) {
+                    PaymentMethodMode.UPI -> grandTotalPaise
+                    PaymentMethodMode.SPLIT -> splitUpiPaise.value
+                    PaymentMethodMode.CASH, PaymentMethodMode.OTHER -> 0L
+                }
 
                 val custName = customerName.value.trim()
                 val custPhone = customerPhone.value.trim()
+
                 if (duePaise > 0 && (custName.isBlank() || custName.equals("Walk-in Customer", ignoreCase = true))) {
                     _errorMessage.value = "Customer name required for Udhaar (Due) bill"
                     _isCompletingSale.value = false
                     return@launch
                 }
 
+                val targetCustomer = getTargetCustomer()
+
+                // 3. Customer Credit Limit Check
+                if (duePaise > 0L && targetCustomer != null && targetCustomer.creditLimitPaise > 0L) {
+                    val currentBal = targetCustomer.openingBalancePaise
+                    if ((currentBal + duePaise) > targetCustomer.creditLimitPaise && !managerApprovedCreditLimit) {
+                        _errorMessage.value = "Credit limit exceeded for ${targetCustomer.name}. Manager PIN authorization required."
+                        _isCompletingSale.value = false
+                        return@launch
+                    }
+                }
+
+                val currentUser = userRepository?.currentUser?.value
                 val invoiceNumber = invoiceRepository.generateNextInvoiceNumber()
+
+                val paymentMethodStr = when {
+                    selectedMode == PaymentMethodMode.SPLIT -> "SPLIT"
+                    selectedMode == PaymentMethodMode.UPI -> "UPI"
+                    duePaise > 0L && cashReceived == 0L && upiPaid == 0L -> "CREDIT"
+                    else -> "CASH"
+                }
+
+                val isGstActive = isGstEnabled && !isCompositionScheme.value
 
                 val invoice = InvoiceEntity(
                     id = 0L,
                     invoiceNumber = invoiceNumber,
                     timestamp = System.currentTimeMillis(),
-                    subtotalPaise = subtotal.paise,
-                    discountPaise = discount,
-                    taxPaise = tax,
-                    grandTotalPaise = grandTotalPaise,
+                    subtotalPaise = billResult.subtotalPaise,
+                    discountPaise = billResult.billDiscountPaise,
+                    taxPaise = billResult.totalTaxPaise,
+                    roundOffPaise = billResult.roundOffPaise,
+                    grandTotalPaise = billResult.grandTotalPaise,
                     duePaise = duePaise,
+                    originalDuePaise = duePaise,
                     status = InvoiceStatus.COMPLETED,
-                    paymentMethod = selectedPaymentMethod.value.name,
+                    paymentMethod = paymentMethodStr,
                     customerName = custName.ifBlank { null },
                     customerPhone = custPhone.ifBlank { null },
-                    cashReceivedPaise = cashReceivedPaise.value,
+                    customerId = targetCustomer?.id,
+                    cashReceivedPaise = cashReceived,
                     changeReturnedPaise = changeReturnedPaise,
+                    upiPaidPaise = upiPaid,
+                    shiftId = activeShift?.id,
+                    createdByUserId = currentUser?.id,
                     invoiceType = "SALE",
                     itemsCount = items.sumOf { it.quantity }.coerceAtLeast(1)
                 )
 
-                val invoiceItems = items.map { item ->
+                val invoiceItems = items.mapIndexed { index, item ->
+                    val lineCalc = billResult.lineCalculations.getOrNull(index)
+                    val effectiveRateBp = if (isGstActive) {
+                        if (item.product.gstRateBp > 0) item.product.gstRateBp else (taxRatePercent * 100).toInt()
+                    } else {
+                        0
+                    }
                     InvoiceItemEntity(
                         id = 0L,
-                        invoiceNumber = invoiceNumber,
-                        productId = item.product.id,
-                        productName = item.product.name,
-                        barcode = item.product.barcode,
-                        unitPricePaise = item.product.price.paise,
-                        quantity = item.quantity,
-                        lineTotalPaise = item.total.paise
-                    )
+                        invoiceId = 0L,
+                        productId = if (item.isCustomItem) null else item.product.id,
+                        productName = item.displayName,
+                        barcode = if (item.isCustomItem) "" else item.product.barcode,
+                        unitPricePaise = item.effectiveUnitPricePaise,
+                        quantityMilli = item.quantityMilli,
+                        lineTotalPaise = item.total.paise,
+                        discountPaise = item.discountPaise,
+                        billDiscountSharePaise = lineCalc?.billDiscountSharePaise ?: 0L,
+                        taxableValuePaise = lineCalc?.taxableValuePaise ?: item.total.paise,
+                        taxPaise = lineCalc?.taxPaise ?: 0L,
+                        gstRateBp = effectiveRateBp,
+                        unitCostPaise = if (item.isCustomItem) 0L else item.product.purchasePrice.paise,
+                        unit = UnitRegistry.resolve(if (item.isCustomItem) "PCS" else item.product.unit).code,
+                        isCustomItem = item.isCustomItem,
+                        isCostUnknown = item.isCostUnknown
+                    ).apply {
+                        this.invoiceNumber = invoiceNumber
+                    }
                 }
 
                 val result = invoiceRepository.completeSale(
@@ -293,6 +465,7 @@ class CheckoutViewModel(
                     // Check low stock trigger
                     productRepository?.let { repo ->
                         for (item in items) {
+                            if (item.isCustomItem) continue
                             val updatedProd = repo.getProductById(item.product.id)
                             if (updatedProd != null && updatedProd.stock <= 5) {
                                 DokandaarNotificationManager.showLowStockNotification(
@@ -314,11 +487,16 @@ class CheckoutViewModel(
         }
     }
 
+    fun completeSale(items: List<CartItem>, subtotal: Money, onSuccess: () -> Unit) {
+        completeSale(items, subtotal, managerApprovedCreditLimit = false, onSuccess = onSuccess)
+    }
+
     fun holdDraft(items: List<CartItem>, subtotal: Money, onSuccess: () -> Unit) {
         if (items.isEmpty()) return
         viewModelScope.launch {
             try {
-                val invoiceNumber = resumedDraftInvoiceNumber ?: invoiceRepository.generateNextInvoiceNumber()
+                val invoiceNumber = resumedDraftInvoiceNumber
+                    ?: String.format(Locale.US, "DFT-%06d", (System.currentTimeMillis() / 1000) % 1000000)
                 val invoice = InvoiceEntity(
                     id = 0L,
                     invoiceNumber = invoiceNumber,
@@ -331,20 +509,27 @@ class CheckoutViewModel(
                     paymentMethod = selectedPaymentMethod.value.name,
                     customerName = customerName.value.ifBlank { null },
                     customerPhone = customerPhone.value.ifBlank { null },
+                    customerId = selectedCustomerId.value,
                     invoiceType = "SALE",
                     itemsCount = items.sumOf { it.quantity }.coerceAtLeast(1)
                 )
                 val invoiceItems = items.map { item ->
                     InvoiceItemEntity(
                         id = 0L,
-                        invoiceNumber = invoiceNumber,
-                        productId = item.product.id,
-                        productName = item.product.name,
-                        barcode = item.product.barcode,
-                        unitPricePaise = item.product.price.paise,
-                        quantity = item.quantity,
-                        lineTotalPaise = item.total.paise
-                    )
+                        invoiceId = 0L,
+                        productId = if (item.isCustomItem) null else item.product.id,
+                        productName = item.displayName,
+                        barcode = if (item.isCustomItem) "" else item.product.barcode,
+                        unitPricePaise = item.effectiveUnitPricePaise,
+                        quantityMilli = item.quantityMilli,
+                        lineTotalPaise = item.total.paise,
+                        discountPaise = item.discountPaise,
+                        unit = UnitRegistry.resolve(if (item.isCustomItem) "PCS" else item.product.unit).code,
+                        isCustomItem = item.isCustomItem,
+                        isCostUnknown = item.isCostUnknown
+                    ).apply {
+                        this.invoiceNumber = invoiceNumber
+                    }
                 }
                 invoiceRepository.saveDraft(invoice, invoiceItems)
                 onSuccess()
@@ -354,14 +539,133 @@ class CheckoutViewModel(
         }
     }
 
-    fun printLastReceipt(onDone: () -> Unit = {}) {
-        val invoice = lastCompletedInvoice ?: return
-        val items = lastCompletedItems
-        val profile = shopProfile.value
+    fun getLastCompletedInvoice(): InvoiceEntity? = lastCompletedInvoice
+    fun getLastCompletedItems(): List<InvoiceItemEntity> = lastCompletedItems
 
+    fun getLastInvoiceReceipt(): InvoiceReceipt? {
+        val invoice = lastCompletedInvoice ?: return null
+        val shop = shopProfile.value
+        val receiptItems = lastCompletedItems.map {
+            ReceiptItem(
+                name = it.productName,
+                quantityMilli = it.quantityMilli,
+                unitCode = it.unit,
+                unitPricePaise = it.unitPricePaise,
+                lineTotalPaise = it.lineTotalPaise
+            )
+        }
+        val receiptType = if (isCompositionScheme.value) "Bill of Supply" else if (invoice.taxPaise > 0L || isGstEnabled) "Tax Invoice" else "Bill of Supply"
+        val currentUser = userRepository?.currentUser?.value
+        val cashier = currentUser?.displayName ?: currentUser?.username ?: ""
+
+        return InvoiceReceipt(
+            shopName = shop.name,
+            shopAddressLine1 = shop.addressLine1,
+            shopAddressLine2 = shop.addressLine2,
+            shopPhone = shop.phoneNumber,
+            shopGstin = gstin,
+            footerText = shop.footerText,
+            invoiceNumber = invoice.invoiceNumber,
+            timestamp = invoice.timestamp,
+            items = receiptItems,
+            subtotalPaise = invoice.subtotalPaise,
+            discountPaise = invoice.discountPaise,
+            taxPaise = invoice.taxPaise,
+            grandTotalPaise = invoice.grandTotalPaise,
+            paymentMethod = invoice.paymentMethod,
+            cashReceivedPaise = invoice.cashReceivedPaise,
+            changeReturnedPaise = invoice.changeReturnedPaise,
+            duePaise = invoice.duePaise,
+            customerName = invoice.customerName,
+            customerPhone = invoice.customerPhone,
+            receiptType = receiptType,
+            cashierName = cashier,
+            roundOffPaise = invoice.roundOffPaise,
+            upiPaidPaise = invoice.upiPaidPaise
+        )
+    }
+
+    fun getLastInvoiceWhatsAppUrl(): String? {
+        val invoice = lastCompletedInvoice ?: return null
+        val rawPhone = invoice.customerPhone ?: return null
+        val normalized = Quantity.normalizeInputDigits(rawPhone)
+        val digits = normalized.filter { it.isDigit() }
+        val phone10 = if (digits.length >= 10) digits.takeLast(10) else return null
+
+        val shop = shopProfile.value
+        val dateStr = SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.ROOT).format(Date(invoice.timestamp))
+        val receiptType = if (isCompositionScheme.value) "Bill of Supply" else "Tax Invoice"
+
+        val summary = buildString {
+            appendLine("*${shop.name.ifBlank { "Dokandaar Store" }}*")
+            if (shop.addressLine1.isNotBlank()) appendLine(shop.addressLine1)
+            if (shop.phoneNumber.isNotBlank()) appendLine("Ph: ${shop.phoneNumber}")
+            if (gstin.isNotBlank()) appendLine("GSTIN: $gstin")
+            appendLine("--------------------------------")
+            appendLine("*$receiptType*")
+            if (isCompositionScheme.value) {
+                appendLine("_Composition Taxable Person, not eligible to collect tax on supplies_")
+            }
+            appendLine("Invoice: ${invoice.invoiceNumber}")
+            appendLine("Date: $dateStr")
+            if (!invoice.customerName.isNullOrBlank()) {
+                appendLine("Customer: ${invoice.customerName}")
+            }
+            appendLine("--------------------------------")
+            for (item in lastCompletedItems) {
+                val totalStr = Money(item.lineTotalPaise).format()
+                val qtyStr = Quantity.formatReceipt(item.quantityMilli, item.unit)
+                val priceUnitStr = Quantity.formatPricePerUnit(item.unitPricePaise, item.unit)
+                appendLine("${item.productName}: $qtyStr x $priceUnitStr = $totalStr")
+            }
+            appendLine("--------------------------------")
+            appendLine("Subtotal: ${Money(invoice.subtotalPaise).format()}")
+            if (invoice.discountPaise > 0L) {
+                appendLine("Discount: -${Money(invoice.discountPaise).format()}")
+            }
+            if (invoice.taxPaise > 0L) {
+                appendLine("Tax / GST: ${Money(invoice.taxPaise).format()}")
+            }
+            if (invoice.roundOffPaise != 0L) {
+                val sign = if (invoice.roundOffPaise > 0) "+" else "-"
+                appendLine("Round Off: $sign${Money(kotlin.math.abs(invoice.roundOffPaise)).format()}")
+            }
+            appendLine("*TOTAL: ${Money(invoice.grandTotalPaise).format()}*")
+            appendLine("--------------------------------")
+            appendLine("Payment: ${invoice.paymentMethod}")
+            if (invoice.cashReceivedPaise > 0L) {
+                appendLine("Cash Received: ${Money(invoice.cashReceivedPaise).format()}")
+                if (invoice.changeReturnedPaise > 0L) {
+                    appendLine("Change Returned: ${Money(invoice.changeReturnedPaise).format()}")
+                }
+            }
+            if (invoice.upiPaidPaise > 0L) {
+                appendLine("UPI Paid: ${Money(invoice.upiPaidPaise).format()}")
+            }
+            if (invoice.duePaise > 0L) {
+                appendLine("*Balance Due: ${Money(invoice.duePaise).format()}*")
+            }
+            appendLine("--------------------------------")
+            if (shop.footerText.isNotBlank()) {
+                appendLine(shop.footerText)
+            } else {
+                appendLine("Thank you! Visit again.")
+            }
+        }
+
+        val encodedText = URLEncoder.encode(summary, "UTF-8")
+        return "https://wa.me/91$phone10?text=$encodedText"
+    }
+
+    fun printLastReceipt(onDone: () -> Unit = {}) {
+        val receipt = getLastInvoiceReceipt()
+        if (receipt == null) {
+            onDone()
+            return
+        }
         _isPrinting.value = true
         viewModelScope.launch {
-            val result = printerRepository.printInvoice(invoice, items, profile)
+            val result = printerRepository.printInvoiceReceipt(receipt)
             _isPrinting.value = false
             _printSuccess.value = result.isSuccess
             onDone()

@@ -58,6 +58,9 @@ import com.billing.app.core.ui.theme.PastelGreenContent
 import com.billing.app.core.ui.theme.PrimaryPurple
 import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.core.util.Money
+import com.billing.app.core.util.Quantity
+import com.billing.app.core.util.UnitRegistry
+import com.billing.app.domain.model.AppError
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.repository.ProductRepository
 import kotlinx.coroutines.Dispatchers
@@ -65,7 +68,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Locale
 import java.util.UUID
+import kotlin.math.roundToLong
 
 @Composable
 fun ImportExportScreen(
@@ -305,8 +310,10 @@ private suspend fun exportProductsToCsv(context: Context, products: List<Product
         products.forEach { p ->
             val cleanName = p.name.replace(",", " ")
             val cleanCat = p.category.replace(",", " ")
-            val priceRupees = p.price.format(includeSymbol = false)
-            out.println("${p.id},$cleanName,${p.barcode},${p.sku},$cleanCat,$priceRupees,${p.stock},${p.unit}")
+            val priceRupees = String.format(Locale.ROOT, "%.2f", p.price.paise / 100.0)
+            val stockVal = if (p.stockMilli % 1000L == 0L) (p.stockMilli / 1000L).toString() else String.format(Locale.ROOT, "%.3f", p.stockMilli / 1000.0).trimEnd('0').trimEnd('.')
+            val unitStr = UnitRegistry.resolve(p.unit).code
+            out.println("${p.id},$cleanName,${p.barcode},${p.sku},$cleanCat,$priceRupees,$stockVal,$unitStr")
         }
     }
 
@@ -392,21 +399,49 @@ private suspend fun importProductsFromCsv(
                 val category = parts.getOrNull(categoryIdx)?.trim().takeUnless { it.isNullOrBlank() } ?: "Grocery"
                 val priceStr = parts.getOrNull(priceIdx)?.trim() ?: "0"
                 val stockStr = parts.getOrNull(stockIdx)?.trim() ?: "0"
-                val unit = parts.getOrNull(unitIdx)?.trim().takeUnless { it.isNullOrBlank() } ?: "Piece"
+                val rawUnit = parts.getOrNull(unitIdx)?.trim().takeUnless { it.isNullOrBlank() } ?: "PCS"
+                val conversion = UnitRegistry.resolveWithConversion(rawUnit)
+                if (conversion.isLossyOrUnknown) {
+                    throw IllegalArgumentException("Line ${i + 1}: ${conversion.errorMessage ?: "Unsupported or unknown unit '$rawUnit' for product '$name'"}")
+                }
+
+                val canonicalUnit = UnitRegistry.resolve(conversion.canonicalCode)
+                val qtyFactor = conversion.quantityMultiplier
+                val priceFactor = conversion.priceMultiplier
 
                 if (name.isNotBlank() && barcode.isNotBlank()) {
-                    val price = Money.fromRupees(priceStr)
-                    val stock = maxOf(0, stockStr.toIntOrNull() ?: 0)
+                    val rawStockDouble = stockStr.toDoubleOrNull() ?: 0.0
+                    val stockMilli = (rawStockDouble * qtyFactor * 1000.0).roundToLong().coerceAtLeast(0L)
+
+                    if (!canonicalUnit.allowsFractional && stockMilli % 1000L != 0L) {
+                        throw IllegalArgumentException("Line ${i + 1}: Fractional stock ($stockStr) not allowed for discrete unit '${canonicalUnit.code}' for product '$name'")
+                    }
+
+                    val existing = productRepository.getProductByBarcode(barcode)
+                    if (existing != null) {
+                        val existingUnit = UnitRegistry.resolve(existing.unit).code
+                        if (existingUnit != canonicalUnit.code) {
+                            val txCount = productRepository.getProductTransactionCount(existing.id)
+                            if (existing.stockMilli != 0L || txCount > 0) {
+                                throw IllegalArgumentException("Line ${i + 1}: Cannot change unit from '$existingUnit' to '${canonicalUnit.code}' for product '$name' with stock/transaction history")
+                            }
+                        }
+                    }
+
+                    val rawPrice = Money.fromRupees(priceStr)
+                    val pricePaise = (rawPrice.paise * priceFactor).roundToLong()
+                    val price = Money(pricePaise)
+
                     batch.add(
                         Product(
-                            id = UUID.randomUUID().toString(),
+                            id = existing?.id ?: UUID.randomUUID().toString(),
                             name = name,
                             barcode = barcode,
-                            sku = if (sku.isNotBlank()) sku else "SKU-${System.currentTimeMillis().toString().takeLast(6)}",
+                            sku = if (sku.isNotBlank()) sku else (existing?.sku ?: "SKU-${System.currentTimeMillis().toString().takeLast(6)}"),
                             category = category,
-                            unit = unit,
+                            unit = canonicalUnit.code,
                             price = price,
-                            stock = stock
+                            stockMilli = stockMilli
                         )
                     )
                 }

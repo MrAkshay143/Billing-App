@@ -70,6 +70,7 @@ fun PaymentSettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = com.billing.app.core.localization.LocalAppStrings.current
     val shopProfile by viewModel.shopProfile.collectAsState()
     val defaultPaymentMethod by viewModel.defaultPaymentMethod.collectAsState()
     val isGstEnabled by viewModel.isGstEnabled.collectAsState()
@@ -104,7 +105,7 @@ fun PaymentSettingsScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Payment & Taxes",
+                title = strings.paymentSettings,
                 subtitle = "UPI QR, cash & GST settings",
                 icon = Icons.Default.QrCode,
                 onNavigateBack = onNavigateBack
@@ -140,7 +141,7 @@ fun PaymentSettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("UPI QR Code Setup", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                            Text(strings.upiQrSetup, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                             Text("Used to generate dynamic Scan & Pay QR on checkout", fontSize = 12.sp, color = DokandaarTheme.textMuted)
                         }
                     }
@@ -150,7 +151,7 @@ fun PaymentSettingsScreen(
                     OutlinedTextField(
                         value = upiInput,
                         onValueChange = { upiInput = it },
-                        label = { Text("Store UPI ID / VPA") },
+                        label = { Text(strings.storeUpiId) },
                         placeholder = { Text("e.g. mobile@upi, merchant@oksbi") },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -212,7 +213,7 @@ fun PaymentSettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Default Payment Method", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                            Text(strings.defaultPaymentMethod, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
                             Text("Pre-selected tab when opening checkout", fontSize = 12.sp, color = DokandaarTheme.textMuted)
                         }
                     }
@@ -297,8 +298,8 @@ fun PaymentSettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text("GST & Tax Configuration", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
-                                Text("Enable GST calculations on sales & print GSTIN", fontSize = 12.sp, color = DokandaarTheme.textMuted)
+                                Text(strings.gstTaxConfig, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
+                                Text(strings.enableGstBilling, fontSize = 12.sp, color = DokandaarTheme.textMuted)
                             }
                         }
                         Switch(
@@ -317,7 +318,7 @@ fun PaymentSettingsScreen(
                         OutlinedTextField(
                             value = gstinInput,
                             onValueChange = { gstinInput = it.uppercase() },
-                            label = { Text("Store GSTIN Number") },
+                            label = { Text(strings.storeGstin) },
                             placeholder = { Text("e.g. 22AAAAA0000A1Z5") },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
@@ -331,7 +332,7 @@ fun PaymentSettingsScreen(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            text = "Default Tax Rate (%)",
+                            text = strings.defaultTaxRate,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = DokandaarTheme.textPrimary
@@ -387,7 +388,7 @@ fun PaymentSettingsScreen(
                 color = HeaderGradientStart
             ) {
                 Text(
-                    text = "Save Settings",
+                    text = strings.saveSettings,
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,

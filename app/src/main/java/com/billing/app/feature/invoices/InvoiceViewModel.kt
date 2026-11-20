@@ -7,10 +7,13 @@ import com.billing.app.core.util.Money
 import com.billing.app.data.local.entity.InvoiceEntity
 import com.billing.app.data.local.entity.InvoiceItemEntity
 import com.billing.app.data.local.entity.InvoiceStatus
+import com.billing.app.data.local.entity.ReturnEntity
 import com.billing.app.domain.model.CartItem
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.repository.InvoiceRepository
 import com.billing.app.domain.repository.PrinterRepository
+import com.billing.app.domain.repository.ReturnItemInput
+import com.billing.app.domain.repository.ReturnRepository
 import com.billing.app.domain.repository.ShopRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,7 +41,8 @@ class InvoiceViewModel(
     private val invoiceRepository: InvoiceRepository,
     private val printerRepository: PrinterRepository,
     private val shopRepository: ShopRepository,
-    private val settingsDataStore: SettingsDataStore? = null
+    private val settingsDataStore: SettingsDataStore? = null,
+    private val returnRepository: ReturnRepository? = null
 ) : ViewModel() {
 
     val isPinEnabled: StateFlow<Boolean> = (settingsDataStore?.pinEnabledFlow ?: flowOf(false))
@@ -198,7 +202,7 @@ class InvoiceViewModel(
         return items.map { item ->
             CartItem(
                 product = Product(
-                    id = item.productId,
+                    id = item.productId ?: "",
                     name = item.productName,
                     barcode = item.barcode,
                     price = Money.fromPaise(item.unitPricePaise)
@@ -237,6 +241,42 @@ class InvoiceViewModel(
         }
     }
 
+    suspend fun getInvoiceItemList(invoiceNumber: String): List<InvoiceItemEntity> =
+        invoiceRepository.getInvoiceItems(invoiceNumber)
+
+    fun processSalesReturn(
+        invoiceNumber: String,
+        itemsToReturn: List<ReturnItemInput>,
+        reason: String = "Sales Return",
+        userId: String = "Cashier",
+        onSuccess: (ReturnEntity) -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            if (returnRepository != null) {
+                val result = returnRepository.processSalesReturn(
+                    invoiceNumber = invoiceNumber,
+                    itemsToReturn = itemsToReturn,
+                    reason = reason,
+                    userId = userId
+                )
+                if (result.isSuccess) {
+                    val returnEntity = result.getOrNull()!!
+                    _printMessage.value = "Sales Return #${returnEntity.returnNumber} processed successfully"
+                    onSuccess(returnEntity)
+                } else {
+                    val err = result.exceptionOrNull()?.message ?: "Return failed"
+                    _printMessage.value = err
+                    onError(err)
+                }
+            } else {
+                val err = "Return repository not initialized"
+                _printMessage.value = err
+                onError(err)
+            }
+        }
+    }
+
     fun settleDue(invoiceNumber: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             val result = invoiceRepository.settleInvoiceDue(invoiceNumber)
@@ -262,7 +302,7 @@ class InvoiceViewModel(
         val cartItems = items.map { item ->
             CartItem(
                 product = Product(
-                    id = item.productId,
+                    id = item.productId ?: "",
                     name = item.productName,
                     barcode = item.barcode,
                     price = Money.fromPaise(item.unitPricePaise)

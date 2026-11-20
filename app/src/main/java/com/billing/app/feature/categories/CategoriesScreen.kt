@@ -88,7 +88,7 @@ fun CategoriesScreen(
     // Add Category Dialog
     if (showAddDialog) {
         CategoryEditorDialog(
-            title = "Add Category",
+            title = strings.addCategory,
             initialName = "",
             initialIconName = "grocery",
             initialImageUri = null,
@@ -109,7 +109,7 @@ fun CategoriesScreen(
     // Edit Category Dialog
     categoryToEdit?.let { cat ->
         CategoryEditorDialog(
-            title = "Edit Category",
+            title = strings.editCategory,
             initialName = cat.name,
             initialIconName = cat.iconName ?: "others",
             initialImageUri = cat.imageUri,
@@ -160,8 +160,8 @@ fun CategoriesScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Categories",
-                subtitle = "${categories.size} Item Categories",
+                title = strings.categoriesTitle,
+                subtitle = strings.itemCategoriesCount(categories.size),
                 icon = Icons.Default.Category,
                 onNavigateBack = onNavigateBack,
                 actions = {
@@ -190,7 +190,7 @@ fun CategoriesScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "No categories yet",
+                        text = strings.noCategoriesFound,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = DokandaarTheme.textMuted
@@ -237,7 +237,7 @@ fun CategoriesScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = if (!cat.imageUri.isNullOrBlank()) "Custom Image"
+                                    text = if (!cat.imageUri.isNullOrBlank()) strings.customImage
                                     else CategoryPresets.getPreset(cat.iconName).title,
                                     fontSize = 11.sp,
                                     color = DokandaarTheme.textMuted
@@ -251,7 +251,7 @@ fun CategoriesScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit Category",
+                                    contentDescription = strings.editCategory,
                                     tint = PrimaryPurple,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -264,7 +264,7 @@ fun CategoriesScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Category",
+                                    contentDescription = strings.delete,
                                     tint = ErrorColor,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -286,6 +286,7 @@ private fun CategoryEditorDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, iconName: String?, imageUri: String?) -> Unit
 ) {
+    val strings = appStrings()
     var name by remember { mutableStateOf(initialName) }
     var selectedIconName by remember { mutableStateOf(initialIconName ?: "grocery") }
     var selectedImageUri by remember { mutableStateOf(initialImageUri) }
@@ -308,7 +309,7 @@ private fun CategoryEditorDialog(
                     .verticalScroll(rememberScrollState())
             ) {
                 InputField(
-                    label = "Category Name *",
+                    label = "${strings.categoryName} *",
                     value = name,
                     onValueChange = { name = it },
                     placeholder = "e.g. Snacks, Spices, Dairy"
@@ -317,7 +318,7 @@ private fun CategoryEditorDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Category Visual (Icon or Custom Image)",
+                    text = strings.categoryVisual,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = DokandaarTheme.textPrimary
@@ -341,14 +342,14 @@ private fun CategoryEditorDialog(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Custom Image Selected", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
-                            Text("Will be shown on category card", fontSize = 10.sp, color = DokandaarTheme.textMuted)
+                            Text(strings.customImageSelected, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryPurple)
+                            Text(strings.shownOnCategoryCard, fontSize = 10.sp, color = DokandaarTheme.textMuted)
                         }
                         IconButton(
                             onClick = { selectedImageUri = null },
                             modifier = Modifier.size(28.dp)
                         ) {
-                            Icon(Icons.Default.Close, contentDescription = "Remove", tint = ErrorColor, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Close, contentDescription = strings.remove, tint = ErrorColor, modifier = Modifier.size(16.dp))
                         }
                     }
                 } else {
@@ -373,7 +374,7 @@ private fun CategoryEditorDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Upload Custom Photo",
+                                text = strings.uploadCustomPhoto,
                                 color = PrimaryPurple,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -385,7 +386,7 @@ private fun CategoryEditorDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Or Choose Preset Icon",
+                    text = strings.choosePresetIcon,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = DokandaarTheme.textMuted

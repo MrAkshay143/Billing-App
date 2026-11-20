@@ -74,6 +74,7 @@ fun PrinterSetupScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = com.billing.app.core.localization.LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
     val paperWidth by viewModel.paperWidth.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -120,7 +121,7 @@ fun PrinterSetupScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Printer Setup",
+                title = strings.printerSetup,
                 subtitle = "Bluetooth thermal receipt printer",
                 icon = Icons.Default.Print,
                 onNavigateBack = onNavigateBack
@@ -164,7 +165,7 @@ fun PrinterSetupScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (uiState.isConnected) "Printer Connected" else "No Printer Connected",
+                            text = if (uiState.isConnected) strings.printerConnected else strings.noPrinterConnected,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (uiState.isConnected) InStockText else Color(0xFFEF4444)
@@ -184,7 +185,7 @@ fun PrinterSetupScreen(
                             color = Color(0xFFFEE2E2)
                         ) {
                             Text(
-                                text = "Disconnect",
+                                text = strings.disconnect,
                                 color = Color(0xFFEF4444),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -204,7 +205,7 @@ fun PrinterSetupScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Receipt Paper Format",
+                        text = strings.receiptPaperFormat,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = DokandaarTheme.textPrimary
@@ -272,7 +273,7 @@ fun PrinterSetupScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Paired Devices",
+                                text = strings.pairedDevices,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0F172A)
@@ -294,7 +295,7 @@ fun PrinterSetupScreen(
                                 ) {
                                     Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Scan", color = HeaderGradientStart, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text(strings.scanPrinters, color = HeaderGradientStart, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -310,7 +311,7 @@ fun PrinterSetupScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No paired printers found.\nPlease turn on your printer and pair it in Phone Settings first.",
+                                text = strings.noPairedPrinters,
                                 fontSize = 13.sp,
                                 color = TextMutedColor,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -366,7 +367,7 @@ fun PrinterSetupScreen(
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "Connected",
+                                                    text = strings.connected,
                                                     color = HeaderGradientStart,
                                                     fontSize = 13.sp,
                                                     fontWeight = FontWeight.Bold
@@ -374,7 +375,7 @@ fun PrinterSetupScreen(
                                             }
                                         } else {
                                             Text(
-                                                text = "Tap to Connect",
+                                                text = strings.tapToConnect,
                                                 color = Color(0xFF0284C7),
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.SemiBold
@@ -397,7 +398,7 @@ fun PrinterSetupScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Hardware Verification",
+                        text = strings.hardwareVerification,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = DokandaarTheme.textPrimary
@@ -426,11 +427,11 @@ fun PrinterSetupScreen(
                             if (uiState.isPrintingTest) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Printing Sample...", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(strings.printingSample, color = Color.White, fontWeight = FontWeight.Bold)
                             } else {
                                 Icon(imageVector = Icons.Default.Print, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Print Test Receipt", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(strings.printTestReceipt, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
                     }
@@ -453,7 +454,7 @@ fun PrinterSetupScreen(
                     Icon(imageVector = Icons.Default.Settings, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Open Bluetooth Settings",
+                        text = strings.openBluetoothSettings,
                         color = HeaderGradientStart,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,

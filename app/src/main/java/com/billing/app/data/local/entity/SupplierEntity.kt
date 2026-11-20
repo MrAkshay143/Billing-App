@@ -21,5 +21,7 @@ data class SupplierEntity(
     val address: String? = null,
     val gstin: String? = null,
     val openingBalancePaise: Long = 0L,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isActive: Boolean = true,
+    val duePaise: Long = 0L
 )

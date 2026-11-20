@@ -44,7 +44,8 @@ interface InvoiceRepository {
         items: List<InvoiceItemEntity>
     ): Result<InvoiceEntity>
 
-    suspend fun voidInvoice(invoiceNumber: String): Result<Unit>
+    suspend fun voidInvoice(invoiceNumber: String): Result<Unit> = voidInvoice(invoiceNumber, null, null)
+    suspend fun voidInvoice(invoiceNumber: String, managerUserId: String? = null, reason: String? = null): Result<Unit> = Result.success(Unit)
     suspend fun settleInvoiceDue(invoiceNumber: String): Result<Unit>
     suspend fun deleteInvoice(invoiceNumber: String): Result<Unit>
 

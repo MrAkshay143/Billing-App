@@ -88,6 +88,7 @@ import com.billing.app.core.ui.components.DokandaarKpiFourRow
 import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.DokandaarStatCard
 import com.billing.app.core.ui.components.DokandaarTab
+import com.billing.app.core.ui.components.ManagerPinDialog
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
@@ -105,9 +106,12 @@ import com.billing.app.core.ui.theme.PastelRedContent
 import com.billing.app.core.ui.theme.PrimaryPurple
 import com.billing.app.core.ui.theme.SecondaryPurple
 import com.billing.app.core.util.Money
+import com.billing.app.core.util.Quantity
 import com.billing.app.data.local.entity.InvoiceEntity
+import com.billing.app.data.local.entity.InvoiceItemEntity
 import com.billing.app.data.local.entity.InvoiceStatus
 import com.billing.app.domain.model.CartItem
+import com.billing.app.domain.repository.ReturnItemInput
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -155,9 +159,30 @@ fun InvoicesScreen(
 
     var selectedInvoiceForDetails by remember { mutableStateOf<InvoiceEntity?>(null) }
     var invoiceToVoid by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var invoiceToAuthorizeVoid by remember { mutableStateOf<InvoiceEntity?>(null) }
     var invoiceToDiscard by remember { mutableStateOf<InvoiceEntity?>(null) }
     var invoiceToSettle by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var invoiceToAuthorizeSettle by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var invoiceToReturn by remember { mutableStateOf<InvoiceEntity?>(null) }
+    var returnItemList by remember { mutableStateOf<List<InvoiceItemEntity>>(emptyList()) }
+    var returnQuantities by remember { mutableStateOf<Map<Long, String>>(emptyMap()) }
+    var returnReason by remember { mutableStateOf("Customer return") }
     var showDateFilterMenu by remember { mutableStateOf(false) }
+
+    LaunchedEffect(invoiceToReturn) {
+        invoiceToReturn?.let { inv ->
+            val items = viewModel.getInvoiceItemList(inv.invoiceNumber)
+            returnItemList = items
+            returnQuantities = items.associate { item ->
+                val qtyStr = if (item.quantityMilli % 1000L == 0L) {
+                    (item.quantityMilli / 1000L).toString()
+                } else {
+                    (item.quantityMilli / 1000.0).toString()
+                }
+                item.id to qtyStr
+            }
+        }
+    }
 
     // Summary KPIs
     val todaySalesAmount = invoices.filter { it.status == InvoiceStatus.COMPLETED }.sumOf { it.grandTotalPaise }
@@ -392,10 +417,10 @@ fun InvoicesScreen(
                 Box {
                     DokandaarDateFilterPill(
                         label = when (dateFilter) {
-                            InvoiceDateFilter.TODAY -> "Today"
-                            InvoiceDateFilter.THIS_WEEK -> "This Week"
-                            InvoiceDateFilter.THIS_MONTH -> "This Month"
-                            else -> "All"
+                            InvoiceDateFilter.TODAY -> strings.periodToday
+                            InvoiceDateFilter.THIS_WEEK -> strings.periodThisWeek
+                            InvoiceDateFilter.THIS_MONTH -> strings.periodThisMonth
+                            else -> strings.periodAllTime
                         },
                         onClick = { showDateFilterMenu = true }
                     )
@@ -405,28 +430,28 @@ fun InvoicesScreen(
                         onDismissRequest = { showDateFilterMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Today") },
+                            text = { Text(strings.periodToday) },
                             onClick = {
                                 viewModel.dateFilter.value = InvoiceDateFilter.TODAY
                                 showDateFilterMenu = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("This Week") },
+                            text = { Text(strings.periodThisWeek) },
                             onClick = {
                                 viewModel.dateFilter.value = InvoiceDateFilter.THIS_WEEK
                                 showDateFilterMenu = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("This Month") },
+                            text = { Text(strings.periodThisMonth) },
                             onClick = {
                                 viewModel.dateFilter.value = InvoiceDateFilter.THIS_MONTH
                                 showDateFilterMenu = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("All Time") },
+                            text = { Text(strings.periodAllTime) },
                             onClick = {
                                 viewModel.dateFilter.value = InvoiceDateFilter.ALL
                                 showDateFilterMenu = false
@@ -455,7 +480,7 @@ fun InvoicesScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "No invoices found",
+                            text = strings.noInvoicesFound,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = DokandaarTheme.textMuted
@@ -535,13 +560,26 @@ fun InvoicesScreen(
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.printInvoice(inv.invoiceNumber)
-                        selectedInvoiceForDetails = null
+                Row {
+                    if (inv.status == InvoiceStatus.COMPLETED) {
+                        TextButton(
+                            onClick = {
+                                val target = inv
+                                selectedInvoiceForDetails = null
+                                invoiceToReturn = target
+                            }
+                        ) {
+                            Text(strings.salesReturn, color = PastelOrangeContent, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                        }
                     }
-                ) {
-                    Text(strings.reprint, color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                    TextButton(
+                        onClick = {
+                            viewModel.printInvoice(inv.invoiceNumber)
+                            selectedInvoiceForDetails = null
+                        }
+                    ) {
+                        Text(strings.reprint, color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                    }
                 }
             },
             dismissButton = {
@@ -568,8 +606,9 @@ fun InvoicesScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.voidInvoice(inv.invoiceNumber)
+                        val target = inv
                         invoiceToVoid = null
+                        invoiceToAuthorizeVoid = target
                     }
                 ) {
                     Text(strings.delete, color = ErrorColor, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
@@ -578,6 +617,139 @@ fun InvoicesScreen(
             dismissButton = {
                 TextButton(onClick = { invoiceToVoid = null }) {
                     Text(strings.cancel, color = DokandaarTheme.textMuted, maxLines = 1, softWrap = false)
+                }
+            }
+        )
+    }
+
+    // Manager PIN Authorization for Void Invoice
+    invoiceToAuthorizeVoid?.let { inv ->
+        ManagerPinDialog(
+            title = "Authorize Bill Cancellation",
+            subtitle = "Enter Manager PIN to void invoice #${inv.invoiceNumber}",
+            onDismissRequest = { invoiceToAuthorizeVoid = null },
+            onAuthorized = {
+                viewModel.voidInvoice(inv.invoiceNumber)
+                invoiceToAuthorizeVoid = null
+            }
+        )
+    }
+
+    // Sales Return Dialog
+    invoiceToReturn?.let { inv ->
+        AlertDialog(
+            onDismissRequest = { invoiceToReturn = null },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = DokandaarTheme.cardBackground,
+            title = {
+                Text(
+                    text = "Sales Return - #${inv.invoiceNumber}",
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryPurple
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Enter return quantity for items to return to stock:",
+                        fontSize = 13.sp,
+                        color = DokandaarTheme.textMuted
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(returnItemList, key = { it.id }) { item ->
+                            val soldQtyStr = Quantity.formatDisplay(item.quantityMilli, item.unit)
+                            val currentInput = returnQuantities[item.id] ?: "0"
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = DokandaarTheme.background),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = item.productName,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 13.sp,
+                                            color = DokandaarTheme.textPrimary
+                                        )
+                                        Text(
+                                            text = "Sold: $soldQtyStr | Price: ${Money(item.unitPricePaise).format()}",
+                                            fontSize = 11.sp,
+                                            color = DokandaarTheme.textMuted
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    OutlinedTextField(
+                                        value = currentInput,
+                                        onValueChange = { newVal ->
+                                            val filtered = newVal.filter { it.isDigit() }
+                                            returnQuantities = returnQuantities + (item.id to filtered)
+                                        },
+                                        label = { Text(strings.returnQuantity, fontSize = 10.sp) },
+                                        singleLine = true,
+                                        modifier = Modifier.width(90.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = returnReason,
+                        onValueChange = { returnReason = it },
+                        label = { Text(strings.returnReason, fontSize = 11.sp) },
+                        placeholder = { Text("e.g. Defective, Customer choice") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val itemsToReturn = returnItemList.mapNotNull { item ->
+                            val returnQty = returnQuantities[item.id]?.toLongOrNull() ?: 0L
+                            if (returnQty > 0L) {
+                                ReturnItemInput(
+                                    invoiceItemId = item.id,
+                                    quantityMilli = returnQty * 1000L,
+                                    reason = returnReason
+                                )
+                            } else null
+                        }
+                        if (itemsToReturn.isNotEmpty()) {
+                            viewModel.processSalesReturn(
+                                invoiceNumber = inv.invoiceNumber,
+                                itemsToReturn = itemsToReturn,
+                                reason = returnReason,
+                                userId = "Cashier",
+                                onSuccess = {
+                                    invoiceToReturn = null
+                                }
+                            )
+                        } else {
+                            FeedbackManager.showToast(context, "Please select at least 1 item to return")
+                        }
+                    }
+                ) {
+                    Text(strings.confirmReturn, color = PastelOrangeContent, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { invoiceToReturn = null }) {
+                    Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
             }
         )
@@ -630,8 +802,9 @@ fun InvoicesScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.settleDue(inv.invoiceNumber)
+                        val target = inv
                         invoiceToSettle = null
+                        invoiceToAuthorizeSettle = target
                     }
                 ) {
                     Text(strings.confirm, color = PrimaryPurple, fontWeight = FontWeight.Bold)
@@ -641,6 +814,19 @@ fun InvoicesScreen(
                 TextButton(onClick = { invoiceToSettle = null }) {
                     Text(strings.cancel, color = DokandaarTheme.textMuted)
                 }
+            }
+        )
+    }
+
+    // Manager PIN Authorization for Settle Due
+    invoiceToAuthorizeSettle?.let { inv ->
+        ManagerPinDialog(
+            title = "Authorize Settle Due",
+            subtitle = "Enter Manager PIN to settle due of ${Money(inv.duePaise).format()} for #${inv.invoiceNumber}",
+            onDismissRequest = { invoiceToAuthorizeSettle = null },
+            onAuthorized = {
+                viewModel.settleDue(inv.invoiceNumber)
+                invoiceToAuthorizeSettle = null
             }
         )
     }

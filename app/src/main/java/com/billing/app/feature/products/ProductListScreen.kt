@@ -71,6 +71,7 @@ import com.billing.app.core.ui.components.CategoryCard
 import com.billing.app.core.ui.components.DokandaarActionPill
 import com.billing.app.core.ui.components.DokandaarSearchBar
 import com.billing.app.core.ui.components.DokandaarTab
+import com.billing.app.core.ui.components.ManagerPinDialog
 import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.theme.DarkPurple
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -85,7 +86,9 @@ import com.billing.app.core.ui.theme.PastelRedBg
 import com.billing.app.core.ui.theme.PastelRedContent
 import com.billing.app.core.ui.theme.PrimaryPurple
 import com.billing.app.core.ui.theme.SecondaryPurple
+import com.billing.app.core.util.Quantity
 import com.billing.app.domain.model.Product
+import com.billing.app.domain.repository.StockAdjustmentReason
 
 @Composable
 fun ProductListScreen(
@@ -105,11 +108,29 @@ fun ProductListScreen(
     val strings = appStrings()
 
     var productToDelete by remember { mutableStateOf<Product?>(null) }
+    var productPendingStockAdjust by remember { mutableStateOf<Product?>(null) }
     var productToAdjustStock by remember { mutableStateOf<Product?>(null) }
     var adjustStockStr by remember { mutableStateOf("") }
+    var adjustReason by remember { mutableStateOf(StockAdjustmentReason.CORRECTION) }
+    var adjustNotes by remember { mutableStateOf("") }
     var showFilterMenu by remember { mutableStateOf(false) }
 
     val dbCategories by viewModel.categories.collectAsState()
+
+    // Manager PIN Gate for Stock Adjustment
+    if (productPendingStockAdjust != null) {
+        val prod = productPendingStockAdjust!!
+        ManagerPinDialog(
+            title = "Manager Authorization",
+            subtitle = "Enter Manager PIN to adjust stock for ${prod.name}",
+            onDismissRequest = { productPendingStockAdjust = null },
+            onAuthorized = {
+                productPendingStockAdjust = null
+                productToAdjustStock = prod
+                adjustStockStr = prod.stock.toString()
+            }
+        )
+    }
 
     // Stock Adjustment Dialog
     if (productToAdjustStock != null) {
@@ -124,13 +145,47 @@ fun ProductListScreen(
             },
             text = {
                 Column {
-                    Text("Current stock: ${prod.stock} ${prod.unit}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
+                    Text("Current stock: ${Quantity.formatDisplay(prod.stockMilli, prod.unit)}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = adjustStockStr,
                         onValueChange = { adjustStockStr = it },
                         label = { Text("New Stock Quantity") },
                         placeholder = { Text("Enter quantity") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Adjustment Reason", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(StockAdjustmentReason.values()) { reason ->
+                            val isSelected = adjustReason == reason
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) PrimaryPurple else DokandaarTheme.cardBackground,
+                                border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border) else null,
+                                modifier = Modifier.clickable { adjustReason = reason }
+                            ) {
+                                Text(
+                                    text = reason.displayNameBn,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) Color.White else DokandaarTheme.textPrimary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = adjustNotes,
+                        onValueChange = { adjustNotes = it },
+                        label = { Text("Notes (Optional)") },
+                        placeholder = { Text("e.g. Broken package, stock count") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -141,9 +196,15 @@ fun ProductListScreen(
                     onClick = {
                         val newQty = adjustStockStr.toIntOrNull()
                         if (newQty != null) {
-                            viewModel.adjustStock(prod.id, newQty)
+                            viewModel.adjustStock(
+                                productId = prod.id,
+                                newStock = newQty,
+                                reason = adjustReason,
+                                notes = adjustNotes
+                            )
                         }
                         productToAdjustStock = null
+                        adjustNotes = ""
                     }
                 ) {
                     Text(strings.save, color = PrimaryPurple, fontWeight = FontWeight.Bold)
@@ -236,7 +297,7 @@ fun ProductListScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = if (products.isNotEmpty()) "${products.size} Products in Catalog" else strings.productsSubtitle,
+                                    text = if (products.isNotEmpty()) strings.productsInCatalog(products.size) else strings.productsSubtitle,
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 11.sp,
                                     maxLines = 1,
@@ -364,7 +425,7 @@ fun ProductListScreen(
                 // "All (count)" card
                 item(key = "all") {
                     CategoryCard(
-                        title = "All ($allCount)",
+                        title = "${strings.filterAll} ($allCount)",
                         isSelected = selectedCategory.isBlank() || selectedCategory.equals("All", ignoreCase = true),
                         isAllItem = true,
                         onClick = { viewModel.setCategory("All") }
@@ -416,7 +477,7 @@ fun ProductListScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No products found",
+                            text = strings.noProductsFound,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = DokandaarTheme.textMuted
@@ -437,8 +498,7 @@ fun ProductListScreen(
                             product = product,
                             onEdit = { onNavigateToEditProduct(product.id) },
                             onAdjustStock = {
-                                productToAdjustStock = product
-                                adjustStockStr = product.stock.toString()
+                                productPendingStockAdjust = product
                             },
                             onDelete = { productToDelete = product }
                         )
@@ -465,6 +525,7 @@ private fun ProductItemCard(
     onAdjustStock: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val strings = appStrings()
     var menuExpanded by remember { mutableStateOf(false) }
 
     Card(
@@ -525,10 +586,11 @@ private fun ProductItemCard(
                     isLow -> PastelOrangeContent
                     else -> PastelGreenContent
                 }
+                val stockDisplay = Quantity.formatDisplay(product.stockMilli, product.unit)
                 val badgeText = when {
-                    isOut -> "Out of Stock"
-                    isLow -> "Low Stock: ${product.stock}"
-                    else -> "In Stock: ${product.stock}"
+                    isOut -> strings.filterOutOfStock
+                    isLow -> strings.lowStockColon(stockDisplay)
+                    else -> strings.inStockColon(stockDisplay)
                 }
 
                 Surface(
@@ -581,21 +643,21 @@ private fun ProductItemCard(
                         onDismissRequest = { menuExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Edit Product") },
+                            text = { Text(strings.editProductTitle) },
                             onClick = {
                                 menuExpanded = false
                                 onEdit()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Adjust Stock") },
+                            text = { Text(strings.adjustStock) },
                             onClick = {
                                 menuExpanded = false
                                 onAdjustStock()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete", color = ErrorColor) },
+                            text = { Text(strings.delete, color = ErrorColor) },
                             onClick = {
                                 menuExpanded = false
                                 onDelete()

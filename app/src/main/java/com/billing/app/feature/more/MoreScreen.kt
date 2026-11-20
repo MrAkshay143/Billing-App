@@ -109,11 +109,22 @@ import com.billing.app.core.ui.theme.PastelTealBg
 import com.billing.app.core.ui.theme.PastelTealContent
 import com.billing.app.core.ui.theme.PrimaryPurple
 import com.billing.app.core.ui.theme.SecondaryPurple
+import com.billing.app.BillingApplication
+import com.billing.app.core.ui.components.ShiftCloseDialog
+import com.billing.app.core.ui.components.ShiftOpenDialog
+import com.billing.app.core.ui.components.ShiftSummaryDialog
+import com.billing.app.domain.model.ShiftZReport
+import com.billing.app.domain.repository.PrinterRepository
+import com.billing.app.domain.repository.ShiftRepository
+import com.billing.app.domain.repository.UserRepository
 import com.billing.app.feature.settings.SettingsViewModel
 
 @Composable
 fun MoreScreen(
     viewModel: SettingsViewModel,
+    shiftRepository: ShiftRepository = BillingApplication.instance.shiftRepository,
+    printerRepository: PrinterRepository = BillingApplication.instance.printerRepository,
+    userRepository: UserRepository = BillingApplication.instance.userRepository,
     onNavigateToStoreProfile: () -> Unit,
     onNavigateToUserAccess: () -> Unit,
     onNavigateToPrinterSetup: () -> Unit,
@@ -131,12 +142,46 @@ fun MoreScreen(
     onNavigateToExpenses: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
     onNavigateToImportExport: () -> Unit = {},
+    onNavigateToPurchases: () -> Unit = {},
     onNavigateToPrivacyPolicy: () -> Unit = {},
     onNavigateToTerms: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val strings = appStrings()
     val shopProfile by viewModel.shopProfile.collectAsState()
+
+    val activeShift by shiftRepository.getActiveShiftFlow().collectAsState(initial = null)
+    var showShiftOpenDialog by remember { mutableStateOf(false) }
+    var showShiftCloseDialog by remember { mutableStateOf(false) }
+    var shiftSummaryZReport by remember { mutableStateOf<ShiftZReport?>(null) }
+
+    if (showShiftOpenDialog) {
+        ShiftOpenDialog(
+            userId = userRepository.currentUser.value?.id,
+            onDismissRequest = { showShiftOpenDialog = false },
+            onShiftOpened = { showShiftOpenDialog = false }
+        )
+    }
+
+    if (showShiftCloseDialog) {
+        ShiftCloseDialog(
+            shiftRepository = shiftRepository,
+            onDismissRequest = { showShiftCloseDialog = false },
+            onShiftClosed = { zReport ->
+                showShiftCloseDialog = false
+                shiftSummaryZReport = zReport
+            }
+        )
+    }
+
+    shiftSummaryZReport?.let { zReport ->
+        ShiftSummaryDialog(
+            zReport = zReport,
+            printerRepository = printerRepository,
+            storeName = shopProfile.name.ifBlank { "Dokandaar Store" },
+            onDismissRequest = { shiftSummaryZReport = null }
+        )
+    }
 
     var showHelpDialog by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
@@ -520,6 +565,39 @@ fun MoreScreen(
                         title = strings.settings,
                         onClick = onNavigateToAppearance
                     )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Row 3: Purchases / GRN & Cash Register / Z-Report
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.LocalShipping,
+                        title = "Purchases / GRN",
+                        iconBg = PastelBlueBg,
+                        iconTint = PastelBlueContent,
+                        onClick = onNavigateToPurchases
+                    )
+                    MoreTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.AccountBalanceWallet,
+                        title = "Cash Register & Z-Report / ক্যাশ রেজিস্টার",
+                        iconBg = PastelGreenBg,
+                        iconTint = PastelGreenContent,
+                        onClick = {
+                            if (activeShift != null) {
+                                showShiftCloseDialog = true
+                            } else {
+                                showShiftOpenDialog = true
+                            }
+                        }
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
