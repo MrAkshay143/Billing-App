@@ -259,7 +259,11 @@ object EscPosFormatter {
     /**
      * Renders a full invoice into a high-resolution monochrome Bitmap for native Indic (Hindi/Bengali) printing
      */
-    fun formatInvoiceBitmap(receipt: InvoiceReceipt, widthPx: Int = 384): ByteArray {
+    fun formatInvoiceBitmap(
+        receipt: InvoiceReceipt,
+        widthPx: Int = 384,
+        strings: com.billing.app.core.localization.AppStrings = com.billing.app.core.localization.StringsProvider.receiptStrings
+    ): ByteArray {
         val textSize = if (widthPx > 400) 24f else 20f
         val headerSize = textSize * 1.4f
         val lineHeight = textSize * 1.45f
@@ -353,22 +357,22 @@ object EscPosFormatter {
 
         // Metadata
         paintText.textAlign = Paint.Align.LEFT
-        canvas.drawText("Invoice: ${receipt.invoiceNumber}", padding, y, paintText)
+        canvas.drawText("${strings.receiptInvoice} ${receipt.invoiceNumber}", padding, y, paintText)
         y += lineHeight
         val dateStr = SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.ROOT).format(Date(receipt.timestamp))
-        canvas.drawText("Date: $dateStr", padding, y, paintText)
+        canvas.drawText("${strings.receiptDate} $dateStr", padding, y, paintText)
         y += lineHeight
 
         if (receipt.cashierName.isNotBlank()) {
-            canvas.drawText("Cashier: ${receipt.cashierName}", padding, y, paintText)
+            canvas.drawText("${strings.receiptCashier} ${receipt.cashierName}", padding, y, paintText)
             y += lineHeight
         }
         if (!receipt.customerName.isNullOrBlank()) {
-            canvas.drawText("Customer: ${receipt.customerName}", padding, y, paintText)
+            canvas.drawText("${strings.receiptCustomer} ${receipt.customerName}", padding, y, paintText)
             y += lineHeight
         }
         if (!receipt.customerPhone.isNullOrBlank()) {
-            canvas.drawText("Phone: ${receipt.customerPhone}", padding, y, paintText)
+            canvas.drawText("${strings.receiptPhone} ${receipt.customerPhone}", padding, y, paintText)
             y += lineHeight
         }
 
@@ -376,13 +380,14 @@ object EscPosFormatter {
         y += lineHeight * 0.8f
 
         // Items Header
-        canvas.drawText("Item / Details", padding, y, paintBold)
+        canvas.drawText(strings.receiptItemDetails, padding, y, paintBold)
         paintBold.textAlign = Paint.Align.RIGHT
-        canvas.drawText("Total", widthPx - padding, y, paintBold)
+        canvas.drawText(strings.receiptTotal, widthPx - padding, y, paintBold)
         y += lineHeight * 0.9f
         drawDivider(y)
         y += lineHeight * 0.8f
 
+        val receiptLang = com.billing.app.core.localization.StringsProvider.receiptLang
         // Item Rows (Two-line layout)
         for (item in receipt.items) {
             paintText.textAlign = Paint.Align.LEFT
@@ -390,8 +395,8 @@ object EscPosFormatter {
             canvas.drawText(truncatedName, padding, y, paintText)
             y += lineHeight
 
-            val qtyStr = Quantity.formatReceipt(item.quantityMilli, item.unitCode)
-            val priceStr = Quantity.formatPricePerUnit(item.unitPricePaise, item.unitCode)
+            val qtyStr = Quantity.formatReceipt(item.quantityMilli, item.unitCode, receiptLang)
+            val priceStr = Quantity.formatPricePerUnit(item.unitPricePaise, item.unitCode, receiptLang)
             val detailStr = "$qtyStr x $priceStr"
             val totalStr = formatMoneyPaise(item.lineTotalPaise)
 
@@ -406,27 +411,27 @@ object EscPosFormatter {
 
         // Totals
         paintText.textAlign = Paint.Align.RIGHT
-        canvas.drawText("Subtotal: Rs. ${formatMoneyPaise(receipt.subtotalPaise)}", widthPx - padding, y, paintText)
+        canvas.drawText("${strings.receiptSubtotal} Rs. ${formatMoneyPaise(receipt.subtotalPaise)}", widthPx - padding, y, paintText)
         y += lineHeight
 
         if (receipt.discountPaise > 0) {
-            canvas.drawText("Discount: -Rs. ${formatMoneyPaise(receipt.discountPaise)}", widthPx - padding, y, paintText)
+            canvas.drawText("${strings.receiptDiscount} -Rs. ${formatMoneyPaise(receipt.discountPaise)}", widthPx - padding, y, paintText)
             y += lineHeight
         }
 
         if (receipt.taxPaise > 0) {
-            canvas.drawText("Tax: Rs. ${formatMoneyPaise(receipt.taxPaise)}", widthPx - padding, y, paintText)
+            canvas.drawText("${strings.receiptTax} Rs. ${formatMoneyPaise(receipt.taxPaise)}", widthPx - padding, y, paintText)
             y += lineHeight
         }
 
         if (receipt.roundOffPaise != 0L) {
             val sign = if (receipt.roundOffPaise > 0) "+" else "-"
-            canvas.drawText("Round Off: $sign Rs. ${formatMoneyPaise(kotlin.math.abs(receipt.roundOffPaise))}", widthPx - padding, y, paintText)
+            canvas.drawText("${strings.receiptRoundOff} $sign Rs. ${formatMoneyPaise(kotlin.math.abs(receipt.roundOffPaise))}", widthPx - padding, y, paintText)
             y += lineHeight
         }
 
         paintBold.textAlign = Paint.Align.RIGHT
-        canvas.drawText("TOTAL: Rs. ${formatMoneyPaise(receipt.grandTotalPaise)}", widthPx - padding, y, paintBold)
+        canvas.drawText("${strings.receiptTotalPayable} Rs. ${formatMoneyPaise(receipt.grandTotalPaise)}", widthPx - padding, y, paintBold)
         y += lineHeight * 1.1f
 
         drawDivider(y)
@@ -434,25 +439,25 @@ object EscPosFormatter {
 
         // Payment
         paintText.textAlign = Paint.Align.LEFT
-        canvas.drawText("Payment: ${receipt.paymentMethod}", padding, y, paintText)
+        canvas.drawText("${strings.receiptPayment} ${receipt.paymentMethod}", padding, y, paintText)
         y += lineHeight
 
         if (receipt.cashReceivedPaise > 0) {
-            canvas.drawText("Cash Received: Rs. ${formatMoneyPaise(receipt.cashReceivedPaise)}", padding, y, paintText)
+            canvas.drawText("${strings.receiptCashReceived} Rs. ${formatMoneyPaise(receipt.cashReceivedPaise)}", padding, y, paintText)
             y += lineHeight
             if (receipt.changeReturnedPaise > 0) {
-                canvas.drawText("Change Returned: Rs. ${formatMoneyPaise(receipt.changeReturnedPaise)}", padding, y, paintText)
+                canvas.drawText("${strings.receiptChangeReturned} Rs. ${formatMoneyPaise(receipt.changeReturnedPaise)}", padding, y, paintText)
                 y += lineHeight
             }
         }
 
         if (receipt.upiPaidPaise > 0) {
-            canvas.drawText("UPI Paid: Rs. ${formatMoneyPaise(receipt.upiPaidPaise)}", padding, y, paintText)
+            canvas.drawText("${strings.receiptUpiPaid} Rs. ${formatMoneyPaise(receipt.upiPaidPaise)}", padding, y, paintText)
             y += lineHeight
         }
 
         if (receipt.duePaise > 0) {
-            canvas.drawText("Due Balance: Rs. ${formatMoneyPaise(receipt.duePaise)}", padding, y, paintBold)
+            canvas.drawText("${strings.receiptDueBalance} Rs. ${formatMoneyPaise(receipt.duePaise)}", padding, y, paintBold)
             y += lineHeight
         }
 
@@ -465,7 +470,7 @@ object EscPosFormatter {
             canvas.drawText(receipt.footerText, widthPx / 2f, y, paintText)
             y += lineHeight
         }
-        canvas.drawText("Thank You! Visit Again", widthPx / 2f, y, paintText)
+        canvas.drawText(strings.receiptThankYou, widthPx / 2f, y, paintText)
 
         try {
             return convertBitmapToEscPosRaster(bitmap)

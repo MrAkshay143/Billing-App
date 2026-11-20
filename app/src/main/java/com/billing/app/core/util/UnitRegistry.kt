@@ -1,5 +1,6 @@
 package com.billing.app.core.util
 
+import com.billing.app.data.local.entity.CustomUnitEntity
 import com.billing.app.domain.model.ProductUnit
 import com.billing.app.domain.model.QuantityStepChip
 import com.billing.app.domain.model.UnitCategory
@@ -96,8 +97,18 @@ object UnitRegistry {
     /**
      * Resolves standard unit by canonical code or fallback to PCS
      */
-    fun resolve(rawCode: String?): ProductUnit {
+    fun resolve(rawCode: String?, customUnits: List<CustomUnitEntity>? = null): ProductUnit {
         val clean = rawCode?.trim()?.uppercase() ?: return PCS
+        val custom = customUnits?.find { it.code.equals(clean, ignoreCase = true) }
+        if (custom != null) {
+            val base = resolve(custom.baseUnitCode)
+            return ProductUnit(
+                code = custom.code,
+                category = base.category,
+                allowsFractional = custom.allowsFractional,
+                defaultStepMilli = (custom.conversionFactor * 1000L).toLong()
+            )
+        }
         return when (clean) {
             "PCS", "PC", "PIECE", "PIECES" -> PCS
             "KG", "KILOGRAM", "KGS" -> KG
@@ -113,10 +124,20 @@ object UnitRegistry {
      * Resolves legacy unit strings with quantity & price conversion factors.
      * Flagged as lossyOrUnknown if unknown or lossy mapping to prevent silent corruption in CSV / Restore.
      */
-    fun resolveWithConversion(rawCode: String?): UnitConversionResult {
+    fun resolveWithConversion(rawCode: String?, customUnits: List<CustomUnitEntity>? = null): UnitConversionResult {
         val clean = rawCode?.trim()?.uppercase()
         if (clean.isNullOrBlank()) {
             return UnitConversionResult("PCS", 1.0, 1.0)
+        }
+        val custom = customUnits?.find { it.code.equals(clean, ignoreCase = true) }
+        if (custom != null) {
+            val base = resolve(custom.baseUnitCode)
+            return UnitConversionResult(
+                canonicalCode = base.code,
+                quantityMultiplier = custom.conversionFactor,
+                priceMultiplier = if (custom.conversionFactor > 0.0) 1.0 / custom.conversionFactor else 1.0,
+                isLossyOrUnknown = false
+            )
         }
         return when (clean) {
             "PCS", "PC", "PIECE", "PIECES" -> UnitConversionResult("PCS", 1.0, 1.0)

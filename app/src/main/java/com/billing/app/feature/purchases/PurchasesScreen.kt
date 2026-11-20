@@ -43,6 +43,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import com.billing.app.core.util.WholesaleConverter
+import com.billing.app.core.util.WholesaleConversion
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -364,6 +366,13 @@ private fun NewGrnDialog(
     var itemBatchNumber by remember { mutableStateOf("") }
     var itemExpiryDate by remember { mutableStateOf<Long?>(null) }
     var itemMrpText by remember { mutableStateOf("") }
+
+    // Wholesale / Carton conversion wizard state
+    var showWholesaleWizard by remember { mutableStateOf(false) }
+    var wholesalePackagingUnit by remember { mutableStateOf("CARTON") }
+    var wholesaleUnitsPerPkgText by remember { mutableStateOf("12") }
+    var wholesalePackageCountText by remember { mutableStateOf("1") }
+    var wholesalePricePerPkgText by remember { mutableStateOf("") }
 
     // Dropdown states
     var supplierDropdownExpanded by remember { mutableStateOf(false) }
@@ -714,6 +723,203 @@ private fun NewGrnDialog(
                                                     }
                                                 )
                                             }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Wholesale Conversion (Carton / Dozen) Toggle & Wizard
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { showWholesaleWizard = !showWholesaleWizard },
+                                color = if (showWholesaleWizard) PrimaryPurple.copy(alpha = 0.12f) else DokandaarTheme.surfaceVariant,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (showWholesaleWizard) PrimaryPurple else DokandaarTheme.border
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocalShipping,
+                                            contentDescription = null,
+                                            tint = if (showWholesaleWizard) PrimaryPurple else DokandaarTheme.textMuted,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = strings.wholesaleConversionTitle,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (showWholesaleWizard) PrimaryPurple else DokandaarTheme.textPrimary
+                                        )
+                                    }
+                                    Text(
+                                        text = if (showWholesaleWizard) "▲" else "▼",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (showWholesaleWizard) PrimaryPurple else DokandaarTheme.textMuted
+                                    )
+                                }
+                            }
+
+                            if (showWholesaleWizard) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = DokandaarTheme.surfaceVariant
+                                    ),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryPurple.copy(alpha = 0.4f))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = strings.wholesaleConversionHelp,
+                                            fontSize = 11.sp,
+                                            color = DokandaarTheme.textMuted
+                                        )
+
+                                        // Packaging Unit Chips
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            WholesaleConverter.PRESET_PACKAGING_UNITS.forEach { unit ->
+                                                val isSelected = wholesalePackagingUnit == unit
+                                                Surface(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clickable {
+                                                            wholesalePackagingUnit = unit
+                                                            if (unit == "DOZEN") {
+                                                                wholesaleUnitsPerPkgText = "12"
+                                                            }
+                                                        },
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = if (isSelected) PrimaryPurple else DokandaarTheme.cardBackground,
+                                                    border = androidx.compose.foundation.BorderStroke(
+                                                        1.dp,
+                                                        if (isSelected) PrimaryPurple else DokandaarTheme.border
+                                                    )
+                                                ) {
+                                                    Text(
+                                                        text = unit,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isSelected) Color.White else DokandaarTheme.textPrimary,
+                                                        textAlign = TextAlign.Center,
+                                                        modifier = Modifier.padding(vertical = 6.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                InputField(
+                                                    label = "${strings.packageCount} *",
+                                                    value = wholesalePackageCountText,
+                                                    onValueChange = { wholesalePackageCountText = it },
+                                                    placeholder = "e.g. 5",
+                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                                )
+                                            }
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                InputField(
+                                                    label = "${strings.unitsPerPackage} *",
+                                                    value = wholesaleUnitsPerPkgText,
+                                                    onValueChange = { wholesaleUnitsPerPkgText = it },
+                                                    placeholder = "e.g. 24",
+                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                                )
+                                            }
+                                        }
+
+                                        InputField(
+                                            label = "${strings.pricePerPackage} *",
+                                            value = wholesalePricePerPkgText,
+                                            onValueChange = { wholesalePricePerPkgText = it },
+                                            placeholder = "e.g. 1440.00",
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                        )
+
+                                        // Compute conversion
+                                        val pkgCount = wholesalePackageCountText.toDoubleOrNull() ?: 0.0
+                                        val unitsPerPkg = wholesaleUnitsPerPkgText.toIntOrNull() ?: 0
+                                        val pricePerPkg = (wholesalePricePerPkgText.toDoubleOrNull()?.let { (it * 100.0).toLong() }) ?: 0L
+                                        val baseCode = selectedProduct?.unit ?: "PCS"
+
+                                        val convResult = if (pkgCount > 0.0 && unitsPerPkg > 0 && pricePerPkg >= 0L) {
+                                            WholesaleConverter.convert(
+                                                wholesaleUnit = wholesalePackagingUnit,
+                                                unitsPerPackage = unitsPerPkg,
+                                                packageCount = pkgCount,
+                                                pricePerPackagePaise = pricePerPkg,
+                                                baseUnitCode = baseCode
+                                            )
+                                        } else null
+
+                                        if (convResult?.isSuccess == true) {
+                                            val conv = convResult.getOrThrow()
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = PastelGreenBg,
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, PastelGreenContent.copy(alpha = 0.3f)),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Column(modifier = Modifier.padding(8.dp)) {
+                                                    val displaySummary = "✓ ${conv.displayText}"
+                                                    val costSummary = "${strings.totalLineCost}: Rs. ${String.format(Locale.ROOT, "%.2f", conv.totalCostPaise / 100.0)}"
+                                                    Text(
+                                                        text = displaySummary,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = PastelGreenContent
+                                                    )
+                                                    Text(
+                                                        text = costSummary,
+                                                        fontSize = 11.sp,
+                                                        color = PastelGreenContent
+                                                    )
+                                                }
+                                            }
+
+                                            Button(
+                                                onClick = {
+                                                    val baseQty = conv.baseQuantityMilli / 1000.0
+                                                    itemQuantityText = if (baseQty % 1.0 == 0.0) baseQty.toInt().toString() else String.format(Locale.ROOT, "%.3f", baseQty)
+                                                    itemUnitPriceText = String.format(Locale.ROOT, "%.2f", conv.unitPricePaise / 100.0)
+                                                    showWholesaleWizard = false
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(8.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = PrimaryPurple,
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text(strings.applyWholesaleToItem, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                            }
+                                        } else if (convResult?.isFailure == true) {
+                                            Text(
+                                                text = convResult.exceptionOrNull()?.message ?: "Invalid conversion parameters",
+                                                fontSize = 11.sp,
+                                                color = ErrorColor
+                                            )
                                         }
                                     }
                                 }

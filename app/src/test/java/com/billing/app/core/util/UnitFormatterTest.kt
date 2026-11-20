@@ -107,4 +107,25 @@ class UnitFormatterTest {
         assertEquals("1500.00", Quantity.normalizeInputDigits("₹ 1,500.00"))
         assertEquals("350", Quantity.normalizeInputDigits("Rs. 350"))
     }
+
+    @Test
+    fun testCustomUnitResolution() {
+        val customBosta = com.billing.app.data.local.entity.CustomUnitEntity(
+            code = "BOSTA",
+            name = "Bosta (50kg)",
+            baseUnitCode = "KG",
+            conversionFactor = 50.0,
+            allowsFractional = true
+        )
+        val resolved = UnitRegistry.resolve("bosta", listOf(customBosta))
+        assertEquals("BOSTA", resolved.code)
+        assertTrue(resolved.allowsFractional)
+        assertEquals(50000L, resolved.defaultStepMilli)
+
+        val conversion = UnitRegistry.resolveWithConversion("bosta", listOf(customBosta))
+        assertEquals("KG", conversion.canonicalCode)
+        assertEquals(50.0, conversion.quantityMultiplier, 0.0001)
+        assertEquals(0.02, conversion.priceMultiplier, 0.0001)
+        assertFalse(conversion.isLossyOrUnknown)
+    }
 }

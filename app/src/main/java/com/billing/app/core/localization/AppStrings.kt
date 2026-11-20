@@ -465,6 +465,38 @@ abstract class AppStrings {
     abstract val upiPayments: String
     abstract val copyReport: String
     abstract val viewInvoices: String
+
+    abstract val wholesaleConversionTitle: String
+    abstract val wholesalePackagingUnit: String
+    abstract val unitsPerPackage: String
+    abstract val packageCount: String
+    abstract val pricePerPackage: String
+    abstract val applyWholesaleToItem: String
+    abstract val customUnitsTitle: String
+    abstract val addCustomUnit: String
+    abstract val baseUnit: String
+    abstract val conversionFactorLabel: String
+    abstract val wholesaleConversionHelp: String
+
+    abstract val receiptInvoice: String
+    abstract val receiptDate: String
+    abstract val receiptCashier: String
+    abstract val receiptCustomer: String
+    abstract val receiptPhone: String
+    abstract val receiptItemDetails: String
+    abstract val receiptTotal: String
+    abstract val receiptSubtotal: String
+    abstract val receiptDiscount: String
+    abstract val receiptTax: String
+    abstract val receiptRoundOff: String
+    abstract val receiptTotalPayable: String
+    abstract val receiptPayment: String
+    abstract val receiptCashReceived: String
+    abstract val receiptChangeReturned: String
+    abstract val receiptUpiPaid: String
+    abstract val receiptDueBalance: String
+    abstract val receiptThankYou: String
+    abstract val totalLineCost: String
 }
 
 val EnStrings: AppStrings = EnglishStrings()

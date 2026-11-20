@@ -176,23 +176,39 @@ flowchart TD
 - [x] `hardcoded_strings_baseline.json` পুনর্নির্মাণ করে ৪০টি ফাইলে মোট ২৭০টি স্ট্রিংয়ে কঠোরভাবে লক করা হয়েছে।
 - [x] সম্পূর্ণ ইউনিট টেস্ট যাচাই: `./gradlew testDebugUnitTest` চালিয়ে বাস্তব আউটপুট রেকর্ড করা হয়েছে (১৫৫টি টেস্ট সফল, ০ ফেইলিউর)।
 
-### পর্ব U3 (P3 - ভবিষ্যৎ ব্যাকলগ):
-- [ ] কাস্টম একক (`custom_units` টেবিল, বস্তা/প্লেট)।
-- [ ] মহাজনি ক্রয় চালান (GRN) কার্টন/ডজন থেকে পিসে রূপান্তর উইজার্ড (`purchaseUnit + conversionFactor`)।
-- [ ] বহুভাষিক বিটম্যাপ থার্মাল রসিদ রেন্ডারিং।
+### পর্ব U3 (P3 - ভবিষ্যৎ ব্যাকলগ - সম্পন্ন):
+- [x] কাস্টম একক (`custom_units` টেবিল, বস্তা/প্লেট):
+  - `CustomUnitEntity` এবং `CustomUnitDao` বাস্তবায়ন।
+  - Room স্কিমা সংস্করণ ৮-এ উন্নীতকরণ এবং `MIGRATION_7_8` মাইগ্রেশন স্ক্রিপ্ট যুক্তকরণ।
+  - `CustomUnitRepository` ও `CustomUnitRepositoryImpl` ডোমেন সার্ভিস ও বৈধতা পরীক্ষা (কোড ইউনিকনেস, বেস ইউনিট ম্যাপিং)।
+  - `UnitRegistry.resolve()` এবং `UnitRegistry.resolveWithConversion()` এ কাস্টম একক রেজোলিউশন সংহতকরণ।
+  - `CustomUnitRepositoryImplTest.kt` এ ৪টি ইউনিট টেস্ট সফল।
+- [x] মহাজনি ক্রয় চালান (GRN) কার্টন/ডজন থেকে পিসে রূপান্তর উইজার্ড (`purchaseUnit + conversionFactor`):
+  - `WholesaleConverter.kt` ডোমেন রূপান্তর ইঞ্জিন বাস্তবায়ন (`DOZEN`, `CARTON`, `BOX`, `BAG`, `CUSTOM` প্যাকেজিং একক সমর্থন)।
+  - `PurchasesScreen.kt` এ নিউ জিআরএন ডায়ালগে আধুনিক কোলাপ্সিবল রূপান্তর উইজার্ড ও রিয়েল-টাইম প্রিভিউ কার্ড যুক্তকরণ।
+  - ডিসক্রিট এককের জন্য ভগ্নাংশ গার্ড এবং নির্ভুল রাউন্ডিং হিসাব কার্যকর।
+  - `WholesaleConverterTest.kt` এ ৪টি ইউনিট টেস্ট সফল।
+- [x] বহুভাষিক বিটম্যাপ থার্মাল রসিদ রেন্ডারিং:
+  - `EscPosFormatter.formatInvoiceBitmap` এ ৩টি ভাষার লেবেল (`receiptInvoice`, `receiptDate`, `receiptTotalPayable`, `receiptThankYou` ইত্যাদি) ডাইনামিক রেন্ডারিং।
+  - `StringsProvider.receiptStrings` এবং `StringsProvider.receiptLang` অনুযায়ী রসিদের ফিল্ড ও এককের প্রতীক বাংলায়/হিন্দিতে রেন্ডার হওয়া।
+  - সিএ নির্দেশিকা অনুযায়ী সংবিধিবদ্ধ টেক্সট ("Tax Invoice", "Bill of Supply", কম্পোজিশন ক্লজ) ইংরেজিতে বহাল রাখা এবং সমস্ত সংখ্যা ও পরিমাণ `Locale.ROOT` এ ASCII ডিজিটে রাখা।
+  - `PrinterGoldenTest.kt` এ বহুভাষিক নন-অ্যাস্কি ডিটেকশন ও রসিদ লেবেল প্যারিটি টেস্ট সফল।
 
 ---
 
 ## ৫. কোয়ালিটি নিশ্চয়তা ও টেস্ট স্পেসিফিকেশন
 
-1. **`UnitFormatterTest.kt`:** `formatDisplay` এবং `formatReceipt` টেবিল-চালিত টেস্ট (পাস)।
-2. **`PrinterGoldenTest.kt`:** ৫৮মিমি রসিদে `0.250 kg` নিখুঁত দুই-লাইনে প্রিন্ট হওয়া যাচাই (পাস)।
+1. **`UnitFormatterTest.kt`:** `formatDisplay`, `formatReceipt`, এবং কাস্টম একক রেজোলিউশন টেস্ট (পাস)।
+2. **`PrinterGoldenTest.kt`:** ৫৮মিমি রসিদে দুই-লাইন লেআউট, সংবিধিবদ্ধ ঘোষণা ও বহুভাষিক বিটম্যাপ ভেরিফিকেশন (পাস)।
 3. **`LocaleRootSafetyTest.kt`:** বাংলা কীবোর্ড ইনপুট নরমালাইজেশন এবং `am=` এ ASCII ডিজিট যাচাই (পাস)।
 4. **`DomainFractionalGuardTest.kt`:** `PCS`, `PACK`, `BOX` এর জন্য ১৫০০ মিলি রিজেক্ট হওয়া এবং `MTR` এর জন্য ১৫০০ মিলি সফল হওয়া পরীক্ষা (পাস)।
 5. **`HardcodedStringGuardTest.kt`:** বেইজলাইন ভ্যালিডেশন (২৭০ লিটারেল), `StringsProvider` এবং তিন ভাষার সমতা পরীক্ষা (পাস)।
+6. **`WholesaleConverterTest.kt`:** ডজন, কার্টন এবং বস্তা থেকে বেস ইউনিটে নির্ভুল রূপান্তর পরীক্ষা (পাস)।
+7. **`CustomUnitRepositoryImplTest.kt`:** কাস্টম একক সংযোজন, ডুপ্লিকেট রোধ এবং মোছা পরীক্ষা (পাস)।
 
-> **বাস্তব টেস্ট ভেরিফিকেশন ফলাফল (Phase U2 সমাপনান্তে):**
-> - মোট ইউনিট টেস্ট সংখ্যা: **১৫৫টি** (১৫৫/১৫৫ পাস)
+> **বাস্তব টেস্ট ভেরিফিকেশন ফলাফল (Phase U3 সমাপনান্তে):**
+> - মোট ইউনিট টেস্ট সংখ্যা: **১৬৬টি** (১৬৬/১৬৬ পাস)
 > - টেস্ট ফেইলিউর / এরর: **০টি**
 > - কম্পাইল স্ট্যাটাস: `:app:compileDebugKotlin` **BUILD SUCCESSFUL**
+> - রুম ডেটাবেস স্কিমা: **সংস্করণ ৮ (8.json সংগৃহীত ও MIGRATION_7_8 ভেরিফাইড)**
 > - মোট কমপোজ হার্ডকোডেড `Text("...")` লিটারেল: **৫৬১ থেকে কমে ২৭০** (২৯১টি সেন্ট্রালাইজড, ৫২% সার্বিক হ্রাস)।

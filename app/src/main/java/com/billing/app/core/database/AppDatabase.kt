@@ -9,6 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.billing.app.data.local.dao.AuditLogDao
 import com.billing.app.data.local.dao.CashMovementDao
 import com.billing.app.data.local.dao.CategoryDao
+import com.billing.app.data.local.dao.CustomUnitDao
 import com.billing.app.data.local.dao.CustomerDao
 import com.billing.app.data.local.dao.CustomerLedgerDao
 import com.billing.app.data.local.dao.ExpenseDao
@@ -29,6 +30,7 @@ import com.billing.app.data.local.dao.UserDao
 import com.billing.app.data.local.entity.AuditLogEntity
 import com.billing.app.data.local.entity.CashMovementEntity
 import com.billing.app.data.local.entity.CategoryEntity
+import com.billing.app.data.local.entity.CustomUnitEntity
 import com.billing.app.data.local.entity.CustomerEntity
 import com.billing.app.data.local.entity.CustomerLedgerEntity
 import com.billing.app.data.local.entity.ExpenseEntity
@@ -76,9 +78,10 @@ import com.billing.app.data.local.entity.UserEntity
         ReturnItemEntity::class,
         ReturnItemBatchEntity::class,
         StockAdjustmentEntity::class,
-        AuditLogEntity::class
+        AuditLogEntity::class,
+        CustomUnitEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -102,6 +105,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun returnItemBatchDao(): ReturnItemBatchDao
     abstract fun stockAdjustmentDao(): StockAdjustmentDao
     abstract fun auditLogDao(): AuditLogDao
+    abstract fun customUnitDao(): CustomUnitDao
 
     companion object {
         @Volatile
@@ -329,6 +333,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS custom_units (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        code TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        baseUnitCode TEXT NOT NULL,
+                        conversionFactor REAL NOT NULL,
+                        allowsFractional INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_custom_units_code ON custom_units (code)")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val builder = Room.databaseBuilder(
@@ -336,7 +357,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "billing_app.db"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_6_7)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_6_7, MIGRATION_7_8)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)

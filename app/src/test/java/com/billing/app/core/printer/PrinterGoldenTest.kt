@@ -91,4 +91,41 @@ class PrinterGoldenTest {
         assertTrue(text.contains("Composition Taxable Person, not eligible to collect tax on supplies"))
         assertTrue(text.contains("Bill of Supply"))
     }
+
+    @Test
+    fun testNonAsciiDetectionForMultilingualPrinting() {
+        // Pure ASCII text routes to fast ESC/POS text engine
+        assertFalse(EscPosFormatter.containsNonAscii("Maa Tara Store INV-1001 0.250 kg"))
+
+        // Bengali text routes to bitmap raster engine
+        assertTrue(EscPosFormatter.containsNonAscii("মা তারা ভাণ্ডার"))
+        assertTrue(EscPosFormatter.containsNonAscii("চিনি ১ কেজি"))
+
+        // Devanagari text routes to bitmap raster engine
+        assertTrue(EscPosFormatter.containsNonAscii("दुकानदार बिल"))
+        assertTrue(EscPosFormatter.containsNonAscii("चीनी"))
+    }
+
+    @Test
+    fun testReceiptStringsParityAcrossLanguages() {
+        val en = com.billing.app.core.localization.EnStrings
+        val bn = com.billing.app.core.localization.BnStrings
+        val hi = com.billing.app.core.localization.HiStrings
+
+        // Bengali receipt labels verified
+        assertEquals("চালান:", bn.receiptInvoice)
+        assertEquals("তারিখ:", bn.receiptDate)
+        assertEquals("সর্বমোট:", bn.receiptTotalPayable)
+        assertEquals("ধন্যবাদ! আবার আসবেন", bn.receiptThankYou)
+
+        // Hindi receipt labels verified
+        assertEquals("इनवॉइस:", hi.receiptInvoice)
+        assertEquals("तारीख:", hi.receiptDate)
+        assertEquals("कुल देय:", hi.receiptTotalPayable)
+        assertEquals("धन्यवाद! फिर पधारें", hi.receiptThankYou)
+
+        // English receipt labels verified
+        assertEquals("Invoice:", en.receiptInvoice)
+        assertEquals("TOTAL:", en.receiptTotalPayable)
+    }
 }
