@@ -116,13 +116,13 @@ fun ExpensesScreen(
                         label = strings.expenseTitle,
                         value = title,
                         onValueChange = { title = it },
-                        placeholder = "e.g. Electricity Bill, Shop Rent, Tea"
+                        placeholder = strings.placeholderExpenseTitle
                     )
                     InputField(
                         label = strings.expenseCategory,
                         value = category,
                         onValueChange = { category = it },
-                        placeholder = "e.g. Rent, Utilities, Salary, Miscellaneous"
+                        placeholder = strings.placeholderCategoryName
                     )
 
                     // Quick category selection chips
@@ -199,7 +199,7 @@ fun ExpensesScreen(
         AlertDialog(
             onDismissRequest = { expenseToDelete = null },
             title = { Text(strings.deleteExpenseTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
-            text = { Text("Delete '${exp.title}' (${Money(exp.amountPaise).format()})? ${strings.deleteExpenseConfirm}") },
+            text = { Text(strings.deleteExpensePrompt(exp.title)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -359,7 +359,7 @@ fun ExpensesScreen(
                                     expenseToDelete = exp
                                 }
                             ) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorColor, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Delete, contentDescription = strings.delete, tint = ErrorColor, modifier = Modifier.size(18.dp))
                             }
                         }
                     }

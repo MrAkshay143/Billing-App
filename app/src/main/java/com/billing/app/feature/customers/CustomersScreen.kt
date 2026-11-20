@@ -159,20 +159,20 @@ fun CustomersScreen(
                         label = strings.customerName,
                         value = formName,
                         onValueChange = { formName = it },
-                        placeholder = "e.g. Ramesh Kumar"
+                        placeholder = strings.placeholderCustomerName
                     )
                     InputField(
                         label = strings.customerPhone,
                         value = formPhone,
                         onValueChange = { formPhone = it },
-                        placeholder = "e.g. 9876543210",
+                        placeholder = strings.placeholderCustomerPhone,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
                     InputField(
                         label = strings.customerAddress,
                         value = formAddress,
                         onValueChange = { formAddress = it },
-                        placeholder = "e.g. Shop 4, Main Market"
+                        placeholder = strings.placeholderCustomerAddress
                     )
                 }
             },
@@ -234,7 +234,7 @@ fun CustomersScreen(
         AlertDialog(
             onDismissRequest = { customerToDelete = null },
             title = { Text(strings.deleteCustomerTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
-            text = { Text("Remove '${cust.name}'? ${strings.deleteCustomerConfirm}") },
+            text = { Text(strings.deleteCustomerPrompt(cust.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -301,7 +301,7 @@ fun CustomersScreen(
                 DokandaarSearchBar(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = "Search by name or mobile number...",
+                    placeholder = strings.searchCustomers,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -433,14 +433,14 @@ fun CustomersScreen(
                                         formEmail = cust.email ?: ""
                                     }
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PrimaryPurple, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Edit, contentDescription = strings.edit, tint = PrimaryPurple, modifier = Modifier.size(18.dp))
                                 }
                                 IconButton(
                                     onClick = {
                                         customerToDelete = cust
                                     }
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorColor, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = strings.delete, tint = ErrorColor, modifier = Modifier.size(18.dp))
                                 }
                             }
                         }

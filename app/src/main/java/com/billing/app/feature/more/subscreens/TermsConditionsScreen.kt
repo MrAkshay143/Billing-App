@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -30,11 +31,12 @@ import com.billing.app.core.ui.theme.PrimaryPurple
 fun TermsConditionsScreen(
     onNavigateBack: () -> Unit
 ) {
+    val strings = appStrings()
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Terms & Conditions",
-                subtitle = "Usage Terms for Kirana Retailers",
+                title = strings.termsConditionsTitle,
+                subtitle = strings.termsConditionsDesc,
                 icon = Icons.Default.Gavel,
                 onNavigateBack = onNavigateBack
             )

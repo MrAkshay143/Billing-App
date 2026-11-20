@@ -28,30 +28,43 @@ object FeedbackManager {
     fun showToast(
         context: Context? = null,
         message: String,
-        duration: Int = 0
+        duration: Int = 0,
+        type: ToastType? = null
     ) {
         if (message.isBlank()) return
-        val lower = message.lowercase()
-        val type = when {
-            lower.contains("success") || lower.contains("saved") || lower.contains("copied") ||
-            lower.contains("imported") || lower.contains("restored") || lower.contains("applied") ||
-            lower.contains("verified") || lower.contains("selected") || lower.contains("added") -> ToastType.SUCCESS
+        val resolvedType = type ?: run {
+            val lower = message.lowercase()
+            when {
+                lower.contains("success") || lower.contains("saved") || lower.contains("copied") ||
+                lower.contains("imported") || lower.contains("restored") || lower.contains("applied") ||
+                lower.contains("verified") || lower.contains("selected") || lower.contains("added") ||
+                lower.contains("সফল") || lower.contains("সংরক্ষিত") || lower.contains("যুক্ত") ||
+                lower.contains("सफल") || lower.contains("सहेजा") || lower.contains("जोड़ा") -> ToastType.SUCCESS
 
-            lower.contains("fail") || lower.contains("error") || lower.contains("required") ||
-            lower.contains("cannot") || lower.contains("not found") || lower.contains("deleted") ||
-            lower.contains("disabled") || lower.contains("please enter") -> ToastType.ERROR
+                lower.contains("fail") || lower.contains("error") || lower.contains("required") ||
+                lower.contains("cannot") || lower.contains("not found") || lower.contains("deleted") ||
+                lower.contains("disabled") || lower.contains("please enter") ||
+                lower.contains("ব্যর্থ") || lower.contains("ত্রুটি") || lower.contains("প্রয়োজন") ||
+                lower.contains("মুছে") || lower.contains("বাকি") || lower.contains("হাতে নেই") ||
+                lower.contains("विफल") || lower.contains("त्रुटि") || lower.contains("आवश्यक") ||
+                lower.contains("हटाया") || lower.contains("उधार") -> ToastType.ERROR
 
-            else -> ToastType.INFO
+                else -> ToastType.INFO
+            }
         }
 
         val durationMillis = if (message.length > 40 || duration > 0) 3500L else 2500L
         _activeToast.value = DokandaarToastData(
             id = System.currentTimeMillis(),
             message = message.trim(),
-            type = type,
+            type = resolvedType,
             durationMillis = durationMillis
         )
     }
+
+    fun showSuccess(context: Context? = null, message: String) = showToast(context, message, type = ToastType.SUCCESS)
+    fun showError(context: Context? = null, message: String) = showToast(context, message, type = ToastType.ERROR)
+    fun showInfo(context: Context? = null, message: String) = showToast(context, message, type = ToastType.INFO)
 
     fun dismissToast() {
         _activeToast.value = null

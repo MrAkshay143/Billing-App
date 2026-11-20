@@ -62,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
 import com.billing.app.core.ui.theme.PastelBlueBg
@@ -99,6 +100,7 @@ fun CustomerKhataDetailSheet(
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val ledgerEntries by customerRepository.getCustomerLedger(customer.id).collectAsState(initial = emptyList())
@@ -211,7 +213,7 @@ fun CustomerKhataDetailSheet(
                     ) {
                         Column {
                             Text(
-                                text = "Current Due Balance / মোট বাকি",
+                                text = strings.customerDueBalance,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = DokandaarTheme.textMuted
@@ -235,7 +237,7 @@ fun CustomerKhataDetailSheet(
                             )
                         ) {
                             Text(
-                                text = if (currentDuePaise > 0L) "Due / বাকি" else "Clear / Advance / পরিশোধ",
+                                text = if (currentDuePaise > 0L) strings.badgePending else strings.badgePaid,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (currentDuePaise > 0L) PastelOrangeContent else PastelGreenContent,
@@ -299,7 +301,7 @@ fun CustomerKhataDetailSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "+ Receive Payment / জমা নিন",
+                    text = "+ ${strings.receivePaymentAction}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -348,7 +350,7 @@ fun CustomerKhataDetailSheet(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "WhatsApp / তাগাদা",
+                        text = strings.actionSendWhatsApp,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -380,13 +382,13 @@ fun CustomerKhataDetailSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Phone,
-                        contentDescription = "Call",
+                        contentDescription = strings.cdCall,
                         modifier = Modifier.size(16.dp),
                         tint = PastelBlueContent
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Call / কল করুন",
+                        text = strings.actionCallCustomer,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -412,7 +414,7 @@ fun CustomerKhataDetailSheet(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Ledger Statement / খাতা লেনদেন",
+                        text = strings.customerKhataStatement,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = DokandaarTheme.textPrimary
@@ -455,7 +457,7 @@ fun CustomerKhataDetailSheet(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "No ledger transactions yet",
+                            text = strings.noRecordsFound,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = DokandaarTheme.textMuted
@@ -489,34 +491,35 @@ fun CustomerKhataDetailSheet(
 
 @Composable
 fun CustomerLedgerEntryCard(entry: CustomerLedgerEntity) {
+    val strings = appStrings()
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
     val formattedDate = remember(entry.createdAt) { dateFormat.format(Date(entry.createdAt)) }
 
-    val config = remember(entry.transactionType) {
+    val config = remember(entry.transactionType, strings) {
         when (entry.transactionType) {
             "OPENING_BALANCE" -> LedgerTypeConfig(
-                label = "Opening Balance / পূর্বের বাকি",
+                label = strings.customerOpeningBalance,
                 badgeBg = PastelOrangeBg,
                 badgeContent = PastelOrangeContent,
                 icon = Icons.Default.AccountBalance,
                 isDebit = true
             )
             "CREDIT_SALE" -> LedgerTypeConfig(
-                label = "Credit Sale / বাকি বিক্রয়",
+                label = strings.badgePending,
                 badgeBg = PastelRedBg,
                 badgeContent = PastelRedContent,
                 icon = Icons.AutoMirrored.Filled.ReceiptLong,
                 isDebit = true
             )
             "PAYMENT" -> LedgerTypeConfig(
-                label = "Payment (${entry.paymentMode ?: "CASH"}) / জমা",
+                label = "${strings.receivePaymentAction} (${if (entry.paymentMode == "UPI") strings.upiOnline else strings.cash})",
                 badgeBg = PastelGreenBg,
                 badgeContent = PastelGreenContent,
                 icon = Icons.Default.CheckCircle,
                 isDebit = false
             )
             "RETURN_CREDIT" -> LedgerTypeConfig(
-                label = "Return Credit / ফেরত জমা",
+                label = strings.salesReturn,
                 badgeBg = PastelBlueBg,
                 badgeContent = PastelBlueContent,
                 icon = Icons.AutoMirrored.Filled.Undo,

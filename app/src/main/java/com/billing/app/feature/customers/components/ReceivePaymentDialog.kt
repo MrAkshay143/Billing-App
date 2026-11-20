@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.ShiftOpenDialog
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
@@ -76,6 +77,7 @@ fun ReceivePaymentDialog(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val strings = appStrings()
 
     val initialAmount = if (currentDuePaise > 0L) {
         String.format(Locale.US, "%.2f", currentDuePaise / 100.0)
@@ -125,7 +127,7 @@ fun ReceivePaymentDialog(
                     )
                 }
                 Text(
-                    text = "Receive Payment / জমা নিন",
+                    text = strings.receivePaymentTitle,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryPurple
@@ -165,7 +167,7 @@ fun ReceivePaymentDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "Current Due:",
+                                text = "${strings.customerDueBalance}:",
                                 fontSize = 12.sp,
                                 color = DokandaarTheme.textMuted
                             )
@@ -183,7 +185,7 @@ fun ReceivePaymentDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Amount / টাকার পরিমাণ (₹)") },
+                    label = { Text("${strings.payableAmountLabel} (₹)") },
                     prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
                     placeholder = { Text("0.00") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -200,7 +202,7 @@ fun ReceivePaymentDialog(
                 // Payment Mode Selection Row
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Payment Mode / মাধ্যম:",
+                        text = "${strings.paymentMode}:",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = DokandaarTheme.textPrimary
@@ -228,13 +230,13 @@ fun ReceivePaymentDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.AccountBalanceWallet,
-                                    contentDescription = "Cash",
+                                    contentDescription = strings.cash,
                                     tint = if (paymentMode == "CASH") PrimaryPurple else DokandaarTheme.textMuted,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Cash / নগদ",
+                                    text = strings.cash,
                                     fontSize = 13.sp,
                                     fontWeight = if (paymentMode == "CASH") FontWeight.Bold else FontWeight.Medium,
                                     color = if (paymentMode == "CASH") PrimaryPurple else DokandaarTheme.textPrimary
@@ -261,13 +263,13 @@ fun ReceivePaymentDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.QrCode,
-                                    contentDescription = "UPI",
+                                    contentDescription = strings.upiOnline,
                                     tint = if (paymentMode == "UPI") PrimaryPurple else DokandaarTheme.textMuted,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "UPI / ইউপিআই",
+                                    text = strings.upiOnline,
                                     fontSize = 13.sp,
                                     fontWeight = if (paymentMode == "UPI") FontWeight.Bold else FontWeight.Medium,
                                     color = if (paymentMode == "UPI") PrimaryPurple else DokandaarTheme.textPrimary
@@ -327,8 +329,8 @@ fun ReceivePaymentDialog(
                 OutlinedTextField(
                     value = noteText,
                     onValueChange = { noteText = it },
-                    label = { Text("Note / মন্তব্য (Optional)") },
-                    placeholder = { Text("e.g. Partial payment / খাতা জমা") },
+                    label = { Text(strings.paymentNotePlaceholder) },
+                    placeholder = { Text(strings.paymentNotePlaceholder) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
@@ -345,13 +347,13 @@ fun ReceivePaymentDialog(
                 onClick = {
                     val amountPaise = Money.fromRupees(amountText).paise
                     if (amountPaise <= 0L) {
-                        FeedbackManager.showToast(context, "Please enter a valid payment amount")
+                        FeedbackManager.showError(context, strings.enterValidQuantity)
                         return@Button
                     }
 
                     if (paymentMode == "CASH" && activeShift == null) {
                         showShiftOpenDialog = true
-                        FeedbackManager.showToast(context, "Please open a shift before recording cash payment")
+                        FeedbackManager.showError(context, "Please open a shift before recording cash payment")
                         return@Button
                     }
 
@@ -368,14 +370,14 @@ fun ReceivePaymentDialog(
                         isSubmitting = false
 
                         if (result.isSuccess) {
-                            FeedbackManager.showToast(
+                            FeedbackManager.showSuccess(
                                 context,
                                 "Payment of ${Money(amountPaise).format()} recorded successfully."
                             )
                             onPaymentSuccess()
                             onDismissRequest()
                         } else {
-                            FeedbackManager.showToast(
+                            FeedbackManager.showError(
                                 context,
                                 "Failed to record payment: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
                             )
@@ -394,7 +396,7 @@ fun ReceivePaymentDialog(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                 }
-                Text("Confirm / জমা করুন", fontWeight = FontWeight.Bold)
+                Text(strings.confirmReceivePayment, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -402,7 +404,7 @@ fun ReceivePaymentDialog(
                 onClick = onDismissRequest,
                 enabled = !isSubmitting
             ) {
-                Text("Cancel / বাতিল", color = DokandaarTheme.textMuted)
+                Text(strings.cancel, color = DokandaarTheme.textMuted)
             }
         },
         containerColor = DokandaarTheme.cardBackground,

@@ -181,14 +181,14 @@ fun ShiftSummaryDialog(
                 }
 
                 // 1. Cash Drawer Reconciliation Card
-                SectionCard(title = "Cash Drawer Reconciliation / ক্যাশ মিলান") {
+                SectionCard(title = strings.shiftReconciliationTitle) {
                     SummaryRow(
-                        label = "Expected Cash in Drawer:",
+                        label = "${strings.shiftExpectedCash}:",
                         value = Money(zReport.expectedCashPaise).format(),
                         isBold = true
                     )
                     SummaryRow(
-                        label = "Actual Counted Cash:",
+                        label = "${strings.shiftActualCash}:",
                         value = Money(zReport.actualCashPaise).format(),
                         isBold = true
                     )
@@ -208,9 +208,9 @@ fun ShiftSummaryDialog(
                         else -> PastelOrangeContent
                     }
                     val badgeLabel = when {
-                        variancePaise == 0L -> "Balanced / নিখুঁত (${Money(0L).format()})"
-                        variancePaise < 0L -> "Shortage / ঘাটতি: -${Money(kotlin.math.abs(variancePaise)).format()}"
-                        else -> "Excess / অতিরিক্ত: +${Money(variancePaise).format()}"
+                        variancePaise == 0L -> strings.shiftVarianceBalanced
+                        variancePaise < 0L -> strings.shiftVarianceShortage(Money(kotlin.math.abs(variancePaise)).format())
+                        else -> strings.shiftVarianceExcess(Money(variancePaise).format())
                     }
 
                     Box(
@@ -232,26 +232,26 @@ fun ShiftSummaryDialog(
                 }
 
                 // 2. Financial Breakdown Card
-                SectionCard(title = "Cash Flow Breakdown / নগদ প্রবাহ") {
-                    SummaryRow(label = "Opening Float:", value = Money(zReport.openingFloatPaise).format())
-                    SummaryRow(label = "Cash Sales:", value = "+${Money(zReport.cashSalesPaise).format()}", valueColor = PastelGreenContent)
-                    SummaryRow(label = "Khata Collections:", value = "+${Money(zReport.khataCollectionsPaise).format()}", valueColor = PastelGreenContent)
+                SectionCard(title = strings.shiftCashFlowTitle) {
+                    SummaryRow(label = "${strings.shiftOpeningFloat}:", value = Money(zReport.openingFloatPaise).format())
+                    SummaryRow(label = "${strings.shiftCashSales}:", value = "+${Money(zReport.cashSalesPaise).format()}", valueColor = PastelGreenContent)
+                    SummaryRow(label = "${strings.shiftKhataCollections}:", value = "+${Money(zReport.khataCollectionsPaise).format()}", valueColor = PastelGreenContent)
                     if (zReport.otherCashInPaise > 0L) {
                         SummaryRow(label = "Other Cash In:", value = "+${Money(zReport.otherCashInPaise).format()}", valueColor = PastelGreenContent)
                     }
-                    SummaryRow(label = "Cash Expenses:", value = "-${Money(zReport.expenseCashOutPaise).format()}", valueColor = PastelRedContent)
-                    SummaryRow(label = "Supplier Payments:", value = "-${Money(zReport.supplierPaymentPaise).format()}", valueColor = PastelRedContent)
+                    SummaryRow(label = "${strings.shiftCashExpenses}:", value = "-${Money(zReport.expenseCashOutPaise).format()}", valueColor = PastelRedContent)
+                    SummaryRow(label = "${strings.shiftCashSupplierPaid}:", value = "-${Money(zReport.supplierPaymentPaise).format()}", valueColor = PastelRedContent)
                     if (zReport.otherCashOutPaise > 0L) {
                         SummaryRow(label = "Other Cash Out:", value = "-${Money(zReport.otherCashOutPaise).format()}", valueColor = PastelRedContent)
                     }
                 }
 
                 // 3. Digital & Total Sales Card
-                SectionCard(title = "Digital & Total Turnover / মোট লেনদেন") {
-                    SummaryRow(label = "UPI / Online Sales:", value = Money(zReport.upiSalesPaise).format())
-                    SummaryRow(label = "Credit (Khata) Sales:", value = Money(zReport.creditSalesPaise).format())
-                    SummaryRow(label = "Total Invoices:", value = "${zReport.invoicesCount}")
-                    SummaryRow(label = "Total Items Sold:", value = "${zReport.itemsSoldCount}")
+                SectionCard(title = strings.shiftTurnoverTitle) {
+                    SummaryRow(label = "${strings.upiOnline} Sales:", value = Money(zReport.upiSalesPaise).format())
+                    SummaryRow(label = "${strings.customerKhata} Sales:", value = Money(zReport.creditSalesPaise).format())
+                    SummaryRow(label = "${strings.totalInvoices}:", value = "${zReport.invoicesCount}")
+                    SummaryRow(label = "${strings.kpiTotalItems}:", value = "${zReport.itemsSoldCount}")
                     HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp), color = DokandaarTheme.border)
                     SummaryRow(
                         label = "Gross Turnover:",
@@ -263,7 +263,7 @@ fun ShiftSummaryDialog(
 
                 // 4. Cashier-wise Breakdown List
                 if (zReport.cashierBreakdowns.isNotEmpty()) {
-                    SectionCard(title = "Cashier-wise Performance / ক্যাশিয়ার ভিত্তিক") {
+                    SectionCard(title = strings.shiftCashierPerformance) {
                         zReport.cashierBreakdowns.forEach { cashier ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

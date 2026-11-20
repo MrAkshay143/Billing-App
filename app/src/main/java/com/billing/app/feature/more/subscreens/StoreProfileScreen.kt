@@ -255,7 +255,7 @@ fun StoreProfileScreen(
                         value = name,
                         onValueChange = { name = it },
                         label = { Text(strings.storeName) },
-                        placeholder = { Text("e.g. Dokandaar Grocery Store") },
+                        placeholder = { Text(strings.placeholderStoreName) },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Business, contentDescription = null, tint = HeaderGradientStart)
                         },
@@ -274,7 +274,7 @@ fun StoreProfileScreen(
                         value = phone,
                         onValueChange = { phone = it },
                         label = { Text(strings.storePhone) },
-                        placeholder = { Text("+91 9876543210") },
+                        placeholder = { Text(strings.placeholderCustomerPhone) },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = HeaderGradientStart)
                         },
@@ -312,7 +312,7 @@ fun StoreProfileScreen(
                         value = address1,
                         onValueChange = { address1 = it },
                         label = { Text(strings.addressLine1) },
-                        placeholder = { Text("Shop No, Building, Street") },
+                        placeholder = { Text(strings.placeholderCustomerAddress) },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = HeaderGradientStart)
                         },
@@ -331,7 +331,7 @@ fun StoreProfileScreen(
                         value = address2,
                         onValueChange = { address2 = it },
                         label = { Text(strings.addressLine2) },
-                        placeholder = { Text("Kolkata, WB - 700001") },
+                        placeholder = { Text(strings.placeholderCustomerAddress) },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = HeaderGradientStart)
                         },
@@ -389,7 +389,7 @@ fun StoreProfileScreen(
                             value = gstinInput,
                             onValueChange = { gstinInput = it.uppercase() },
                             label = { Text(strings.storeGstin) },
-                            placeholder = { Text("e.g. 27AAPFU0939F1ZV") },
+                            placeholder = { Text(strings.placeholderGstin) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(10.dp),
@@ -456,7 +456,7 @@ fun StoreProfileScreen(
                         value = footer,
                         onValueChange = { footer = it },
                         label = { Text(strings.receiptFooterMessage) },
-                        placeholder = { Text("Thank you! Visit again.") },
+                        placeholder = { Text(strings.receiptThankYou) },
                         leadingIcon = {
                             Icon(imageVector = Icons.AutoMirrored.Filled.Message, contentDescription = null, tint = HeaderGradientStart)
                         },

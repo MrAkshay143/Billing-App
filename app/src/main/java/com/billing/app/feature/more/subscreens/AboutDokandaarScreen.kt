@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.AddProductBg
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -55,11 +56,12 @@ import com.billing.app.core.ui.theme.TextMutedColor
 fun AboutDokandaarScreen(
     onNavigateBack: () -> Unit
 ) {
+    val strings = appStrings()
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "About Dokandaar",
-                subtitle = "Version 1.0.0 • Offline Kirana POS",
+                title = strings.aboutDokandaarTitle,
+                subtitle = "Version 1.0.0 • ${strings.offlineModeBanner}",
                 icon = Icons.Default.Info,
                 onNavigateBack = onNavigateBack
             )
@@ -109,7 +111,7 @@ fun AboutDokandaarScreen(
                         color = DokandaarTheme.textPrimary
                     )
                     Text(
-                        text = "Retail Billing & Point of Sale",
+                        text = strings.aboutDokandaarDesc,
                         fontSize = 13.sp,
                         color = TextMutedColor
                     )

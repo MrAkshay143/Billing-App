@@ -497,6 +497,117 @@ abstract class AppStrings {
     abstract val receiptDueBalance: String
     abstract val receiptThankYou: String
     abstract val totalLineCost: String
+
+    // Phase L1 Centralization additions
+    abstract val receivePaymentTitle: String
+    abstract val receivePaymentAction: String
+    abstract val confirmReceivePayment: String
+    abstract val customerDueBalance: String
+    abstract val customerKhataStatement: String
+    abstract val customerOpeningBalance: String
+    abstract val actionSendWhatsApp: String
+    abstract val actionCallCustomer: String
+    abstract val paymentNotePlaceholder: String
+
+    abstract val placeholderProductName: String
+    abstract val placeholderBarcode: String
+    abstract val placeholderSku: String
+    abstract val placeholderHsn: String
+    abstract val placeholderLowStockThreshold: String
+    abstract val placeholderCategoryName: String
+    abstract val placeholderCustomerName: String
+    abstract val placeholderCustomerPhone: String
+    abstract val placeholderCustomerAddress: String
+    abstract val placeholderOpeningBalance: String
+    abstract val placeholderSupplierAgency: String
+    abstract val placeholderSupplierContact: String
+    abstract val placeholderSupplierPhone: String
+    abstract val placeholderSupplierGstin: String
+    abstract val placeholderSupplierAddress: String
+    abstract val placeholderExpenseTitle: String
+    abstract val placeholderExpenseAmount: String
+
+    abstract fun deleteProductPrompt(name: String): String
+    abstract fun deleteCustomerPrompt(name: String): String
+    abstract fun deleteSupplierPrompt(name: String): String
+    abstract fun deleteCategoryPrompt(name: String): String
+    abstract fun deleteExpensePrompt(name: String): String
+
+    abstract val stockAdjustmentTitle: String
+    abstract val stockAdjustedSuccess: String
+    abstract val enterValidQuantity: String
+    abstract val cameraErrorToast: String
+    abstract val galleryErrorToast: String
+
+    abstract val customItem: String
+    abstract val splitPayment: String
+    abstract val purchaseGstInclusive: String
+    abstract val gstInclusiveShort: String
+    abstract val gstExclusiveShort: String
+    abstract val placeholderPurchaseInvoice: String
+    abstract val placeholderPurchaseQty: String
+    abstract val placeholderPurchasePrice: String
+    abstract val placeholderBatchNumber: String
+    abstract val purchaseItemRequired: String
+    abstract val supplierRequired: String
+    abstract val invoicesTabAll: String
+    abstract val invoicesTabSales: String
+    abstract val invoicesTabDrafts: String
+    abstract val invoicesTabReturns: String
+    abstract val kpiTodaySales: String
+    abstract val kpiInvoicesCount: String
+    abstract val kpiPendingBills: String
+    abstract val kpiTotalItems: String
+    abstract val overviewToday: String
+    abstract val overviewThisWeek: String
+    abstract val overviewThisMonth: String
+    abstract val overviewThisYear: String
+    abstract val offlineModeBanner: String
+    abstract val offlineModeSubtitle: String
+
+    abstract val realCogsHeader: String
+    abstract val shiftReconciliationTitle: String
+    abstract val shiftCashFlowTitle: String
+    abstract val shiftTurnoverTitle: String
+    abstract val shiftCashierPerformance: String
+    abstract val shiftExpectedCash: String
+    abstract val shiftActualCash: String
+    abstract val shiftVarianceBalanced: String
+    abstract fun shiftVarianceShortage(amount: String): String
+    abstract fun shiftVarianceExcess(amount: String): String
+    abstract val shiftOpeningFloat: String
+    abstract val shiftCashSales: String
+    abstract val shiftKhataCollections: String
+    abstract val shiftCashExpenses: String
+    abstract val shiftCashSupplierPaid: String
+    abstract val managerAuthorizationTitle: String
+    abstract val managerAuthSubtitle: String
+    abstract val aboutDokandaarTitle: String
+    abstract val aboutDokandaarDesc: String
+    abstract val privacyPolicyTitle: String
+    abstract val privacyPolicyDesc: String
+    abstract val termsConditionsTitle: String
+    abstract val termsConditionsDesc: String
+    abstract val importExportTitle: String
+    abstract val importExportSubtitle: String
+    abstract val placeholderStoreName: String
+    abstract val placeholderGstin: String
+    abstract val placeholderUpiId: String
+    abstract val placeholderUpiName: String
+    abstract val cameraPermissionRequired: String
+    abstract val cdCamera: String
+    abstract val cdGallery: String
+    abstract val cdBack: String
+    abstract val cdSearch: String
+    abstract val cdFilter: String
+    abstract val cdOptions: String
+    abstract val cdCall: String
+
+    abstract val searchCustomers: String
+    abstract val searchSuppliers: String
+    abstract val optional: String
+    abstract val notes: String
+    abstract val enterQuantity: String
 }
 
 val EnStrings: AppStrings = EnglishStrings()

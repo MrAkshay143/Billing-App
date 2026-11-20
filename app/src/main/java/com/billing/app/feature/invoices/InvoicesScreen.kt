@@ -155,7 +155,13 @@ fun InvoicesScreen(
 
     val scope = rememberCoroutineScope()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabTitles = listOf("All Invoices", "Sales", "Drafts (Hold)", "Credit Dues", "Return")
+    val tabTitles = listOf(
+        strings.invoicesTabAll,
+        strings.invoicesTabSales,
+        strings.invoicesTabDrafts,
+        strings.customerKhata,
+        strings.invoicesTabReturns
+    )
 
     var selectedInvoiceForDetails by remember { mutableStateOf<InvoiceEntity?>(null) }
     var invoiceToVoid by remember { mutableStateOf<InvoiceEntity?>(null) }
@@ -363,7 +369,7 @@ fun InvoicesScreen(
             DokandaarKpiFourRow {
                 DokandaarStatCard(
                     modifier = Modifier.weight(1f),
-                    title = "Today Sales",
+                    title = strings.kpiTodaySales,
                     value = Money(todaySalesAmount).format(),
                     icon = Icons.Default.ShoppingCart,
                     iconTint = PastelGreenContent,
@@ -371,7 +377,7 @@ fun InvoicesScreen(
                 )
                 DokandaarStatCard(
                     modifier = Modifier.weight(1f),
-                    title = "Invoices",
+                    title = strings.kpiInvoicesCount,
                     value = invoicesCount.toString(),
                     icon = Icons.AutoMirrored.Filled.ReceiptLong,
                     iconTint = PastelPurpleContent,
@@ -379,7 +385,7 @@ fun InvoicesScreen(
                 )
                 DokandaarStatCard(
                     modifier = Modifier.weight(1f),
-                    title = "Pending Bill",
+                    title = strings.kpiPendingBills,
                     value = Money(pendingBillsAmount).format(),
                     icon = Icons.Default.Schedule,
                     iconTint = PastelOrangeContent,
@@ -388,7 +394,7 @@ fun InvoicesScreen(
                 )
                 DokandaarStatCard(
                     modifier = Modifier.weight(1f),
-                    title = "Total Items",
+                    title = strings.kpiTotalItems,
                     value = totalItemsCount.toString(),
                     icon = Icons.Default.Inventory2,
                     iconTint = PastelBlueContent,
@@ -409,7 +415,7 @@ fun InvoicesScreen(
                 DokandaarSearchBar(
                     value = searchQuery,
                     onValueChange = { viewModel.searchQuery.value = it },
-                    placeholder = "Search by Invoice No., Customer, or Mobile...",
+                    placeholder = strings.searchInvoices,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -710,7 +716,7 @@ fun InvoicesScreen(
                         value = returnReason,
                         onValueChange = { returnReason = it },
                         label = { Text(strings.returnReason, fontSize = 11.sp) },
-                        placeholder = { Text("e.g. Defective, Customer choice") },
+                        placeholder = { Text(strings.paymentNotePlaceholder) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

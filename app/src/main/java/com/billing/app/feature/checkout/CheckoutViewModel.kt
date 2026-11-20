@@ -3,6 +3,7 @@ package com.billing.app.feature.checkout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.billing.app.BillingApplication
+import com.billing.app.core.localization.StringsProvider
 import com.billing.app.core.datastore.SettingsDataStore
 import com.billing.app.core.notification.DokandaarNotificationManager
 import com.billing.app.core.util.BillCalculationResult
@@ -593,6 +594,7 @@ class CheckoutViewModel(
         val phone10 = if (digits.length >= 10) digits.takeLast(10) else return null
 
         val shop = shopProfile.value
+        val rStrings = StringsProvider.receiptStrings
         val dateStr = SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.ROOT).format(Date(invoice.timestamp))
         val receiptType = if (isCompositionScheme.value) "Bill of Supply" else "Tax Invoice"
 
@@ -606,10 +608,10 @@ class CheckoutViewModel(
             if (isCompositionScheme.value) {
                 appendLine("_Composition Taxable Person, not eligible to collect tax on supplies_")
             }
-            appendLine("Invoice: ${invoice.invoiceNumber}")
-            appendLine("Date: $dateStr")
+            appendLine("${rStrings.receiptInvoice} ${invoice.invoiceNumber}")
+            appendLine("${rStrings.receiptDate} $dateStr")
             if (!invoice.customerName.isNullOrBlank()) {
-                appendLine("Customer: ${invoice.customerName}")
+                appendLine("${rStrings.receiptCustomer} ${invoice.customerName}")
             }
             appendLine("--------------------------------")
             for (item in lastCompletedItems) {
@@ -619,37 +621,37 @@ class CheckoutViewModel(
                 appendLine("${item.productName}: $qtyStr x $priceUnitStr = $totalStr")
             }
             appendLine("--------------------------------")
-            appendLine("Subtotal: ${Money(invoice.subtotalPaise).format()}")
+            appendLine("${rStrings.receiptSubtotal} ${Money(invoice.subtotalPaise).format()}")
             if (invoice.discountPaise > 0L) {
-                appendLine("Discount: -${Money(invoice.discountPaise).format()}")
+                appendLine("${rStrings.receiptDiscount} -${Money(invoice.discountPaise).format()}")
             }
             if (invoice.taxPaise > 0L) {
-                appendLine("Tax / GST: ${Money(invoice.taxPaise).format()}")
+                appendLine("${rStrings.receiptTax} ${Money(invoice.taxPaise).format()}")
             }
             if (invoice.roundOffPaise != 0L) {
                 val sign = if (invoice.roundOffPaise > 0) "+" else "-"
-                appendLine("Round Off: $sign${Money(kotlin.math.abs(invoice.roundOffPaise)).format()}")
+                appendLine("${rStrings.receiptRoundOff} $sign${Money(kotlin.math.abs(invoice.roundOffPaise)).format()}")
             }
-            appendLine("*TOTAL: ${Money(invoice.grandTotalPaise).format()}*")
+            appendLine("*${rStrings.receiptTotalPayable} ${Money(invoice.grandTotalPaise).format()}*")
             appendLine("--------------------------------")
-            appendLine("Payment: ${invoice.paymentMethod}")
+            appendLine("${rStrings.receiptPayment} ${invoice.paymentMethod}")
             if (invoice.cashReceivedPaise > 0L) {
-                appendLine("Cash Received: ${Money(invoice.cashReceivedPaise).format()}")
+                appendLine("${rStrings.receiptCashReceived} ${Money(invoice.cashReceivedPaise).format()}")
                 if (invoice.changeReturnedPaise > 0L) {
-                    appendLine("Change Returned: ${Money(invoice.changeReturnedPaise).format()}")
+                    appendLine("${rStrings.receiptChangeReturned} ${Money(invoice.changeReturnedPaise).format()}")
                 }
             }
             if (invoice.upiPaidPaise > 0L) {
-                appendLine("UPI Paid: ${Money(invoice.upiPaidPaise).format()}")
+                appendLine("${rStrings.receiptUpiPaid} ${Money(invoice.upiPaidPaise).format()}")
             }
             if (invoice.duePaise > 0L) {
-                appendLine("*Balance Due: ${Money(invoice.duePaise).format()}*")
+                appendLine("*${rStrings.receiptDueBalance} ${Money(invoice.duePaise).format()}*")
             }
             appendLine("--------------------------------")
             if (shop.footerText.isNotBlank()) {
                 appendLine(shop.footerText)
             } else {
-                appendLine("Thank you! Visit again.")
+                appendLine(rStrings.receiptThankYou)
             }
         }
 

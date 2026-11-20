@@ -145,18 +145,18 @@ fun ProductListScreen(
             },
             text = {
                 Column {
-                    Text("Current stock: ${Quantity.formatDisplay(prod.stockMilli, prod.unit)}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
+                    Text("${strings.currentStock}: ${Quantity.formatDisplay(prod.stockMilli, prod.unit)}", fontSize = 13.sp, color = DokandaarTheme.textMuted)
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = adjustStockStr,
                         onValueChange = { adjustStockStr = it },
-                        label = { Text("New Stock Quantity") },
-                        placeholder = { Text("Enter quantity") },
+                        label = { Text(strings.enterQuantity) },
+                        placeholder = { Text(strings.enterQuantity) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Adjustment Reason", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
+                    Text(strings.returnReason, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = DokandaarTheme.textPrimary)
                     Spacer(modifier = Modifier.height(4.dp))
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -184,8 +184,8 @@ fun ProductListScreen(
                     OutlinedTextField(
                         value = adjustNotes,
                         onValueChange = { adjustNotes = it },
-                        label = { Text("Notes (Optional)") },
-                        placeholder = { Text("e.g. Broken package, stock count") },
+                        label = { Text("${strings.notes} (${strings.optional})") },
+                        placeholder = { Text(strings.paymentNotePlaceholder) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -226,7 +226,7 @@ fun ProductListScreen(
         AlertDialog(
             onDismissRequest = { productToDelete = null },
             title = { Text(strings.deleteProductTitle, fontWeight = FontWeight.Bold) },
-            text = { Text("Remove '${product.name}'? ${strings.deleteProductConfirm}") },
+            text = { Text(strings.deleteProductPrompt(product.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -393,7 +393,7 @@ fun ProductListScreen(
                 DokandaarSearchBar(
                     value = searchQuery,
                     onValueChange = { viewModel.searchQuery.value = it },
-                    placeholder = "Search items by name, SKU or barcode...",
+                    placeholder = strings.searchProducts,
                     modifier = Modifier.fillMaxWidth(),
                     trailingContent = {
                         IconButton(
@@ -402,7 +402,7 @@ fun ProductListScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.QrCodeScanner,
-                                contentDescription = "Scan",
+                                contentDescription = strings.scanQrBarcode,
                                 tint = PrimaryPurple,
                                 modifier = Modifier.size(20.dp)
                             )

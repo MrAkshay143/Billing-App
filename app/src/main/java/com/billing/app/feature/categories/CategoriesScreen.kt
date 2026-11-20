@@ -134,7 +134,7 @@ fun CategoriesScreen(
         AlertDialog(
             onDismissRequest = { categoryToDelete = null },
             title = { Text(strings.deleteCategoryTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
-            text = { Text("Delete category '${cat.name}'?\n${strings.deleteCategoryConfirm}") },
+            text = { Text(strings.deleteCategoryPrompt(cat.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -312,7 +312,7 @@ private fun CategoryEditorDialog(
                     label = "${strings.categoryName} *",
                     value = name,
                     onValueChange = { name = it },
-                    placeholder = "e.g. Snacks, Spices, Dairy"
+                    placeholder = strings.placeholderCategoryName
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))

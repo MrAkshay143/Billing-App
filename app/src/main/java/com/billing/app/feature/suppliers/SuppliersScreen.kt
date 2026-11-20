@@ -115,26 +115,26 @@ fun SuppliersScreen(
                         label = strings.supplierAgencyName,
                         value = formName,
                         onValueChange = { formName = it },
-                        placeholder = "e.g. Parle Distributors"
+                        placeholder = strings.placeholderSupplierAgency
                     )
                     InputField(
                         label = strings.contactPerson,
                         value = formContact,
                         onValueChange = { formContact = it },
-                        placeholder = "e.g. Anil Sharma"
+                        placeholder = strings.placeholderSupplierContact
                     )
                     InputField(
                         label = strings.customerPhone,
                         value = formPhone,
                         onValueChange = { formPhone = it },
-                        placeholder = "e.g. 9811223344",
+                        placeholder = strings.placeholderSupplierPhone,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
                     InputField(
                         label = strings.customerAddress,
                         value = formAddress,
                         onValueChange = { formAddress = it },
-                        placeholder = "e.g. Wholesale Mandi"
+                        placeholder = strings.placeholderSupplierAddress
                     )
                 }
             },
@@ -197,7 +197,7 @@ fun SuppliersScreen(
         AlertDialog(
             onDismissRequest = { supplierToDelete = null },
             title = { Text(strings.deleteSupplierTitle, fontWeight = FontWeight.Bold, color = ErrorColor) },
-            text = { Text("Remove '${sup.name}'? ${strings.deleteSupplierConfirm}") },
+            text = { Text(strings.deleteSupplierPrompt(sup.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -253,7 +253,7 @@ fun SuppliersScreen(
                 DokandaarSearchBar(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = "Search suppliers by name or phone...",
+                    placeholder = strings.searchSuppliers,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -363,14 +363,14 @@ fun SuppliersScreen(
                                         formAddress = sup.address ?: ""
                                     }
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PrimaryPurple, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Edit, contentDescription = strings.edit, tint = PrimaryPurple, modifier = Modifier.size(18.dp))
                                 }
                                 IconButton(
                                     onClick = {
                                         supplierToDelete = sup
                                     }
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorColor, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = strings.delete, tint = ErrorColor, modifier = Modifier.size(18.dp))
                                 }
                             }
                         }

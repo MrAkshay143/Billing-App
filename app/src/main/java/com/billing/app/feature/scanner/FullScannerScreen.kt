@@ -135,7 +135,7 @@ fun FullScannerScreen(
     ) { isGranted ->
         hasCameraPermission = isGranted
         if (!isGranted) {
-            FeedbackManager.showToast(context, "Camera permission required for scanning")
+            FeedbackManager.showError(context, strings.cameraPermissionRequired)
         }
     }
 
@@ -699,7 +699,7 @@ fun FullScannerScreen(
     if (showHelpDialog) {
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
-            title = { Text("How to Scan Barcodes", fontWeight = FontWeight.Bold) },
+            title = { Text(strings.howToScanBarcodes, fontWeight = FontWeight.Bold) },
             text = {
                 Text(
                     "1. Align barcode within the green frame.\n" +
@@ -710,7 +710,7 @@ fun FullScannerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showHelpDialog = false }) {
-                    Text("Got It", color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                    Text(strings.done, color = PrimaryPurple, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             }
         )

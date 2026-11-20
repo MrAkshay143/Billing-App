@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -31,11 +32,12 @@ import com.billing.app.core.ui.theme.PrimaryPurple
 fun PrivacyPolicyScreen(
     onNavigateBack: () -> Unit
 ) {
+    val strings = appStrings()
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Privacy Policy",
-                subtitle = "Your Data Stays on Your Device",
+                title = strings.privacyPolicyTitle,
+                subtitle = strings.privacyPolicyDesc,
                 icon = Icons.Default.Policy,
                 onNavigateBack = onNavigateBack
             )

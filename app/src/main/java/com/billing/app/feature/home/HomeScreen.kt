@@ -234,8 +234,8 @@ fun HomeScreen(
                             Icon(Icons.Default.Security, contentDescription = null, tint = PrimaryPurple, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
-                                Text("100% Offline Mode", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryPurple)
-                                Text("All store data safely saved on this device", fontSize = 11.sp, color = DokandaarTheme.textPrimary)
+                                Text(strings.offlineModeBanner, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = PrimaryPurple)
+                                Text(strings.offlineModeSubtitle, fontSize = 11.sp, color = DokandaarTheme.textPrimary)
                             }
                         }
                     }
@@ -611,7 +611,12 @@ fun HomeScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = selectedPeriod.label,
+                                    text = when (selectedPeriod) {
+                                        OverviewPeriod.TODAY -> strings.overviewToday
+                                        OverviewPeriod.THIS_WEEK -> strings.overviewThisWeek
+                                        OverviewPeriod.THIS_MONTH -> strings.overviewThisMonth
+                                        OverviewPeriod.ALL_TIME -> strings.tabAll
+                                    },
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = DokandaarTheme.textPrimary
@@ -632,7 +637,16 @@ fun HomeScreen(
                         ) {
                             OverviewPeriod.entries.forEach { period ->
                                 DropdownMenuItem(
-                                    text = { Text(period.label) },
+                                    text = {
+                                        Text(
+                                            when (period) {
+                                                OverviewPeriod.TODAY -> strings.overviewToday
+                                                OverviewPeriod.THIS_WEEK -> strings.overviewThisWeek
+                                                OverviewPeriod.THIS_MONTH -> strings.overviewThisMonth
+                                                OverviewPeriod.ALL_TIME -> strings.tabAll
+                                            }
+                                        )
+                                    },
                                     onClick = {
                                         viewModel.setPeriod(period)
                                         showPeriodMenu = false

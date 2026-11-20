@@ -494,7 +494,7 @@ fun SaleScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (strings.cartTitle == "কার্ট") "কাস্টম" else "Custom",
+                            text = strings.customItem,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryPurple
@@ -1071,14 +1071,14 @@ fun SaleScreen(
                         value = newCustName,
                         onValueChange = { newCustName = it },
                         label = { Text(strings.customerName) },
-                        placeholder = { Text("Name") },
+                        placeholder = { Text(strings.placeholderCustomerName) },
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = newCustPhone,
                         onValueChange = { newCustPhone = it },
                         label = { Text(strings.customerPhone) },
-                        placeholder = { Text("Phone") },
+                        placeholder = { Text(strings.placeholderCustomerPhone) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         singleLine = true
                     )
@@ -1249,7 +1249,7 @@ fun SaleScreen(
                         listOf(
                             Pair(strings.upiOnline, PaymentMethodMode.UPI),
                             Pair(strings.cash, PaymentMethodMode.CASH),
-                            Pair("Split", PaymentMethodMode.SPLIT),
+                            Pair(strings.splitPayment, PaymentMethodMode.SPLIT),
                             Pair(strings.customerKhata, PaymentMethodMode.OTHER)
                         ).forEach { (label, mode) ->
                             val isSel = selectedMode == mode

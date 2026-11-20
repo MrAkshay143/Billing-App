@@ -726,7 +726,7 @@ fun ReportsScreen(
             title = { Text("Profit & Loss Statement", fontWeight = FontWeight.Bold, color = PrimaryPurple) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("আসল ক্রয়মূল্য ও ব্যাচ স্ন্যাপশট ভিত্তিক লাভ-ক্ষতি (Real COGS & Profit):", fontSize = 12.sp, color = DokandaarTheme.textMuted)
+                    Text(strings.realCogsHeader, fontSize = 12.sp, color = DokandaarTheme.textMuted)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("${strings.grossSales}: ${Money(totalSalesPaise).format()}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     if (totalRefundPaise > 0L) {

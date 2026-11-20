@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.billing.app.core.localization.appStrings
 import androidx.core.content.FileProvider
 import com.billing.app.core.ui.components.SubPageHeader
 import com.billing.app.core.ui.theme.DokandaarTheme
@@ -78,6 +79,7 @@ fun ImportExportScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val strings = appStrings()
     val scope = rememberCoroutineScope()
     val products by productRepository.getProducts().collectAsState(initial = emptyList())
     var isProcessing by remember { mutableStateOf(false) }
@@ -91,9 +93,9 @@ fun ImportExportScreen(
                 isProcessing = true
                 try {
                     val count = importProductsFromCsv(context, uri, productRepository)
-                    FeedbackManager.showToast(context, "Successfully imported $count products!")
+                    FeedbackManager.showSuccess(context, "Successfully imported $count products!")
                 } catch (e: Exception) {
-                    FeedbackManager.showToast(context, "Import failed: ${e.message}")
+                    FeedbackManager.showError(context, "Import failed: ${e.message}")
                 } finally {
                     isProcessing = false
                 }
@@ -104,8 +106,8 @@ fun ImportExportScreen(
     Scaffold(
         topBar = {
             SubPageHeader(
-                title = "Import / Export",
-                subtitle = "Excel & CSV Data Management",
+                title = strings.importExportTitle,
+                subtitle = strings.importExportSubtitle,
                 icon = Icons.Default.TableChart,
                 onNavigateBack = onNavigateBack
             )

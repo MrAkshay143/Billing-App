@@ -152,7 +152,7 @@ fun PaymentSettingsScreen(
                         value = upiInput,
                         onValueChange = { upiInput = it },
                         label = { Text(strings.storeUpiId) },
-                        placeholder = { Text("e.g. mobile@upi, merchant@oksbi") },
+                        placeholder = { Text(strings.placeholderUpiId) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -319,7 +319,7 @@ fun PaymentSettingsScreen(
                             value = gstinInput,
                             onValueChange = { gstinInput = it.uppercase() },
                             label = { Text(strings.storeGstin) },
-                            placeholder = { Text("e.g. 22AAAAA0000A1Z5") },
+                            placeholder = { Text(strings.placeholderGstin) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(

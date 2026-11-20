@@ -149,7 +149,7 @@ fun AddEditProductScreen(
                 }
                 viewModel.draftImageUri.value = newPath
             } else {
-                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Could not select image")
+                com.billing.app.core.ui.util.FeedbackManager.showError(context, strings.galleryErrorToast)
             }
         }
     }
@@ -167,7 +167,7 @@ fun AddEditProductScreen(
                 }
                 viewModel.draftImageUri.value = newPath
             } else {
-                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Could not take photo")
+                com.billing.app.core.ui.util.FeedbackManager.showError(context, strings.cameraErrorToast)
             }
         }
     }
@@ -204,16 +204,16 @@ fun AddEditProductScreen(
             ) {
                 Box(modifier = Modifier.padding(16.dp)) {
                     PrimaryButton(
-                        text = if (existingProduct == null) "Save Product" else "Update Product",
+                        text = if (existingProduct == null) strings.save else strings.editProductTitle,
                         enabled = !isSaving,
                         isLoading = isSaving,
                         onClick = {
                             if (name.isBlank()) {
-                                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Please enter product name")
+                                com.billing.app.core.ui.util.FeedbackManager.showError(context, strings.errorProductNameRequired)
                                 return@PrimaryButton
                             }
                             if (barcode.isBlank()) {
-                                com.billing.app.core.ui.util.FeedbackManager.showToast(context, "Please enter or scan barcode")
+                                com.billing.app.core.ui.util.FeedbackManager.showError(context, strings.errorBarcodeRequired)
                                 return@PrimaryButton
                             }
                             if (existingProduct == null) {
@@ -422,22 +422,22 @@ fun AddEditProductScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             InputField(
-                label = "Product Name *",
+                label = "${strings.productsTitle} *",
                 value = name,
                 onValueChange = { viewModel.draftName.value = it },
-                placeholder = "e.g. Aashirvaad Atta (5 kg)"
+                placeholder = strings.placeholderProductName
             )
 
             InputField(
-                label = "Barcode *",
+                label = "${strings.barcodeLabel} *",
                 value = barcode,
                 onValueChange = { viewModel.draftBarcode.value = it },
-                placeholder = "Scan or type barcode",
+                placeholder = strings.placeholderBarcode,
                 trailingIcon = {
                     IconButton(onClick = { showBarcodeScannerDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan barcode",
+                            contentDescription = strings.scanQrBarcode,
                             tint = HeaderGradientStart
                         )
                     }
@@ -445,10 +445,10 @@ fun AddEditProductScreen(
             )
 
             InputField(
-                label = "SKU Code (Optional)",
+                label = "SKU (${strings.optional})",
                 value = sku,
                 onValueChange = { viewModel.draftSku.value = it },
-                placeholder = "e.g. ATT-5KG"
+                placeholder = strings.placeholderSku
             )
 
             // Category Selector
@@ -686,7 +686,7 @@ fun AddEditProductScreen(
                                 label = "HSN Code",
                                 value = hsnCode,
                                 onValueChange = { viewModel.draftHsnCode.value = it },
-                                placeholder = "e.g. 1901",
+                                placeholder = strings.placeholderHsn,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
                         }
@@ -699,7 +699,7 @@ fun AddEditProductScreen(
                         label = "Low Stock Alert Threshold",
                         value = minStockAlert,
                         onValueChange = { viewModel.draftMinStockAlert.value = it },
-                        placeholder = "5",
+                        placeholder = strings.placeholderLowStockThreshold,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
 

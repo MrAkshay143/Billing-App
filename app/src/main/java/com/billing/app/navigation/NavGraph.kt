@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.billing.app.BillingApplication
+import com.billing.app.core.localization.appStrings
 import com.billing.app.core.audio.SoundHapticManager
 import com.billing.app.core.cart.CartManager
 import com.billing.app.core.ui.components.DokandaarTab
@@ -75,6 +76,7 @@ fun AppNavHost(
     categoryRepository: CategoryRepository,
     soundHapticManager: SoundHapticManager
 ) {
+    val strings = appStrings()
     var scanTargetMode by rememberSaveable { mutableStateOf("cart") } // "cart", "add", "search"
     var pendingRestrictedNavAction by remember { mutableStateOf<(() -> Unit)?>(null) }
 
@@ -130,8 +132,8 @@ fun AppNavHost(
 
     if (pendingRestrictedNavAction != null) {
         ManagerPinDialog(
-            title = "Manager Authorization Required",
-            subtitle = "Cashier role requires Manager PIN to access this section",
+            title = strings.managerAuthorizationTitle,
+            subtitle = strings.managerAuthSubtitle,
             onDismissRequest = {
                 pendingRestrictedNavAction = null
             },

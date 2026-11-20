@@ -546,7 +546,7 @@ private fun NewGrnDialog(
                                 label = "Supplier Invoice Number *",
                                 value = invoiceNumber,
                                 onValueChange = { viewModel.setInvoiceNumber(it) },
-                                placeholder = "e.g. INV-98234 or GRN-01"
+                                placeholder = strings.placeholderPurchaseInvoice
                             )
 
                             // Tax Inclusive vs Exclusive toggle
@@ -567,14 +567,14 @@ private fun NewGrnDialog(
                                         color = DokandaarTheme.textPrimary
                                     )
                                     Text(
-                                        text = if (isTaxInclusive) "Buy prices INCLUDE GST" else "GST is ADDED to buy prices",
+                                        text = strings.purchaseGstInclusive,
                                         fontSize = 11.sp,
                                         color = if (isTaxInclusive) PastelGreenContent else PrimaryPurple
                                     )
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = if (isTaxInclusive) "Inclusive" else "Exclusive",
+                                        text = if (isTaxInclusive) strings.gstInclusiveShort else strings.gstExclusiveShort,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isTaxInclusive) PastelGreenContent else PrimaryPurple,
@@ -834,7 +834,7 @@ private fun NewGrnDialog(
                                                     label = "${strings.packageCount} *",
                                                     value = wholesalePackageCountText,
                                                     onValueChange = { wholesalePackageCountText = it },
-                                                    placeholder = "e.g. 5",
+                                                    placeholder = strings.placeholderPurchaseQty,
                                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                                                 )
                                             }
@@ -843,7 +843,7 @@ private fun NewGrnDialog(
                                                     label = "${strings.unitsPerPackage} *",
                                                     value = wholesaleUnitsPerPkgText,
                                                     onValueChange = { wholesaleUnitsPerPkgText = it },
-                                                    placeholder = "e.g. 24",
+                                                    placeholder = strings.placeholderPurchaseQty,
                                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                                 )
                                             }
@@ -1030,7 +1030,7 @@ private fun NewGrnDialog(
                                             label = "Batch Number *",
                                             value = itemBatchNumber,
                                             onValueChange = { itemBatchNumber = it },
-                                            placeholder = "e.g. BATCH-2026-X"
+                                            placeholder = strings.placeholderBatchNumber
                                         )
 
                                         // Expiry Date & MRP
@@ -1082,7 +1082,7 @@ private fun NewGrnDialog(
                                                     label = "MRP (₹) *",
                                                     value = itemMrpText,
                                                     onValueChange = { itemMrpText = it },
-                                                    placeholder = "e.g. 120.00",
+                                                    placeholder = strings.placeholderPurchasePrice,
                                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                                                 )
                                             }
@@ -1096,17 +1096,17 @@ private fun NewGrnDialog(
                                 onClick = {
                                     val prod = selectedProduct
                                     if (prod == null) {
-                                        FeedbackManager.showToast(context, "Please select a product")
+                                        FeedbackManager.showError(context, strings.chooseProduct)
                                         return@Button
                                     }
                                     val qty = itemQuantityText.toDoubleOrNull() ?: 0.0
                                     if (qty <= 0.0) {
-                                        FeedbackManager.showToast(context, "Quantity must be greater than zero")
+                                        FeedbackManager.showError(context, strings.enterValidQuantity)
                                         return@Button
                                     }
                                     val unitPrice = itemUnitPriceText.toDoubleOrNull() ?: -1.0
                                     if (unitPrice < 0.0) {
-                                        FeedbackManager.showToast(context, "Please enter a valid buy price")
+                                        FeedbackManager.showError(context, strings.enterValidQuantity)
                                         return@Button
                                     }
                                     val unitPricePaise = Money.fromRupees(unitPrice).paise
