@@ -39,7 +39,7 @@ object TaxEngine {
      *        CGST = TotalTax / 2
      *        SGST = TotalTax - CGST (absorbing any 1 paise odd difference)
      * 4. Nearest Rupee Round-Off:
-     *    unroundedTotal = (subtotalPaise - billDiscountPaise + totalTaxPaise).coerceAtLeast(0L)
+     *    unroundedTotal = (subtotalPaise - effectiveDiscountPaise).coerceAtLeast(0L)
      *    grandTotalPaise = ((unroundedTotal + 50) / 100) * 100
      *    roundOffPaise = grandTotalPaise - unroundedTotal
      */
@@ -113,7 +113,7 @@ object TaxEngine {
         }
 
         val totalTaxPaise = lineCalculations.sumOf { it.taxPaise }
-        val unroundedTotalPaise = (subtotalPaise - effectiveDiscountPaise + totalTaxPaise).coerceAtLeast(0L)
+        val unroundedTotalPaise = (subtotalPaise - effectiveDiscountPaise).coerceAtLeast(0L)
         val grandTotalPaise = ((unroundedTotalPaise + 50L) / 100L) * 100L
         val roundOffPaise = grandTotalPaise - unroundedTotalPaise
 

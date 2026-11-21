@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 8,
-    "identityHash": "5160f1dfa85c7309485e751c5b6891cf",
+    "identityHash": "e6822a95d53e9231fb68a074bbfbef8b",
     "entities": [
       {
         "tableName": "products",
@@ -124,12 +124,12 @@
         "indices": [
           {
             "name": "index_products_barcode",
-            "unique": true,
+            "unique": false,
             "columnNames": [
               "barcode"
             ],
             "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_products_barcode` ON `${TABLE_NAME}` (`barcode`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_products_barcode` ON `${TABLE_NAME}` (`barcode`)"
           },
           {
             "name": "index_products_category",
@@ -2476,7 +2476,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5160f1dfa85c7309485e751c5b6891cf')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e6822a95d53e9231fb68a074bbfbef8b')"
     ]
   }
 }

@@ -319,6 +319,233 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private fun createV6Tables(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS customer_ledger (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    customerId TEXT NOT NULL,
+                    transactionType TEXT NOT NULL,
+                    invoiceId INTEGER,
+                    debitPaise INTEGER NOT NULL,
+                    creditPaise INTEGER NOT NULL,
+                    balanceAfterPaise INTEGER NOT NULL,
+                    paymentMode TEXT,
+                    note TEXT,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(customerId) REFERENCES customers(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_customer_ledger_customerId ON customer_ledger (customerId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_customer_ledger_createdAt ON customer_ledger (createdAt)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS supplier_ledger (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    supplierId TEXT NOT NULL,
+                    transactionType TEXT NOT NULL,
+                    purchaseId INTEGER,
+                    debitPaise INTEGER NOT NULL,
+                    creditPaise INTEGER NOT NULL,
+                    balanceAfterPaise INTEGER NOT NULL,
+                    paymentMode TEXT,
+                    note TEXT,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(supplierId) REFERENCES suppliers(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_supplier_ledger_supplierId ON supplier_ledger (supplierId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_supplier_ledger_createdAt ON supplier_ledger (createdAt)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS payment_allocations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    ledgerEntryId INTEGER NOT NULL,
+                    invoiceId INTEGER,
+                    allocatedAmountPaise INTEGER NOT NULL,
+                    reversesAllocationId INTEGER,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(ledgerEntryId) REFERENCES customer_ledger(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
+                    FOREIGN KEY(invoiceId) REFERENCES invoices(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
+                    FOREIGN KEY(reversesAllocationId) REFERENCES payment_allocations(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_payment_allocations_ledgerEntryId ON payment_allocations (ledgerEntryId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_payment_allocations_invoiceId ON payment_allocations (invoiceId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_payment_allocations_reversesAllocationId ON payment_allocations (reversesAllocationId)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS shifts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    userId TEXT NOT NULL,
+                    openedAt INTEGER NOT NULL,
+                    closedAt INTEGER,
+                    openingFloatPaise INTEGER NOT NULL,
+                    actualCashPaise INTEGER,
+                    expectedCashPaise INTEGER,
+                    variancePaise INTEGER,
+                    note TEXT,
+                    status TEXT NOT NULL
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_shifts_userId ON shifts (userId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_shifts_openedAt ON shifts (openedAt)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS cash_movements (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    shiftId INTEGER NOT NULL,
+                    movementType TEXT NOT NULL,
+                    amountPaise INTEGER NOT NULL,
+                    referenceId TEXT,
+                    reason TEXT,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(shiftId) REFERENCES shifts(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_cash_movements_shiftId ON cash_movements (shiftId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_cash_movements_createdAt ON cash_movements (createdAt)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    displayName TEXT NOT NULL,
+                    pinHash TEXT NOT NULL,
+                    pinSalt TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    isActive INTEGER NOT NULL,
+                    failedAttempts INTEGER NOT NULL,
+                    lockedUntil INTEGER,
+                    mustSetPin INTEGER NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    PRIMARY KEY(id)
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_users_role ON users (role)")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_users_username ON users (username)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS product_batches (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    productId TEXT NOT NULL,
+                    batchNumber TEXT NOT NULL,
+                    expiryDate INTEGER,
+                    purchasePricePaise INTEGER NOT NULL,
+                    mrpPaise INTEGER NOT NULL,
+                    initialStockMilli INTEGER NOT NULL,
+                    currentStockMilli INTEGER NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(productId) REFERENCES products(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_product_batches_productId ON product_batches (productId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_product_batches_expiryDate ON product_batches (expiryDate)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS invoice_item_batches (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    invoiceItemId INTEGER NOT NULL,
+                    batchId INTEGER NOT NULL,
+                    quantityMilli INTEGER NOT NULL,
+                    costPaise INTEGER NOT NULL,
+                    FOREIGN KEY(invoiceItemId) REFERENCES invoice_items(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(batchId) REFERENCES product_batches(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_invoice_item_batches_invoiceItemId ON invoice_item_batches (invoiceItemId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_invoice_item_batches_batchId ON invoice_item_batches (batchId)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS returns (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    returnNumber TEXT NOT NULL,
+                    invoiceId INTEGER NOT NULL,
+                    shiftId INTEGER NOT NULL,
+                    totalRefundPaise INTEGER NOT NULL,
+                    cashRefundPaise INTEGER NOT NULL,
+                    upiRefundPaise INTEGER NOT NULL,
+                    khataCreditPaise INTEGER NOT NULL,
+                    reason TEXT NOT NULL,
+                    processedByUserId TEXT NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(invoiceId) REFERENCES invoices(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
+                    FOREIGN KEY(shiftId) REFERENCES shifts(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_returns_invoiceId ON returns (invoiceId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_returns_shiftId ON returns (shiftId)")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_returns_returnNumber ON returns (returnNumber)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS return_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    returnId INTEGER NOT NULL,
+                    invoiceItemId INTEGER NOT NULL,
+                    quantityMilli INTEGER NOT NULL,
+                    refundAmountPaise INTEGER NOT NULL,
+                    taxableRefundPaise INTEGER NOT NULL,
+                    taxRefundPaise INTEGER NOT NULL,
+                    restock INTEGER NOT NULL,
+                    FOREIGN KEY(returnId) REFERENCES returns(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(invoiceItemId) REFERENCES invoice_items(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_return_items_returnId ON return_items (returnId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_return_items_invoiceItemId ON return_items (invoiceItemId)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS return_item_batches (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    returnItemId INTEGER NOT NULL,
+                    batchId INTEGER NOT NULL,
+                    quantityMilli INTEGER NOT NULL,
+                    FOREIGN KEY(returnItemId) REFERENCES return_items(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(batchId) REFERENCES product_batches(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_return_item_batches_returnItemId ON return_item_batches (returnItemId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_return_item_batches_batchId ON return_item_batches (batchId)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS stock_adjustments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    productId TEXT NOT NULL,
+                    batchId INTEGER,
+                    adjustedQuantityMilli INTEGER NOT NULL,
+                    reason TEXT NOT NULL,
+                    adjustedByUserId TEXT NOT NULL,
+                    adjustedAt INTEGER NOT NULL,
+                    FOREIGN KEY(productId) REFERENCES products(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_stock_adjustments_productId ON stock_adjustments (productId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_stock_adjustments_adjustedAt ON stock_adjustments (adjustedAt)")
+
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    userId TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    entityType TEXT NOT NULL,
+                    entityId TEXT NOT NULL,
+                    details TEXT NOT NULL,
+                    timestamp INTEGER NOT NULL
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_audit_logs_userId ON audit_logs (userId)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_audit_logs_timestamp ON audit_logs (timestamp)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_audit_logs_action ON audit_logs (action)")
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                createV6Tables(db)
+                try {
+                    db.execSQL("ALTER TABLE suppliers ADD COLUMN duePaise INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
+            }
+        }
+
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 try {
@@ -347,6 +574,50 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """.trimIndent())
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_custom_units_code ON custom_units (code)")
+
+                try {
+                    db.execSQL("DROP INDEX IF EXISTS index_products_barcode")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_products_barcode ON products (barcode)")
+                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_products_barcode_non_empty ON products (barcode) WHERE barcode != '' AND barcode IS NOT NULL")
+                } catch (_: Exception) {}
+            }
+        }
+
+        val MIGRATION_5_8 = object : Migration(5, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                createV6Tables(db)
+
+                try {
+                    db.execSQL("ALTER TABLE suppliers ADD COLUMN duePaise INTEGER NOT NULL DEFAULT 0")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE invoice_items ADD COLUMN unit TEXT NOT NULL DEFAULT 'PCS'")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE purchase_items ADD COLUMN unit TEXT NOT NULL DEFAULT 'PCS'")
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("ALTER TABLE return_items ADD COLUMN unit TEXT NOT NULL DEFAULT 'PCS'")
+                } catch (_: Exception) {}
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS custom_units (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        code TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        baseUnitCode TEXT NOT NULL,
+                        conversionFactor REAL NOT NULL,
+                        allowsFractional INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_custom_units_code ON custom_units (code)")
+
+                try {
+                    db.execSQL("DROP INDEX IF EXISTS index_products_barcode")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_products_barcode ON products (barcode)")
+                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_products_barcode_non_empty ON products (barcode) WHERE barcode != '' AND barcode IS NOT NULL")
+                } catch (_: Exception) {}
             }
         }
 
@@ -357,7 +628,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "billing_app.db"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_6_7, MIGRATION_7_8)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_5_8)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)

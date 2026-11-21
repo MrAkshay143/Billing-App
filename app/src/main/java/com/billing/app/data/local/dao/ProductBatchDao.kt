@@ -30,10 +30,26 @@ interface ProductBatchDao {
 
     @Query("""
         SELECT * FROM product_batches 
-        WHERE productId = :productId AND currentStockMilli > 0 
+        WHERE productId = :productId 
+          AND currentStockMilli > 0 
+          AND (expiryDate IS NULL OR expiryDate > :currentTime)
         ORDER BY CASE WHEN expiryDate IS NULL THEN 1 ELSE 0 END, expiryDate ASC, createdAt ASC
     """)
-    suspend fun getActiveBatchesFEFO(productId: String): List<ProductBatchEntity>
+    suspend fun getActiveBatchesFEFO(productId: String, currentTime: Long = System.currentTimeMillis()): List<ProductBatchEntity> =
+        getActiveBatchesFEFO(productId)
+
+    suspend fun getActiveBatchesFEFO(productId: String): List<ProductBatchEntity> =
+        getActiveBatchesFEFO(productId, System.currentTimeMillis())
+
+    @Query("""
+        SELECT * FROM product_batches 
+        WHERE productId = :productId 
+          AND currentStockMilli > 0 
+          AND expiryDate IS NOT NULL 
+          AND expiryDate <= :currentTime
+        ORDER BY expiryDate ASC
+    """)
+    suspend fun getExpiredBatches(productId: String, currentTime: Long = System.currentTimeMillis()): List<ProductBatchEntity> = emptyList()
 
     @Query("SELECT * FROM product_batches ORDER BY createdAt DESC")
     fun getAllBatches(): Flow<List<ProductBatchEntity>>

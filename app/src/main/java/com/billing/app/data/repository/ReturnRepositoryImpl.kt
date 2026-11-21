@@ -144,55 +144,97 @@ class ReturnRepositoryImpl(
 
                 val totalRefundPaise = lineRefundList.sumOf { it.second }
 
-                // Mixed-Payment Refund Priority:
-                // Step 1: Khata Credit Reversal:
-                val khataCreditPaise: Long
-                if (invoice.duePaise > 0L) {
-                    khataCreditPaise = minOf(totalRefundPaise, invoice.duePaise)
-                    invoiceDao.updateInvoiceDue(invoice.invoiceNumber, invoice.duePaise - khataCreditPaise)
-
-                    val targetCustomerId = invoice.customerId ?: invoice.customerPhone?.let { phone ->
-                        customerDao.getCustomerByPhone(phone.trim())?.id
-                    }
-                    if (targetCustomerId != null) {
-                        val currentBal = customerLedgerDao.getLatestEntryForCustomer(targetCustomerId)?.balanceAfterPaise
-                            ?: customerDao.getCustomerById(targetCustomerId)?.openingBalancePaise
-                            ?: 0L
-                        val newBal = currentBal - khataCreditPaise
-                        customerLedgerDao.insertEntry(
-                            CustomerLedgerEntity(
-                                customerId = targetCustomerId,
-                                transactionType = "RETURN_CREDIT",
-                                invoiceId = invoice.id,
-                                debitPaise = 0L,
-                                creditPaise = khataCreditPaise,
-                                balanceAfterPaise = newBal,
-                                note = "Return credit: for ${invoice.invoiceNumber}"
-                            )
-                        )
-                        val customer = customerDao.getCustomerById(targetCustomerId)
-                        if (customer != null) {
-                            customerDao.updateCustomer(customer.copy(openingBalancePaise = newBal))
-                        }
-                    }
-                } else {
-                    khataCreditPaise = 0L
+                val targetCustomerId = invoice.customerId ?: invoice.customerPhone?.let { phone ->
+                    customerDao.getCustomerByPhone(phone.trim())?.id
                 }
 
-                // Step 2: Cash & UPI Split Refund:
-                val remainingRefund = totalRefundPaise - khataCreditPaise
+                // Mixed-Payment Refund Priority:
+                // Step 1: Khata Credit Reversal for invoice due:
+                val invoiceDueReduction = if (invoice.duePaise > 0L) {
+                    minOf(totalRefundPaise, invoice.duePaise)
+                } else {
+                    0L
+                }
+                if (invoiceDueReduction > 0L) {
+                    invoiceDao.updateInvoiceDue(invoice.invoiceNumber, invoice.duePaise - invoiceDueReduction)
+                }
+
+                // Step 2: Cash & UPI Split Refund vs Khata Post-Allocation:
+                val remainingRefund = totalRefundPaise - invoiceDueReduction
                 val origCash = (invoice.cashReceivedPaise - invoice.changeReturnedPaise).coerceAtLeast(0L)
                 val origUpi = invoice.upiPaidPaise
                 val totalOrigPaid = origCash + origUpi
 
                 val cashRefundPaise: Long
                 val upiRefundPaise: Long
+                var totalKhataCreditPaise = invoiceDueReduction
+
                 if (totalOrigPaid > 0L) {
-                    cashRefundPaise = (remainingRefund * origCash) / totalOrigPaid
-                    upiRefundPaise = remainingRefund - cashRefundPaise
+                    val calculatedCashRefund = (remainingRefund * origCash) / totalOrigPaid
+                    val calculatedUpiRefund = remainingRefund - calculatedCashRefund
+
+                    // Cap cash and UPI refunds by the original amounts paid on the invoice
+                    val actualCashRefund = minOf(calculatedCashRefund, origCash)
+                    val actualUpiRefund = minOf(calculatedUpiRefund, origUpi)
+                    val excessRefund = remainingRefund - actualCashRefund - actualUpiRefund
+
+                    if (excessRefund > 0L && targetCustomerId != null) {
+                        // Customer has Khata: credit excess to Khata rather than leaking cash
+                        totalKhataCreditPaise += excessRefund
+                        cashRefundPaise = actualCashRefund
+                        upiRefundPaise = actualUpiRefund
+                    } else {
+                        cashRefundPaise = calculatedCashRefund
+                        upiRefundPaise = calculatedUpiRefund
+                    }
                 } else {
-                    cashRefundPaise = remainingRefund
+                    // Prevent cash drawer leakage:
+                    // If no cash/UPI was originally paid on this invoice, check if the customer has outstanding debt across their Khata.
+                    // Prioritize crediting the refund to Khata (RETURN_CREDIT) rather than paying cash out of the register!
+                    val currentBal = if (targetCustomerId != null) {
+                        customerLedgerDao.getLatestEntryForCustomer(targetCustomerId)?.balanceAfterPaise
+                            ?: customerDao.getCustomerById(targetCustomerId)?.openingBalancePaise
+                            ?: 0L
+                    } else 0L
+
+                    val remainingDebt = (currentBal - invoiceDueReduction).coerceAtLeast(0L)
+                    val additionalKhataCredit = if (targetCustomerId != null) {
+                        if (remainingDebt > 0L) {
+                            minOf(remainingRefund, remainingDebt)
+                        } else {
+                            remainingRefund
+                        }
+                    } else {
+                        0L
+                    }
+
+                    totalKhataCreditPaise += additionalKhataCredit
+                    cashRefundPaise = remainingRefund - additionalKhataCredit
                     upiRefundPaise = 0L
+                }
+
+                val khataCreditPaise = totalKhataCreditPaise
+
+                if (khataCreditPaise > 0L && targetCustomerId != null) {
+                    val currentBal = customerLedgerDao.getLatestEntryForCustomer(targetCustomerId)?.balanceAfterPaise
+                        ?: customerDao.getCustomerById(targetCustomerId)?.openingBalancePaise
+                        ?: 0L
+                    val newBal = currentBal - khataCreditPaise
+                    customerLedgerDao.insertEntry(
+                        CustomerLedgerEntity(
+                            customerId = targetCustomerId,
+                            transactionType = "RETURN_CREDIT",
+                            invoiceId = invoice.id,
+                            debitPaise = 0L,
+                            creditPaise = khataCreditPaise,
+                            balanceAfterPaise = newBal,
+                            note = "Return credit: for ${invoice.invoiceNumber}"
+                        )
+                    )
+                    val customer = customerDao.getCustomerById(targetCustomerId)
+                    if (customer != null) {
+                        customerDao.updateCustomer(customer.copy(openingBalancePaise = newBal))
+                    }
                 }
 
                 // Generate unique return number

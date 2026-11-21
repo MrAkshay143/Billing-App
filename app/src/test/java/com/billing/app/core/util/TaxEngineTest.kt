@@ -92,6 +92,12 @@ class TaxEngineTest {
         assertEquals(250L, line.cgstPaise)          // CGST: Rs 2.50
         assertEquals(250L, line.sgstPaise)          // SGST: Rs 2.50
         assertEquals(line.taxPaise, line.cgstPaise + line.sgstPaise)
+
+        // Tax-inclusive pricing: Grand total must NOT add tax again (no double-taxation)
+        assertEquals(10500L, result.subtotalPaise)
+        assertEquals(500L, result.totalTaxPaise)
+        assertEquals(10500L, result.grandTotalPaise)
+        assertEquals(0L, result.roundOffPaise)
     }
 
     @Test
@@ -108,6 +114,12 @@ class TaxEngineTest {
         assertEquals(900L, line.cgstPaise)          // CGST: Rs 9.00
         assertEquals(900L, line.sgstPaise)          // SGST: Rs 9.00
         assertEquals(line.taxPaise, line.cgstPaise + line.sgstPaise)
+
+        // Tax-inclusive pricing: Grand total must equal shelf price
+        assertEquals(11800L, result.subtotalPaise)
+        assertEquals(1800L, result.totalTaxPaise)
+        assertEquals(11800L, result.grandTotalPaise)
+        assertEquals(0L, result.roundOffPaise)
     }
 
     @Test
@@ -124,6 +136,49 @@ class TaxEngineTest {
         assertEquals(2000L, line.cgstPaise)         // CGST: Rs 20.00
         assertEquals(2000L, line.sgstPaise)         // SGST: Rs 20.00
         assertEquals(line.taxPaise, line.cgstPaise + line.sgstPaise)
+
+        // Tax-inclusive pricing: Grand total must equal shelf price
+        assertEquals(14000L, result.subtotalPaise)
+        assertEquals(4000L, result.totalTaxPaise)
+        assertEquals(14000L, result.grandTotalPaise)
+        assertEquals(0L, result.roundOffPaise)
+    }
+
+    @Test
+    fun taxInclusive_retailItems_grandTotalEqualsSubtotalMinusDiscount_taxItemized() {
+        // Scenario: 3 retail products with GST 0%, 5%, 18%
+        // MRP includes GST.
+        val items = listOf(
+            TaxEngine.LineItem(lineTotalPaise = 5000L, gstRateBp = 0),     // Rs 50.00 exempt
+            TaxEngine.LineItem(lineTotalPaise = 10500L, gstRateBp = 500),  // Rs 105.00 (Rs 100 taxable + Rs 5 GST)
+            TaxEngine.LineItem(lineTotalPaise = 11800L, gstRateBp = 1800)  // Rs 118.00 (Rs 100 taxable + Rs 18 GST)
+        )
+        // Subtotal = 5000 + 10500 + 11800 = 27300 paise (Rs 273.00)
+        // Bill discount = Rs 23.00 (2300 paise)
+        val discountPaise = 2300L
+        val result = TaxEngine.calculate(items = items, billDiscountPaise = discountPaise, isGstEnabled = true)
+
+        assertEquals(27300L, result.subtotalPaise)
+        assertEquals(2300L, result.billDiscountPaise)
+
+        // Unrounded total must be exactly subtotal - discount (27300 - 2300 = 25000 paise = Rs 250.00)
+        assertEquals(25000L, result.unroundedTotalPaise)
+        assertEquals(25000L, result.grandTotalPaise)
+        assertEquals(0L, result.roundOffPaise)
+
+        // Tax must be itemized from netLineGross without inflating grand total
+        assertTrue(result.totalTaxPaise > 0L)
+        val sumTaxable = result.lineCalculations.sumOf { it.taxableValuePaise }
+        val sumTax = result.lineCalculations.sumOf { it.taxPaise }
+        val sumNetGross = result.lineCalculations.sumOf { it.netLineGrossPaise }
+
+        // Taxable + Tax must equal Net Line Gross for each item
+        for (line in result.lineCalculations) {
+            assertEquals(line.netLineGrossPaise, line.taxableValuePaise + line.taxPaise)
+            assertEquals(line.taxPaise, line.cgstPaise + line.sgstPaise)
+        }
+        assertEquals(sumNetGross, sumTaxable + sumTax)
+        assertEquals(27300L - 2300L, sumNetGross)
     }
 
     @Test

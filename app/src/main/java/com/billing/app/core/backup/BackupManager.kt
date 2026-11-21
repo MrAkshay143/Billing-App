@@ -10,6 +10,7 @@ import com.billing.app.core.util.UnitRegistry
 import com.billing.app.data.local.entity.AuditLogEntity
 import com.billing.app.data.local.entity.CashMovementEntity
 import com.billing.app.data.local.entity.CategoryEntity
+import com.billing.app.data.local.entity.CustomUnitEntity
 import com.billing.app.data.local.entity.CustomerEntity
 import com.billing.app.data.local.entity.CustomerLedgerEntity
 import com.billing.app.data.local.entity.ExpenseEntity
@@ -56,7 +57,7 @@ object BackupManager {
     }
 
     suspend fun createBackupJson(database: AppDatabase): String = withContext(Dispatchers.IO) {
-        // Query all 24 entities in dependency order
+        // Query all 25 entities in dependency order
         val users = database.userDao().getAllUsers().first()
         val shop = database.shopDao().getShopProfileSync()
         val categories = database.categoryDao().getAllCategories().first()
@@ -81,6 +82,7 @@ object BackupManager {
         val expenses = database.expenseDao().getAllExpenses().first()
         val invoiceCounter = database.invoiceDao().getLastInvoiceNumber() ?: 0L
         val auditLogs = database.auditLogDao().getAllAuditLogList()
+        val customUnits = database.customUnitDao().getAllCustomUnitsSync()
 
         val root = JSONObject().apply {
             put("version", BACKUP_VERSION)
@@ -505,6 +507,21 @@ object BackupManager {
                 })
             }
             put("auditLogs", alArr)
+
+            // 25. Custom Units
+            val cuArr = JSONArray()
+            for (cu in customUnits) {
+                cuArr.put(JSONObject().apply {
+                    put("id", cu.id)
+                    put("code", cu.code)
+                    put("name", cu.name)
+                    put("baseUnitCode", cu.baseUnitCode)
+                    put("conversionFactor", cu.conversionFactor)
+                    put("allowsFractional", cu.allowsFractional)
+                    put("createdAt", cu.createdAt)
+                })
+            }
+            put("customUnits", cuArr)
         }
 
         val jsonString = root.toString(2)
@@ -1204,6 +1221,24 @@ object BackupManager {
                             timestamp = obj.optLong("timestamp", System.currentTimeMillis())
                         )
                         database.auditLogDao().upsertAuditLog(al)
+                    }
+                }
+
+                // 25. Restore Custom Units
+                if (root.has("customUnits")) {
+                    val cuArray = root.getJSONArray("customUnits")
+                    for (i in 0 until cuArray.length()) {
+                        val obj = cuArray.getJSONObject(i)
+                        val cu = CustomUnitEntity(
+                            id = obj.optLong("id", 0L),
+                            code = obj.getString("code"),
+                            name = obj.getString("name"),
+                            baseUnitCode = obj.getString("baseUnitCode"),
+                            conversionFactor = obj.getDouble("conversionFactor"),
+                            allowsFractional = obj.optBoolean("allowsFractional", false),
+                            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                        )
+                        database.customUnitDao().insert(cu)
                     }
                 }
             }

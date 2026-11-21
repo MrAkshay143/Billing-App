@@ -260,8 +260,7 @@ class CheckoutViewModel(
 
     fun calculateGrandTotal(subtotalPaise: Long): Long {
         val discount = discountPaise.value.coerceIn(0L, subtotalPaise)
-        val tax = calculateTax(subtotalPaise, discount)
-        val unrounded = (subtotalPaise - discount + tax).coerceAtLeast(0L)
+        val unrounded = (subtotalPaise - discount).coerceAtLeast(0L)
         return TaxEngine.roundToNearestRupee(unrounded).first
     }
 
@@ -382,7 +381,6 @@ class CheckoutViewModel(
                 }
 
                 val currentUser = userRepository?.currentUser?.value
-                val invoiceNumber = invoiceRepository.generateNextInvoiceNumber()
 
                 val paymentMethodStr = when {
                     selectedMode == PaymentMethodMode.SPLIT -> "SPLIT"
@@ -395,7 +393,7 @@ class CheckoutViewModel(
 
                 val invoice = InvoiceEntity(
                     id = 0L,
-                    invoiceNumber = invoiceNumber,
+                    invoiceNumber = "",
                     timestamp = System.currentTimeMillis(),
                     subtotalPaise = billResult.subtotalPaise,
                     discountPaise = billResult.billDiscountPaise,
@@ -443,9 +441,7 @@ class CheckoutViewModel(
                         unit = UnitRegistry.resolve(if (item.isCustomItem) "PCS" else item.product.unit).code,
                         isCustomItem = item.isCustomItem,
                         isCostUnknown = item.isCostUnknown
-                    ).apply {
-                        this.invoiceNumber = invoiceNumber
-                    }
+                    )
                 }
 
                 val result = invoiceRepository.completeSale(
@@ -455,8 +451,14 @@ class CheckoutViewModel(
                 )
 
                 if (result.isSuccess) {
-                    lastCompletedInvoice = invoice
-                    lastCompletedItems = invoiceItems
+                    val completedInvoice = result.getOrNull() ?: invoice
+                    val finalInvoice = if (completedInvoice.invoiceNumber.isBlank()) {
+                        completedInvoice.copy(invoiceNumber = invoiceRepository.generateNextInvoiceNumber())
+                    } else {
+                        completedInvoice
+                    }
+                    lastCompletedInvoice = finalInvoice
+                    lastCompletedItems = invoiceItems.map { it.copy(invoiceId = finalInvoice.id).apply { this.invoiceNumber = finalInvoice.invoiceNumber } }
                     resumedDraftInvoiceNumber = null
 
                     _saleSuccess.value = true

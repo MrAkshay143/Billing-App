@@ -356,8 +356,14 @@ class CartManager(
             if (index >= 0) {
                 val existing = tab.items[index]
                 val current = tab.items.toMutableList()
-                if (existing.quantityMilli > stepMilli) {
-                    current[index] = existing.copy(quantityMilli = existing.quantityMilli - stepMilli)
+                val unitDef = UnitRegistry.resolve(existing.product.unit)
+                val effectiveStep = if (unitDef.allowsFractional && existing.quantityMilli <= stepMilli) {
+                    minOf(stepMilli, 100L)
+                } else {
+                    stepMilli
+                }
+                if (existing.quantityMilli > effectiveStep) {
+                    current[index] = existing.copy(quantityMilli = existing.quantityMilli - effectiveStep)
                 } else {
                     current.removeAt(index)
                 }

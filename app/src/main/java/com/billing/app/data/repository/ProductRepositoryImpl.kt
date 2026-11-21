@@ -2,7 +2,9 @@ package com.billing.app.data.repository
 
 import com.billing.app.core.util.Money
 import com.billing.app.core.util.UnitRegistry
+import com.billing.app.data.local.dao.ProductBatchDao
 import com.billing.app.data.local.dao.ProductDao
+import com.billing.app.data.local.entity.ProductBatchEntity
 import com.billing.app.data.local.entity.ProductEntity
 import com.billing.app.domain.model.AppError
 import com.billing.app.domain.model.Product
@@ -13,8 +15,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class ProductRepositoryImpl(
-    private val productDao: ProductDao
+    private val productDao: ProductDao,
+    private val productBatchDao: ProductBatchDao? = null
 ) : ProductRepository {
+
+    private val effectiveBatchDao: ProductBatchDao?
+        get() = productBatchDao ?: runCatching { com.billing.app.BillingApplication.instance.database.productBatchDao() }.getOrNull()
 
     override fun getProducts(): Flow<List<Product>> {
         return productDao.getAllProducts().map { entities ->
@@ -73,6 +79,19 @@ class ProductRepositoryImpl(
             }
             val canonicalProduct = product.copy(unit = unitDef.code)
             productDao.insertProduct(canonicalProduct.toEntity())
+            if (canonicalProduct.trackBatch && canonicalProduct.stockMilli > 0L) {
+                val initialBatch = ProductBatchEntity(
+                    productId = canonicalProduct.id,
+                    batchNumber = "BATCH-INIT",
+                    expiryDate = null,
+                    purchasePricePaise = canonicalProduct.purchasePrice.paise,
+                    mrpPaise = canonicalProduct.mrp.paise,
+                    initialStockMilli = canonicalProduct.stockMilli,
+                    currentStockMilli = canonicalProduct.stockMilli,
+                    createdAt = System.currentTimeMillis()
+                )
+                effectiveBatchDao?.insertBatch(initialBatch)
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -89,6 +108,21 @@ class ProductRepositoryImpl(
                 p.copy(unit = unitDef.code)
             }
             productDao.insertAll(canonicalList.map { it.toEntity() })
+            canonicalList.forEach { p ->
+                if (p.trackBatch && p.stockMilli > 0L) {
+                    val initialBatch = ProductBatchEntity(
+                        productId = p.id,
+                        batchNumber = "BATCH-INIT",
+                        expiryDate = null,
+                        purchasePricePaise = p.purchasePrice.paise,
+                        mrpPaise = p.mrp.paise,
+                        initialStockMilli = p.stockMilli,
+                        currentStockMilli = p.stockMilli,
+                        createdAt = System.currentTimeMillis()
+                    )
+                    effectiveBatchDao?.insertBatch(initialBatch)
+                }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -158,7 +192,7 @@ class ProductRepositoryImpl(
         return Product(
             id = id,
             name = name,
-            barcode = barcode,
+            barcode = barcode ?: "",
             price = Money(pricePaise),
             stockMilli = stockMilli,
             imageUri = imageUri,

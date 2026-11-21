@@ -27,5 +27,7 @@ data class ShiftZReport(
     val totalTurnoverPaise: Long,
     val invoicesCount: Int,
     val itemsSoldCount: Long,
-    val cashierBreakdowns: List<CashierSalesSummary>
+    val cashierBreakdowns: List<CashierSalesSummary>,
+    val cashRefundsPaise: Long = 0L,
+    val voidRefundsPaise: Long = 0L
 )

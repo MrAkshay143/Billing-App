@@ -171,6 +171,8 @@ class ShiftRepositoryImpl(
             var supplierPaymentPaise = 0L
             var otherCashInPaise = 0L
             var otherCashOutPaise = 0L
+            var cashRefundsPaise = 0L
+            var voidRefundsPaise = 0L
 
             for (movement in cashMovements) {
                 when (movement.movementType) {
@@ -178,6 +180,8 @@ class ShiftRepositoryImpl(
                     "KHATA_COLLECTION" -> khataCollectionsPaise += movement.amountPaise
                     "EXPENSE_OUT" -> expenseCashOutPaise += kotlin.math.abs(movement.amountPaise)
                     "PURCHASE_PAYMENT" -> supplierPaymentPaise += kotlin.math.abs(movement.amountPaise)
+                    "REFUND_CASH" -> cashRefundsPaise += kotlin.math.abs(movement.amountPaise)
+                    "VOID_REFUND" -> voidRefundsPaise += kotlin.math.abs(movement.amountPaise)
                     "CASH_IN" -> {
                         if (movement.reason != "Opening Float" && movement.amountPaise > 0L) {
                             otherCashInPaise += movement.amountPaise
@@ -190,7 +194,7 @@ class ShiftRepositoryImpl(
             }
 
             val openingFloatPaise = shift.openingFloatPaise
-            val calculatedExpectedCash = openingFloatPaise + cashSalesPaise + khataCollectionsPaise + otherCashInPaise - expenseCashOutPaise - supplierPaymentPaise - otherCashOutPaise
+            val calculatedExpectedCash = openingFloatPaise + cashSalesPaise + khataCollectionsPaise + otherCashInPaise - expenseCashOutPaise - supplierPaymentPaise - otherCashOutPaise - cashRefundsPaise - voidRefundsPaise
             val expectedCashPaise = shift.expectedCashPaise ?: calculatedExpectedCash
             val actualCashPaise = shift.actualCashPaise ?: calculatedExpectedCash
             val variancePaise = shift.variancePaise ?: (actualCashPaise - expectedCashPaise)
@@ -237,7 +241,9 @@ class ShiftRepositoryImpl(
                 totalTurnoverPaise = totalTurnoverPaise,
                 invoicesCount = invoices.size,
                 itemsSoldCount = itemsSoldCount,
-                cashierBreakdowns = cashierBreakdowns
+                cashierBreakdowns = cashierBreakdowns,
+                cashRefundsPaise = cashRefundsPaise,
+                voidRefundsPaise = voidRefundsPaise
             )
             Result.success(report)
         } catch (e: Exception) {

@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.billing.app.core.util.Money
 import com.billing.app.core.util.UnitRegistry
+import com.billing.app.data.local.dao.ProductBatchDao
 import com.billing.app.data.local.entity.CategoryEntity
+import com.billing.app.data.local.entity.ProductBatchEntity
 import com.billing.app.domain.model.Product
 import com.billing.app.domain.repository.CategoryRepository
 import com.billing.app.domain.repository.ProductRepository
@@ -28,8 +30,12 @@ enum class StockFilter {
 class ProductViewModel(
     private val productRepository: ProductRepository,
     private val categoryRepository: CategoryRepository? = null,
-    private val stockAdjustmentRepository: StockAdjustmentRepository? = null
+    private val stockAdjustmentRepository: StockAdjustmentRepository? = null,
+    private val productBatchDao: ProductBatchDao? = null
 ) : ViewModel() {
+
+    private val effectiveBatchDao: ProductBatchDao?
+        get() = productBatchDao ?: runCatching { com.billing.app.BillingApplication.instance.database.productBatchDao() }.getOrNull()
 
     val searchQuery = MutableStateFlow("")
     val activeFilter = MutableStateFlow(StockFilter.ALL)
@@ -112,8 +118,10 @@ class ProductViewModel(
         // Stock filter
         when (filter) {
             StockFilter.ALL -> result
-            StockFilter.LOW_STOCK -> result.filter { it.stock in 1..5 }
-            StockFilter.OUT_OF_STOCK -> result.filter { it.stock <= 0 }
+            StockFilter.LOW_STOCK -> result.filter { 
+                it.stockMilli > 0L && it.stockMilli <= it.minStockAlertMilli 
+            }
+            StockFilter.OUT_OF_STOCK -> result.filter { it.stockMilli <= 0L }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -232,8 +240,8 @@ class ProductViewModel(
             _errorMessage.value = "Selling price must be greater than ₹0"
             return
         }
-        val stock = stockStr.toIntOrNull() ?: 0
-        val stockMilli = stock.toLong() * 1000L
+        val stockMilli = (stockStr.toDoubleOrNull()?.let { kotlin.math.round(it * 1000.0).toLong() }) ?: (stockStr.toIntOrNull()?.toLong()?.times(1000L) ?: 0L)
+        val stock = (stockMilli / 1000L).toInt()
         val purchasePrice = Money.fromRupees(purchasePriceStr)
         val mrp = Money.fromRupees(mrpStr)
         val gstRateBp = (gstRateStr.toIntOrNull() ?: 0) * 100
@@ -343,8 +351,8 @@ class ProductViewModel(
             return
         }
         val price = Money.fromRupees(priceStr)
-        val stock = stockStr.toIntOrNull() ?: 0
-        val stockMilli = stock.toLong() * 1000L
+        val stockMilli = (stockStr.toDoubleOrNull()?.let { kotlin.math.round(it * 1000.0).toLong() }) ?: (stockStr.toIntOrNull()?.toLong()?.times(1000L) ?: 0L)
+        val stock = (stockMilli / 1000L).toInt()
 
         _isSaving.value = true
         viewModelScope.launch {
@@ -452,32 +460,98 @@ class ProductViewModel(
 
     fun adjustStock(
         productId: String,
-        newStock: Int,
+        newStock: Double,
         reason: StockAdjustmentReason = StockAdjustmentReason.CORRECTION,
         managerUserId: String = "Admin",
-        notes: String = ""
+        notes: String = "",
+        batchId: Long? = null
     ) {
         viewModelScope.launch {
+            val targetStockMilli = kotlin.math.round(newStock * 1000.0).toLong()
+            val stockDisplay = if (newStock % 1.0 == 0.0) newStock.toLong().toString() else newStock.toString()
+
             if (stockAdjustmentRepository != null) {
                 val currentProduct = productRepository.getProductById(productId)
-                val currentStockMilli = currentProduct?.stockMilli ?: (products.value.find { it.id == productId }?.stock?.toLong()?.times(1000L) ?: 0L)
-                val targetStockMilli = newStock.toLong() * 1000L
+                val currentStockMilli = currentProduct?.stockMilli ?: (products.value.find { it.id == productId }?.stockMilli ?: 0L)
                 val diffMilli = targetStockMilli - currentStockMilli
                 if (diffMilli != 0L) {
+                    var resolvedBatchId = batchId
+                    if (resolvedBatchId == null && currentProduct?.trackBatch == true) {
+                        val activeBatches = effectiveBatchDao?.getActiveBatchesFEFO(productId) ?: emptyList()
+                        val matchingBatch = if (diffMilli < 0L) {
+                            activeBatches.firstOrNull { it.currentStockMilli >= -diffMilli } ?: activeBatches.firstOrNull()
+                        } else {
+                            activeBatches.firstOrNull()
+                        } ?: effectiveBatchDao?.getBatchListForProduct(productId)?.firstOrNull()
+
+                        resolvedBatchId = matchingBatch?.id ?: run {
+                            effectiveBatchDao?.let { dao ->
+                                val initialBatch = ProductBatchEntity(
+                                    productId = productId,
+                                    batchNumber = "BATCH-INIT",
+                                    expiryDate = null,
+                                    purchasePricePaise = currentProduct.purchasePrice.paise,
+                                    mrpPaise = currentProduct.mrp.paise,
+                                    initialStockMilli = currentStockMilli,
+                                    currentStockMilli = currentStockMilli,
+                                    createdAt = System.currentTimeMillis()
+                                )
+                                dao.insertBatch(initialBatch)
+                            }
+                        }
+                    }
+
                     val input = StockAdjustmentInput(
                         productId = productId,
-                        batchId = null,
+                        batchId = resolvedBatchId,
                         adjustedQuantityMilli = diffMilli,
                         reason = reason.code,
-                        notes = notes.ifBlank { "Manual stock adjustment: $newStock (${reason.displayNameEn})" },
+                        notes = notes.ifBlank { "Manual stock adjustment: $stockDisplay (${reason.displayNameEn})" },
                         managerUserId = managerUserId
                     )
                     stockAdjustmentRepository.adjustStock(input)
                 }
             } else {
-                productRepository.adjustStock(productId, newStock)
+                productRepository.adjustStock(productId, newStock.toInt())
             }
         }
+    }
+
+    fun adjustStock(
+        productId: String,
+        newStock: Int,
+        reason: StockAdjustmentReason = StockAdjustmentReason.CORRECTION,
+        managerUserId: String = "Admin",
+        notes: String = "",
+        batchId: Long? = null
+    ) {
+        adjustStock(
+            productId = productId,
+            newStock = newStock.toDouble(),
+            reason = reason,
+            managerUserId = managerUserId,
+            notes = notes,
+            batchId = batchId
+        )
+    }
+
+    fun adjustStock(
+        productId: String,
+        newStockStr: String,
+        reason: StockAdjustmentReason = StockAdjustmentReason.CORRECTION,
+        managerUserId: String = "Admin",
+        notes: String = "",
+        batchId: Long? = null
+    ) {
+        val qty = newStockStr.toDoubleOrNull() ?: return
+        adjustStock(
+            productId = productId,
+            newStock = qty,
+            reason = reason,
+            managerUserId = managerUserId,
+            notes = notes,
+            batchId = batchId
+        )
     }
 
     fun resetSaveSuccess() {

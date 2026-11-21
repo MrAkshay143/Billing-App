@@ -26,7 +26,7 @@ data class CategorySalesSummary(
 
 @Dao
 interface InvoiceDao {
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvoice(invoice: InvoiceEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.ABORT)

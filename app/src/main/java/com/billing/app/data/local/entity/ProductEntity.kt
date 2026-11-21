@@ -10,7 +10,7 @@ import java.util.UUID
 @Entity(
     tableName = "products",
     indices = [
-        Index(value = ["barcode"], unique = true),
+        Index(value = ["barcode"]),
         Index(value = ["category"]),
         Index(value = ["sku"])
     ]
@@ -51,7 +51,7 @@ data class ProductEntity(
     constructor(
         id: String = UUID.randomUUID().toString(),
         name: String,
-        barcode: String,
+        barcode: String = "",
         pricePaise: Long,
         stock: Int = 0,
         imageUri: String? = null,

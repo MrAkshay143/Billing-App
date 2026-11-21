@@ -158,19 +158,34 @@ class InvoiceRepositoryImpl(
 
         try {
             val completedInvoice = runInTransaction {
+                // Determine invoice number atomically inside transaction to prevent counter leaks on failure
+                val finalInvoiceNumber = if (invoice.invoiceNumber.isBlank() || invoice.invoiceNumber.startsWith("DFT-")) {
+                    val lastNum = invoiceDao.getLastInvoiceNumber() ?: 0L
+                    val nextNum = lastNum + 1
+                    invoiceDao.setInvoiceCounter(InvoiceCounterEntity(id = 1, lastNumber = nextNum))
+                    String.format(Locale.US, "INV-%06d", nextNum)
+                } else {
+                    invoice.invoiceNumber
+                }
+                val invoiceToInsert = if (invoice.invoiceNumber != finalInvoiceNumber) {
+                    invoice.copy(invoiceNumber = finalInvoiceNumber)
+                } else {
+                    invoice
+                }
+
                 // 2. Invoices insertion
-                val insertedId = invoiceDao.insertInvoice(invoice)
-                val finalInvoice = if (invoice.id == 0L) invoice.copy(id = insertedId) else invoice
+                val insertedId = invoiceDao.insertInvoice(invoiceToInsert)
+                val finalInvoice = if (invoiceToInsert.id == 0L) invoiceToInsert.copy(id = insertedId) else invoiceToInsert
 
                 // 3. Items insertion & stock deduction (FEFO for batch tracked products)
                 val pBatchDao = productBatchDao ?: database?.productBatchDao()
                 val iBatchDao = invoiceItemBatchDao ?: database?.invoiceItemBatchDao()
 
                 for (item in items) {
-                    val preparedItem = if (item.invoiceId == 0L || item.invoiceId != finalInvoice.id) {
-                        item.copy(invoiceId = finalInvoice.id)
-                    } else {
-                        item
+                    val preparedItem = item.copy(
+                        invoiceId = finalInvoice.id
+                    ).apply {
+                        this.invoiceNumber = finalInvoice.invoiceNumber
                     }
                     val invoiceItemId = invoiceDao.insertInvoiceItem(preparedItem)
 
@@ -216,30 +231,30 @@ class InvoiceRepositoryImpl(
                     }
                 }
 
-                // 4. Delete draft if sale was from resumed draft
+                // 4. Delete draft if sale was from resumed draft (delete child items before parent invoice)
                 if (!draftInvoiceNumberToDelete.isNullOrBlank()) {
-                    invoiceDao.deleteInvoice(draftInvoiceNumberToDelete)
                     invoiceDao.deleteInvoiceItems(draftInvoiceNumberToDelete)
+                    invoiceDao.deleteInvoice(draftInvoiceNumberToDelete)
                 }
 
                 // 5. Net cash drawer movement
-                val netCash = invoice.cashReceivedPaise - invoice.changeReturnedPaise
+                val netCash = finalInvoice.cashReceivedPaise - finalInvoice.changeReturnedPaise
                 if (netCash > 0L) {
                     cashMovementDao.insertCashMovement(
                         CashMovementEntity(
-                            shiftId = invoice.shiftId,
+                            shiftId = finalInvoice.shiftId!!,
                             movementType = "SALE_CASH",
                             amountPaise = netCash,
                             source = "INVOICE",
-                            sourceId = invoice.invoiceNumber
+                            sourceId = finalInvoice.invoiceNumber
                         )
                     )
                 }
 
                 // 6. Customer Khata Double-Entry Ledger (CREDIT_SALE)
-                val dueAmount = if (invoice.originalDuePaise > 0L) invoice.originalDuePaise else invoice.duePaise
+                val dueAmount = if (finalInvoice.originalDuePaise > 0L) finalInvoice.originalDuePaise else finalInvoice.duePaise
                 if (dueAmount > 0L) {
-                    val targetCustomerId = invoice.customerId ?: invoice.customerPhone?.let { phone ->
+                    val targetCustomerId = finalInvoice.customerId ?: finalInvoice.customerPhone?.let { phone ->
                         customerDao.getCustomerByPhone(phone.trim())?.id
                     }
                     if (targetCustomerId != null) {
@@ -255,7 +270,7 @@ class InvoiceRepositoryImpl(
                                 debitPaise = dueAmount,
                                 creditPaise = 0L,
                                 balanceAfterPaise = newBal,
-                                note = "Credit sale: ${invoice.invoiceNumber}"
+                                note = "Credit sale: ${finalInvoice.invoiceNumber}"
                             )
                         )
                         val customer = customerDao.getCustomerById(targetCustomerId)
@@ -278,12 +293,15 @@ class InvoiceRepositoryImpl(
         items: List<InvoiceItemEntity>
     ): Result<InvoiceEntity> = withContext(Dispatchers.IO) {
         try {
-            runInTransaction {
-                invoiceDao.upsertInvoice(invoice)
+            val savedDraft = runInTransaction {
                 invoiceDao.deleteInvoiceItems(invoice.invoiceNumber)
-                invoiceDao.insertInvoiceItems(items)
+                val invoiceId = invoiceDao.insertInvoice(invoice)
+                invoiceDao.deleteInvoiceItems(invoice.invoiceNumber)
+                val linkedItems = items.map { it.copy(invoiceId = invoiceId) }
+                invoiceDao.insertInvoiceItems(linkedItems)
+                if (invoice.id == 0L) invoice.copy(id = invoiceId) else invoice
             }
-            Result.success(invoice)
+            Result.success(savedDraft)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -343,8 +361,9 @@ class InvoiceRepositoryImpl(
                     )
                 }
 
-                // 5. Revert Customer Khata:
-                if (inv.duePaise > 0L) {
+                // 5. Revert Customer Khata (check originalDuePaise to handle settled due bills):
+                val creditToRevert = if (inv.originalDuePaise > 0L) inv.originalDuePaise else inv.duePaise
+                if (creditToRevert > 0L) {
                     val targetCustomerId = inv.customerId ?: inv.customerPhone?.let { phone ->
                         customerDao.getCustomerByPhone(phone.trim())?.id
                     }
@@ -352,14 +371,14 @@ class InvoiceRepositoryImpl(
                         val currentBal = customerLedgerDao.getLatestEntryForCustomer(targetCustomerId)?.balanceAfterPaise
                             ?: customerDao.getCustomerById(targetCustomerId)?.openingBalancePaise
                             ?: 0L
-                        val newBal = currentBal - inv.duePaise
+                        val newBal = currentBal - creditToRevert
                         customerLedgerDao.insertEntry(
                             CustomerLedgerEntity(
                                 customerId = targetCustomerId,
                                 transactionType = "VOID_CREDIT_REVERSAL",
                                 invoiceId = inv.id,
                                 debitPaise = 0L,
-                                creditPaise = inv.duePaise,
+                                creditPaise = creditToRevert,
                                 balanceAfterPaise = newBal,
                                 note = "Void credit reversal: $invoiceNumber"
                             )
@@ -430,7 +449,10 @@ class InvoiceRepositoryImpl(
 
     override suspend fun deleteInvoice(invoiceNumber: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            invoiceDao.deleteInvoice(invoiceNumber)
+            runInTransaction {
+                invoiceDao.deleteInvoiceItems(invoiceNumber)
+                invoiceDao.deleteInvoice(invoiceNumber)
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
