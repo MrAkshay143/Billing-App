@@ -543,7 +543,7 @@ private fun ProductItemCard(
         ) {
             // Product Thumbnail
             ProductThumbnail(
-                imageUri = product.imageUri,
+                product = product,
                 size = 54.dp,
                 shape = RoundedCornerShape(12.dp)
             )

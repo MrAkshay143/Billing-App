@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.localization.appStrings
+import com.billing.app.core.ui.components.ProductThumbnail
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.ErrorColor
 import com.billing.app.core.ui.theme.PastelPurpleBg
@@ -95,18 +96,26 @@ fun CartItemEditDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
-            Column {
-                Text(
-                    text = item.displayName,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    color = DokandaarTheme.textPrimary
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ProductThumbnail(
+                    product = item.product,
+                    size = 40.dp,
+                    shape = RoundedCornerShape(8.dp)
                 )
-                Text(
-                    text = "Standard Price: ${item.product.price.format()} / ${item.product.unit.lowercase()}",
-                    fontSize = 11.sp,
-                    color = DokandaarTheme.textMuted
-                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = item.displayName,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = DokandaarTheme.textPrimary
+                    )
+                    Text(
+                        text = "Standard Price: ${item.product.price.format()} / ${item.product.unit.lowercase()}",
+                        fontSize = 11.sp,
+                        color = DokandaarTheme.textMuted
+                    )
+                }
             }
         },
         text = {

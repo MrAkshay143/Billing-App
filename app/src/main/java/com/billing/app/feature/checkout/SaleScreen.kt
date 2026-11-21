@@ -583,7 +583,7 @@ fun SaleScreen(
                             ) {
                                 Box(contentAlignment = Alignment.TopEnd) {
                                     ProductThumbnail(
-                                        imageUri = product.imageUri,
+                                        product = product,
                                         size = 48.dp,
                                         shape = RoundedCornerShape(8.dp)
                                     )
@@ -860,7 +860,7 @@ fun SaleScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         ProductThumbnail(
-                                            imageUri = item.product.imageUri,
+                                            product = item.product,
                                             size = 38.dp,
                                             shape = RoundedCornerShape(8.dp)
                                         )

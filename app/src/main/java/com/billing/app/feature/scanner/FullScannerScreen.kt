@@ -552,7 +552,7 @@ fun FullScannerScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     ProductThumbnail(
-                                        imageUri = item.product.imageUri,
+                                        product = item.product,
                                         size = 44.dp,
                                         shape = RoundedCornerShape(10.dp)
                                     )
