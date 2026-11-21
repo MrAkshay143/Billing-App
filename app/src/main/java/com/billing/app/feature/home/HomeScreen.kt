@@ -124,6 +124,7 @@ fun HomeScreen(
     val lowStockCount by viewModel.lowStockCount.collectAsState()
 
     val activeShift by shiftRepository.getActiveShiftFlow().collectAsState(initial = null)
+    val currentUser by userRepository.currentUser.collectAsState()
     var showShiftOpenDialog by remember { mutableStateOf(false) }
     var showShiftCloseDialog by remember { mutableStateOf(false) }
     var shiftSummaryZReport by remember { mutableStateOf<ShiftZReport?>(null) }
@@ -133,7 +134,7 @@ fun HomeScreen(
 
     if (showShiftOpenDialog) {
         ShiftOpenDialog(
-            userId = userRepository.currentUser.value?.id,
+            userId = currentUser?.id,
             onDismissRequest = { showShiftOpenDialog = false },
             onShiftOpened = { showShiftOpenDialog = false }
         )

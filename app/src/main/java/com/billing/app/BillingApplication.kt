@@ -166,10 +166,16 @@ class BillingApplication : Application() {
 
             DokandaarNotificationManager.initChannels(this)
 
-            // Seed default categories and default admin if needed
+            // Seed default categories and default admin if needed, and auto-login
             CoroutineScope(Dispatchers.IO).launch {
                 categoryRepository.seedDefaultCategoriesIfEmpty()
                 userRepository.createDefaultAdminIfNeeded()
+                if (userRepository.currentUser.value == null) {
+                    val activeUser = userRepository.getAllActiveUsers().first().firstOrNull()
+                    if (activeUser != null) {
+                        userRepository.login(activeUser.id, "1234")
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e("BillingApplication", "Error initializing repositories in onCreate", e)

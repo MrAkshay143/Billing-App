@@ -38,6 +38,7 @@ import com.billing.app.core.localization.appStrings
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.data.local.entity.ShiftEntity
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
@@ -58,15 +59,27 @@ fun ShiftOpenDialog(
         val amountDouble = floatAmountRupees.trim().toDoubleOrNull()
         if (amountDouble == null || amountDouble < 0.0) {
             errorMessage = "Please enter a valid cash float amount"
-        } else if (effectiveUserId.isBlank()) {
-            errorMessage = "No active user logged in to open shift"
         } else if (!isOpening) {
             val floatPaise = (amountDouble * 100).toLong()
             coroutineScope.launch {
                 isOpening = true
                 errorMessage = null
+                val userRepo = BillingApplication.instance.userRepository
+                var resolvedUserId = effectiveUserId
+                if (resolvedUserId.isBlank()) {
+                    val activeUser = userRepo.currentUser.value
+                        ?: userRepo.getAllActiveUsers().first().firstOrNull()
+                    if (activeUser != null) {
+                        resolvedUserId = activeUser.id
+                    }
+                }
+                if (resolvedUserId.isBlank()) {
+                    errorMessage = "No active user logged in to open shift"
+                    isOpening = false
+                    return@launch
+                }
                 val result = BillingApplication.instance.shiftRepository.openShift(
-                    userId = effectiveUserId,
+                    userId = resolvedUserId,
                     openingFloatPaise = floatPaise,
                     note = noteInput.trim().ifBlank { null }
                 )
