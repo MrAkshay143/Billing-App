@@ -251,7 +251,7 @@ fun InvoicesScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = if (invoices.isNotEmpty()) "${invoices.size} Bills Recorded" else strings.invoicesSubtitle,
+                                    text = if (invoices.isNotEmpty()) "${invoices.size} ${strings.billsRecorded}" else strings.invoicesSubtitle,
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 11.sp,
                                     maxLines = 1,

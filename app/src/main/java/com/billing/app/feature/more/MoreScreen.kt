@@ -577,7 +577,7 @@ fun MoreScreen(
                     MoreTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.LocalShipping,
-                        title = "Purchases / GRN",
+                        title = strings.purchasesGrn,
                         iconBg = PastelBlueBg,
                         iconTint = PastelBlueContent,
                         onClick = onNavigateToPurchases
@@ -585,7 +585,7 @@ fun MoreScreen(
                     MoreTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.AccountBalanceWallet,
-                        title = "Cash Register & Z-Report / ক্যাশ রেজিস্টার",
+                        title = strings.cashRegisterZReport,
                         iconBg = PastelGreenBg,
                         iconTint = PastelGreenContent,
                         onClick = {

@@ -244,15 +244,15 @@ fun DokandaarInvoiceCard(
 
                 // Status Badge
                 val (badgeBg, badgeText, badgeColor, badgeIcon) = when {
-                    invoice.status == InvoiceStatus.DRAFT -> listOf(PastelBlueBg, "Draft", PastelBlueContent, Icons.Default.Edit)
-                    invoice.status == InvoiceStatus.CANCELLED -> listOf(PastelRedBg, "Returned", PastelRedContent, Icons.AutoMirrored.Filled.Undo)
-                    invoice.duePaise > 0 -> listOf(PastelOrangeBg, "Pending", PastelOrangeContent, Icons.Default.Schedule)
-                    else -> listOf(PastelGreenBg, "Paid", PastelGreenContent, Icons.Default.CheckCircle)
+                    invoice.status == InvoiceStatus.DRAFT -> listOf(PastelBlueBg, strings.badgeDraft, PastelBlueContent, Icons.Default.Edit)
+                    invoice.status == InvoiceStatus.CANCELLED -> listOf(PastelRedBg, strings.badgeReturned, PastelRedContent, Icons.AutoMirrored.Filled.Undo)
+                    invoice.duePaise > 0 -> listOf(PastelOrangeBg, strings.badgePending, PastelOrangeContent, Icons.Default.Schedule)
+                    else -> listOf(PastelGreenBg, strings.badgePaid, PastelGreenContent, Icons.Default.CheckCircle)
                 }
 
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = badgeBg as Color
+                    color = if (DokandaarTheme.isDark) (badgeColor as Color).copy(alpha = 0.18f) else (badgeBg as Color)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -302,7 +302,7 @@ fun DokandaarInvoiceCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Options",
+                            contentDescription = strings.cdOptions,
                             tint = DokandaarTheme.textMuted,
                             modifier = Modifier.size(18.dp)
                         )
@@ -313,14 +313,14 @@ fun DokandaarInvoiceCard(
                         onDismissRequest = { menuExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("View Details") },
+                            text = { Text(strings.viewDetails) },
                             onClick = {
                                 menuExpanded = false
                                 onViewDetails()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Print Receipt") },
+                            text = { Text(strings.printReceipt) },
                             onClick = {
                                 menuExpanded = false
                                 onPrint()
@@ -328,14 +328,14 @@ fun DokandaarInvoiceCard(
                         )
                         if (invoice.status == InvoiceStatus.DRAFT) {
                             DropdownMenuItem(
-                                text = { Text("Resume in POS", color = PrimaryPurple, fontWeight = FontWeight.Bold) },
+                                text = { Text(strings.resumeInPos, color = PrimaryPurple, fontWeight = FontWeight.Bold) },
                                 onClick = {
                                     menuExpanded = false
                                     onResumeDraft()
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Discard Draft", color = ErrorColor) },
+                                text = { Text(strings.discardDraft, color = ErrorColor) },
                                 onClick = {
                                     menuExpanded = false
                                     onDiscardDraft()
@@ -345,7 +345,7 @@ fun DokandaarInvoiceCard(
                         if (invoice.status != InvoiceStatus.DRAFT && invoice.status != InvoiceStatus.CANCELLED) {
                             if (invoice.duePaise > 0) {
                                 DropdownMenuItem(
-                                    text = { Text("Settle Due (${Money(invoice.duePaise).format()})", color = PastelOrangeContent, fontWeight = FontWeight.SemiBold) },
+                                    text = { Text("${strings.settleDueTitle} (${Money(invoice.duePaise).format()})", color = PastelOrangeContent, fontWeight = FontWeight.SemiBold) },
                                     onClick = {
                                         menuExpanded = false
                                         onSettleDue()
@@ -353,7 +353,7 @@ fun DokandaarInvoiceCard(
                                 )
                             }
                             DropdownMenuItem(
-                                text = { Text("Void / Return Invoice", color = ErrorColor) },
+                                text = { Text(strings.voidOrReturnInvoice, color = ErrorColor) },
                                 onClick = {
                                     menuExpanded = false
                                     onVoidInvoice()

@@ -608,6 +608,21 @@ abstract class AppStrings {
     abstract val optional: String
     abstract val notes: String
     abstract val enterQuantity: String
+
+    abstract val purchasesGrn: String
+    abstract val cashRegisterZReport: String
+    abstract val viewDetails: String
+    abstract val printReceipt: String
+    abstract val resumeInPos: String
+    abstract val discardDraft: String
+    abstract val voidOrReturnInvoice: String
+    abstract val themeSystemDesc: String
+    abstract val themeLightDesc: String
+    abstract val themeDarkDesc: String
+    abstract val appearanceSubtitle: String
+    abstract val themeDisplayDesc: String
+    abstract val alignBarcodeFrame: String
+    abstract val billsRecorded: String
 }
 
 val EnStrings: AppStrings = EnglishStrings()

@@ -210,7 +210,7 @@ fun CategoriesScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Row(
@@ -359,7 +359,7 @@ private fun CategoryEditorDialog(
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { imagePickerLauncher.launch("image/*") },
                         color = DokandaarTheme.background,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),

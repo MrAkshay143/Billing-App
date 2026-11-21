@@ -56,7 +56,7 @@ fun PrivacyPolicyScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -79,7 +79,7 @@ fun PrivacyPolicyScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -102,7 +102,7 @@ fun PrivacyPolicyScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -125,7 +125,7 @@ fun PrivacyPolicyScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DokandaarTheme.cardBackground),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                border = androidx.compose.foundation.BorderStroke(1.dp, DokandaarTheme.border)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(

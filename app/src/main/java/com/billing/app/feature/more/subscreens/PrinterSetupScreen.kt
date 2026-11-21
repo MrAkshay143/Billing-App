@@ -59,11 +59,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.billing.app.core.ui.theme.AddProductBg
-import com.billing.app.core.ui.theme.BorderColor
 import com.billing.app.core.ui.theme.DokandaarTheme
 import com.billing.app.core.ui.theme.HeaderGradientStart
 import com.billing.app.core.ui.theme.InStockText
-import com.billing.app.core.ui.theme.TextMutedColor
+import com.billing.app.core.ui.theme.PrimaryPurple
 import com.billing.app.core.ui.util.FeedbackManager
 import com.billing.app.feature.settings.SettingsViewModel
 
@@ -143,11 +142,19 @@ fun PrinterSetupScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (uiState.isConnected) Color(0xFFECFDF5) else Color(0xFFFEF2F2)
+                    containerColor = if (DokandaarTheme.isDark) {
+                        if (uiState.isConnected) Color(0xFF065F46).copy(alpha = 0.25f) else Color(0xFF991B1B).copy(alpha = 0.25f)
+                    } else {
+                        if (uiState.isConnected) Color(0xFFECFDF5) else Color(0xFFFEF2F2)
+                    }
                 ),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    if (uiState.isConnected) Color(0xFFA7F3D0) else Color(0xFFFECACA)
+                    if (DokandaarTheme.isDark) {
+                        if (uiState.isConnected) Color(0xFF059669) else Color(0xFFDC2626)
+                    } else {
+                        if (uiState.isConnected) Color(0xFFA7F3D0) else Color(0xFFFECACA)
+                    }
                 )
             ) {
                 Row(
@@ -182,7 +189,7 @@ fun PrinterSetupScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable { viewModel.disconnectPrinter() },
-                            color = Color(0xFFFEE2E2)
+                            color = if (DokandaarTheme.isDark) Color(0xFFEF4444).copy(alpha = 0.2f) else Color(0xFFFEE2E2)
                         ) {
                             Text(
                                 text = strings.disconnect,
@@ -213,7 +220,7 @@ fun PrinterSetupScreen(
                     Text(
                         text = "Choose paper size matching your thermal printer model",
                         fontSize = 12.sp,
-                        color = TextMutedColor
+                        color = DokandaarTheme.textMuted
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -231,15 +238,15 @@ fun PrinterSetupScreen(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { viewModel.setPaperWidth(width) },
-                                color = if (isSelected) HeaderGradientStart else AddProductBg,
+                                color = if (isSelected) HeaderGradientStart else (if (DokandaarTheme.isDark) PrimaryPurple.copy(alpha = 0.22f) else AddProductBg),
                                 border = androidx.compose.foundation.BorderStroke(
                                     width = if (isSelected) 1.5.dp else 1.dp,
-                                    color = if (isSelected) HeaderGradientStart else BorderColor
+                                    color = if (isSelected) HeaderGradientStart else DokandaarTheme.border
                                 )
                             ) {
                                 Text(
                                     text = label,
-                                    color = if (isSelected) Color.White else HeaderGradientStart,
+                                    color = if (isSelected) Color.White else (if (DokandaarTheme.isDark) Color(0xFFC084FC) else HeaderGradientStart),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
@@ -276,7 +283,7 @@ fun PrinterSetupScreen(
                                 text = strings.pairedDevices,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
+                                color = DokandaarTheme.textPrimary
                             )
                         }
 
@@ -287,7 +294,7 @@ fun PrinterSetupScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .clickable { viewModel.refreshBondedDevices() },
-                                color = AddProductBg
+                                color = if (DokandaarTheme.isDark) PrimaryPurple.copy(alpha = 0.22f) else AddProductBg
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -313,7 +320,7 @@ fun PrinterSetupScreen(
                             Text(
                                 text = strings.noPairedPrinters,
                                 fontSize = 13.sp,
-                                color = TextMutedColor,
+                                color = DokandaarTheme.textMuted,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
@@ -406,7 +413,7 @@ fun PrinterSetupScreen(
                     Text(
                         text = "Send a formatted sample bill to check printer alignment and print head",
                         fontSize = 12.sp,
-                        color = TextMutedColor
+                        color = DokandaarTheme.textMuted
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 

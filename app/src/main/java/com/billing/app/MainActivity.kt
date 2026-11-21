@@ -159,11 +159,7 @@ class MainActivity : ComponentActivity() {
             DisposableEffect(isDark) {
                 try {
                     enableEdgeToEdge(
-                        statusBarStyle = if (isDark) {
-                            androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                        } else {
-                            androidx.activity.SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
-                        },
+                        statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
                         navigationBarStyle = if (isDark) {
                             androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
                         } else {

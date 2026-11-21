@@ -273,7 +273,7 @@ fun FullScannerScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Clear All",
+                                    text = strings.clearAll,
                                     color = Color(0xFFEF4444),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
@@ -308,7 +308,7 @@ fun FullScannerScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Done (${cartItems.sumOf { it.quantity }} Items)",
+                                    text = "${strings.done} (${cartItems.sumOf { it.quantity }} ${strings.itemsCount})",
                                     color = Color.White,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
@@ -402,7 +402,7 @@ fun FullScannerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Camera permission needed",
+                            text = strings.cameraPermissionRequired,
                             color = Color.White,
                             fontSize = 14.sp
                         )
@@ -435,9 +435,9 @@ fun FullScannerScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = if (showAddedBadge && lastAddedProductName != null) {
-                                    "Added: $lastAddedProductName"
+                                    "${strings.itemAddedToCart}: $lastAddedProductName"
                                 } else {
-                                    "Item Added to Cart"
+                                    strings.itemAddedToCart
                                 },
                                 color = PastelGreenContent,
                                 fontSize = 12.sp,
@@ -450,8 +450,8 @@ fun FullScannerScreen(
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = PastelPurpleBg,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD8B4FE))
+                        color = if (DokandaarTheme.isDark) PastelPurpleBg.copy(alpha = 0.2f) else PastelPurpleBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) DokandaarTheme.border else Color(0xFFD8B4FE))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -465,7 +465,7 @@ fun FullScannerScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Total: ${cartItems.sumOf { it.quantity }} Items",
+                                text = "${strings.total}: ${cartItems.sumOf { it.quantity }} ${strings.itemsCount}",
                                 color = PrimaryPurple,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -531,7 +531,7 @@ fun FullScannerScreen(
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = "Align barcode within green laser frame above",
+                                    text = strings.alignBarcodeFrame,
                                     color = DokandaarTheme.textMuted,
                                     fontSize = 13.sp
                                 )
@@ -615,7 +615,7 @@ fun FullScannerScreen(
 
                                         Surface(
                                             shape = RoundedCornerShape(4.dp),
-                                            color = Color.White,
+                                            color = DokandaarTheme.surfaceVariant,
                                             modifier = Modifier
                                                 .padding(horizontal = 2.dp)
                                                 .height(26.dp)
@@ -630,7 +630,7 @@ fun FullScannerScreen(
                                                     text = "${item.quantity}",
                                                     fontSize = 13.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color.Black
+                                                    color = DokandaarTheme.textPrimary
                                                 )
                                             }
                                         }
@@ -648,7 +648,7 @@ fun FullScannerScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Add,
-                                                contentDescription = "Increase",
+                                                contentDescription = null,
                                                 tint = PrimaryPurple,
                                                 modifier = Modifier.size(14.dp)
                                             )
@@ -672,7 +672,7 @@ fun FullScannerScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.DeleteOutline,
-                                            contentDescription = "Remove",
+                                            contentDescription = strings.delete,
                                             tint = Color(0xFFEF4444),
                                             modifier = Modifier.size(20.dp)
                                         )

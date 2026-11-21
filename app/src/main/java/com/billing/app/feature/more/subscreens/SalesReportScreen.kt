@@ -227,7 +227,7 @@ fun SalesReportScreen(
                             Text(
                                 text = "Calculated from ${report.totalInvoices} sales in selected period",
                                 fontSize = 12.sp,
-                                color = TextMutedColor
+                                color = DokandaarTheme.textMuted
                             )
                         }
                     }
@@ -242,14 +242,14 @@ fun SalesReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF3E8FF)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDDD6FE))
+                        colors = CardDefaults.cardColors(containerColor = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else Color(0xFFF3E8FF)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) DokandaarTheme.border else Color(0xFFDDD6FE))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF7C3AED), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = if (DokandaarTheme.isDark) Color(0xFFC084FC) else Color(0xFF7C3AED), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = Money.fromPaise(report.totalRevenuePaise).format(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = strings.totalRevenue, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF5B21B6))
+                            Text(text = Money.fromPaise(report.totalRevenuePaise).format(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = DokandaarTheme.textPrimary)
+                            Text(text = strings.totalRevenue, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (DokandaarTheme.isDark) Color(0xFFC084FC) else Color(0xFF5B21B6))
                         }
                     }
 
@@ -257,14 +257,14 @@ fun SalesReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0))
+                        colors = CardDefaults.cardColors(containerColor = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else Color(0xFFECFDF5)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) DokandaarTheme.border else Color(0xFFA7F3D0))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = if (DokandaarTheme.isDark) Color(0xFF34D399) else Color(0xFF10B981), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = "${report.totalInvoices}", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = strings.totalSales, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF065F46))
+                            Text(text = "${report.totalInvoices}", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = DokandaarTheme.textPrimary)
+                            Text(text = strings.totalSales, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (DokandaarTheme.isDark) Color(0xFF6EE7B7) else Color(0xFF065F46))
                         }
                     }
                 }
@@ -277,14 +277,14 @@ fun SalesReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F2FE)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBAE6FD))
+                        colors = CardDefaults.cardColors(containerColor = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else Color(0xFFE0F2FE)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) DokandaarTheme.border else Color(0xFFBAE6FD))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = if (DokandaarTheme.isDark) Color(0xFF38BDF8) else Color(0xFF0284C7), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = Money.fromPaise(report.avgBillPaise).format(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = strings.avgBillValue, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF075985))
+                            Text(text = Money.fromPaise(report.avgBillPaise).format(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = DokandaarTheme.textPrimary)
+                            Text(text = strings.avgBillValue, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (DokandaarTheme.isDark) Color(0xFF7DD3FC) else Color(0xFF075985))
                         }
                     }
 
@@ -292,14 +292,14 @@ fun SalesReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A))
+                        colors = CardDefaults.cardColors(containerColor = if (DokandaarTheme.isDark) DokandaarTheme.cardBackground else Color(0xFFFFFBEB)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (DokandaarTheme.isDark) DokandaarTheme.border else Color(0xFFFDE68A))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Icon(imageVector = Icons.Default.Payments, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = Icons.Default.Payments, contentDescription = null, tint = if (DokandaarTheme.isDark) Color(0xFFFBBF24) else Color(0xFFD97706), modifier = Modifier.size(22.dp))
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = Money.fromPaise(report.totalDiscountPaise).format(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
-                            Text(text = strings.discountsGiven, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF92400E))
+                            Text(text = Money.fromPaise(report.totalDiscountPaise).format(), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = DokandaarTheme.textPrimary)
+                            Text(text = strings.discountsGiven, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (DokandaarTheme.isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
                         }
                     }
                 }

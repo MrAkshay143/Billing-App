@@ -47,11 +47,11 @@ fun CategoryCard(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) PastelPurpleBg else DokandaarTheme.cardBackground
+            containerColor = if (isSelected) (if (DokandaarTheme.isDark) PrimaryPurple.copy(alpha = 0.22f) else PastelPurpleBg) else DokandaarTheme.cardBackground
         ),
         border = BorderStroke(
             width = if (isSelected) 1.5.dp else 1.dp,
-            color = if (isSelected) PrimaryPurple else BorderColor
+            color = if (isSelected) PrimaryPurple else DokandaarTheme.border
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {

@@ -227,7 +227,7 @@ fun StoreProfileScreen(
                         Text(
                             text = if (phone.isNotBlank()) phone else "Add store contact & address",
                             fontSize = 13.sp,
-                            color = TextMutedColor
+                            color = DokandaarTheme.textMuted
                         )
                     }
                 }
@@ -264,7 +264,7 @@ fun StoreProfileScreen(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = HeaderGradientStart,
-                            unfocusedBorderColor = BorderColor
+                            unfocusedBorderColor = DokandaarTheme.border
                         )
                     )
 
@@ -284,7 +284,7 @@ fun StoreProfileScreen(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = HeaderGradientStart,
-                            unfocusedBorderColor = BorderColor
+                            unfocusedBorderColor = DokandaarTheme.border
                         )
                     )
                 }
@@ -321,7 +321,7 @@ fun StoreProfileScreen(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = HeaderGradientStart,
-                            unfocusedBorderColor = BorderColor
+                            unfocusedBorderColor = DokandaarTheme.border
                         )
                     )
 
@@ -340,7 +340,7 @@ fun StoreProfileScreen(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = HeaderGradientStart,
-                            unfocusedBorderColor = BorderColor
+                            unfocusedBorderColor = DokandaarTheme.border
                         )
                     )
                 }
@@ -371,7 +371,7 @@ fun StoreProfileScreen(
                     ) {
                         Column {
                             Text(strings.enableGstBilling, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
-                            Text("Display GSTIN and tax split on invoices", fontSize = 12.sp, color = TextMutedColor)
+                            Text("Display GSTIN and tax split on invoices", fontSize = 12.sp, color = DokandaarTheme.textMuted)
                         }
                         Switch(
                             checked = isGstEnabled,
@@ -465,7 +465,7 @@ fun StoreProfileScreen(
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = HeaderGradientStart,
-                            unfocusedBorderColor = BorderColor
+                            unfocusedBorderColor = DokandaarTheme.border
                         )
                     )
 
@@ -473,7 +473,7 @@ fun StoreProfileScreen(
                     Text(
                         text = "Tip: Store UPI and payment modes can be configured in Payment Settings.",
                         fontSize = 11.sp,
-                        color = TextMutedColor
+                        color = DokandaarTheme.textMuted
                     )
                 }
             }

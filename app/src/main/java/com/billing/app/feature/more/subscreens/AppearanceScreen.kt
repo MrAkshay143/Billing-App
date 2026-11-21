@@ -68,19 +68,19 @@ fun AppearanceScreen(
         ThemeOption(
             key = "system",
             title = strings.systemDefault,
-            description = "Match your Android system dark/light mode",
+            description = strings.themeSystemDesc,
             icon = Icons.Default.BrightnessAuto
         ),
         ThemeOption(
             key = "light",
             title = strings.lightMode,
-            description = "Dokandaar classic purple and clean white palette",
+            description = strings.themeLightDesc,
             icon = Icons.Default.LightMode
         ),
         ThemeOption(
             key = "dark",
             title = strings.darkMode,
-            description = "Deep dark OLED theme for night & low-light stores",
+            description = strings.themeDarkDesc,
             icon = Icons.Default.DarkMode
         )
     )
@@ -89,7 +89,7 @@ fun AppearanceScreen(
         topBar = {
             SubPageHeader(
                 title = strings.appearanceTheme,
-                subtitle = "Light, Dark & System default",
+                subtitle = strings.appearanceSubtitle,
                 icon = Icons.Default.Palette,
                 onNavigateBack = onNavigateBack
             )
@@ -141,7 +141,7 @@ fun AppearanceScreen(
                             color = DokandaarTheme.textPrimary
                         )
                         Text(
-                            text = "Customize colors and interface presentation",
+                            text = strings.themeDisplayDesc,
                             fontSize = 13.sp,
                             color = DokandaarTheme.textMuted
                         )
@@ -182,13 +182,13 @@ fun AppearanceScreen(
                                 modifier = Modifier
                                     .size(42.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) AddProductBg else Color(0xFFF1F5F9)),
+                                    .background(if (isSelected) (if (DokandaarTheme.isDark) HeaderGradientStart.copy(alpha = 0.22f) else AddProductBg) else DokandaarTheme.surfaceVariant),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = option.icon,
                                     contentDescription = null,
-                                    tint = if (isSelected) HeaderGradientStart else Color(0xFF64748B),
+                                    tint = if (isSelected) HeaderGradientStart else DokandaarTheme.textMuted,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }

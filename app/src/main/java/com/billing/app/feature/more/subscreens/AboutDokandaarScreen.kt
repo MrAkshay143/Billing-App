@@ -113,12 +113,12 @@ fun AboutDokandaarScreen(
                     Text(
                         text = strings.aboutDokandaarDesc,
                         fontSize = 13.sp,
-                        color = TextMutedColor
+                        color = DokandaarTheme.textMuted
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = AddProductBg
+                        color = if (DokandaarTheme.isDark) HeaderGradientStart.copy(alpha = 0.22f) else AddProductBg
                     ) {
                         Text(
                             text = "v2.0.0 Pro Native Edition",
@@ -152,21 +152,21 @@ fun AboutDokandaarScreen(
                         title = "CameraX & ML Kit Vision",
                         description = "High-speed autofocus laser viewfinder supporting EAN-13, UPC, Code 128, and QR codes"
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
 
                     TechSpecItem(
                         icon = Icons.Default.Storage,
                         title = "SQLite Room Database Engine",
                         description = "100% offline-first persistent storage with reactive Flows and atomic transaction guarantees"
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
 
                     TechSpecItem(
                         icon = Icons.Default.QrCode,
                         title = "ZXing Dynamic UPI Engine",
                         description = "Instant dynamic Scan & Pay QR generation preloaded with store VPA and bill amount"
                     )
-                    HorizontalDivider(color = BorderColor.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
+                    HorizontalDivider(color = DokandaarTheme.border.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 10.dp))
 
                     TechSpecItem(
                         icon = Icons.Default.Print,
@@ -193,7 +193,7 @@ fun AboutDokandaarScreen(
                     Text(
                         text = "Designed specifically for retail and grocery businesses. Built natively with Jetpack Compose & Kotlin.",
                         fontSize = 12.sp,
-                        color = TextMutedColor
+                        color = DokandaarTheme.textMuted
                     )
                 }
             }
@@ -217,7 +217,7 @@ private fun TechSpecItem(
             modifier = Modifier
                 .size(34.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(AddProductBg),
+                .background(if (DokandaarTheme.isDark) HeaderGradientStart.copy(alpha = 0.22f) else AddProductBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = HeaderGradientStart, modifier = Modifier.size(18.dp))
@@ -226,7 +226,7 @@ private fun TechSpecItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DokandaarTheme.textPrimary)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = description, fontSize = 11.sp, color = TextMutedColor)
+            Text(text = description, fontSize = 11.sp, color = DokandaarTheme.textMuted)
         }
     }
 }
